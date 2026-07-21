@@ -67,10 +67,14 @@
     .fc .fc-button { background: #334155 !important; border-color: #334155 !important; color: #e2e8f0 !important; font-size: 11px !important; border-radius: 6px !important; padding: 4px 10px !important; }
     .fc .fc-button:hover { background: #475569 !important; }
     .fc .fc-button-active { background: #3b82f6 !important; border-color: #3b82f6 !important; }
-    .fc-event { border-radius: 4px !important; border: none !important; font-size: 10px !important; padding: 1px 4px !important; }
+    .fc-event { border-radius: 4px !important; border: none !important; font-size: 10px !important; padding: 1px 4px !important; cursor: pointer !important; }
     .fc-event-title { font-weight: 600 !important; }
     .fc .fc-daygrid-day { background: transparent; }
     .fc .fc-scrollgrid { border-color: #334155 !important; }
+
+    /* edit mode — events get red ring when hovering in edit mode */
+    body.edit-mode .fc-event:hover { outline: 2px solid #ef4444 !important; opacity: 0.7; }
+    body.edit-mode .fc-event { cursor: crosshair !important; }
 
     /* ── SIDEBAR ── */
     .sidebar { display: flex; flex-direction: column; gap: 12px; }
@@ -92,17 +96,33 @@
     .school-link.sophie-link { color: #34d399; }
     .school-link:hover { opacity: 0.8; }
 
-    /* notice */
-    .notice { background: #1c1a0e; border: 1px solid #78350f; border-radius: 8px; padding: 9px 11px; font-size: 11px; color: #fbbf24; }
-
-    /* ── VIEW TOGGLE ── */
-    .view-toggle { display: flex; gap: 6px; padding: 14px 20px 0; }
+    /* ── VIEW TOOLBAR ── */
+    .view-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 0;
+    }
+    .view-toggle { display: flex; gap: 6px; }
     .view-btn {
-      padding: 7px 18px; border-radius: 8px; border: 1.5px solid #334155;
+      padding: 7px 16px; border-radius: 8px; border: 1.5px solid #334155;
       cursor: pointer; font-size: 12px; font-weight: 700; background: transparent; color: #64748b; transition: all 0.15s;
     }
     .view-btn:hover { border-color: #64748b; color: #cbd5e1; }
     .view-btn.active { background: #1e293b; border-color: #475569; color: #f1f5f9; }
+
+    /* edit mode button */
+    .edit-btn {
+      padding: 6px 14px; border-radius: 8px; border: 1.5px solid #334155;
+      cursor: pointer; font-size: 12px; font-weight: 700; background: transparent; color: #94a3b8; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .edit-btn:hover { border-color: #ef4444; color: #fca5a5; }
+    .edit-btn.active { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #fca5a5; }
+    .restore-btn {
+      padding: 5px 12px; border-radius: 8px; border: 1.5px solid #334155;
+      cursor: pointer; font-size: 11px; font-weight: 700; background: transparent; color: #64748b;
+      margin-left: 6px;
+    }
+    .restore-btn:hover { border-color: #475569; color: #cbd5e1; }
 
     /* ── MASTER CAL VIEW ── */
     #master-view { padding: 16px 20px 20px; display: none; }
@@ -111,6 +131,47 @@
     .master-legend .li { font-size: 12px; }
     .master-cal-wrap { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 20px; }
     .break-row { border-radius: 4px !important; opacity: 0.55 !important; }
+
+    /* ── MONTH LIST VIEW ── */
+    #list-view { padding: 16px 20px 30px; display: none; }
+    .month-block { margin-bottom: 28px; }
+    .month-heading {
+      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+      color: #94a3b8; padding-bottom: 8px; border-bottom: 1px solid #334155; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .month-heading span { font-size: 11px; font-weight: 400; color: #475569; letter-spacing: 0; text-transform: none; }
+    .month-events { display: flex; flex-direction: column; gap: 4px; }
+    .ml-row {
+      display: grid; grid-template-columns: 48px 1fr; align-items: baseline;
+      gap: 10px; padding: 4px 8px; border-radius: 6px; transition: background 0.1s;
+    }
+    .ml-row:hover { background: #1e293b; }
+    .ml-date { font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
+    .ml-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .ml-pill {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+      display: inline-flex; align-items: center; gap: 5px; line-height: 1.4;
+    }
+    .ml-pill.tommy  { background: rgba(59,130,246,0.18); color: #93c5fd; }
+    .ml-pill.emily  { background: rgba(236,72,153,0.18); color: #f9a8d4; }
+    .ml-pill.sophie { background: rgba(16,185,129,0.18); color: #6ee7b7; }
+    .ml-pill.noschool { background: rgba(71,85,105,0.25); color: #94a3b8; }
+    .ml-pill .del-x {
+      cursor: pointer; font-size: 13px; line-height: 1; opacity: 0.6; padding: 0 2px; border-radius: 3px;
+    }
+    .ml-pill .del-x:hover { opacity: 1; color: #ef4444; }
+    body:not(.edit-mode) .ml-pill .del-x { display: none; }
+    .ml-empty { font-size: 11px; color: #475569; padding: 4px 8px; font-style: italic; }
+    .list-filter-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+    .lf-btn {
+      padding: 5px 13px; border-radius: 20px; border: 1.5px solid #334155;
+      cursor: pointer; font-size: 11px; font-weight: 600; background: transparent; color: #64748b;
+    }
+    .lf-btn.active { background: #1e293b; border-color: #475569; color: #f1f5f9; }
+    .lf-btn.tommy-f.active  { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #93c5fd; }
+    .lf-btn.emily-f.active  { background: rgba(236,72,153,0.2); border-color: #ec4899; color: #f9a8d4; }
+    .lf-btn.sophie-f.active { background: rgba(16,185,129,0.2); border-color: #10b981; color: #6ee7b7; }
   </style>
 </head>
 <body>
@@ -129,13 +190,22 @@
   </div>
 </div>
 
-<!-- VIEW TOGGLE -->
-<div class="view-toggle">
-  <button class="view-btn active" id="btn-family" onclick="switchView('family')">🏠 Family View</button>
-  <button class="view-btn" id="btn-master" onclick="switchView('master')">📅 Master Academic Cal</button>
+<!-- VIEW TOOLBAR -->
+<div class="view-toolbar">
+  <div class="view-toggle">
+    <button class="view-btn active" id="btn-family" onclick="switchView('family')">🏠 Family</button>
+    <button class="view-btn" id="btn-master" onclick="switchView('master')">📅 Master Cal</button>
+    <button class="view-btn" id="btn-list"   onclick="switchView('list')">📋 Month List</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <button class="edit-btn" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ Edit</button>
+    <button class="restore-btn" id="restore-btn" onclick="restoreAll()" style="display:none">↩ Restore hidden (<span id="hidden-count">0</span>)</button>
+  </div>
 </div>
 
-<!-- MASTER CAL VIEW -->
+<!-- ══════════════════════════════════════
+     MASTER CAL VIEW
+══════════════════════════════════════ -->
 <div id="master-view">
   <div class="master-cal-wrap">
     <div class="master-header">
@@ -150,7 +220,22 @@
   </div>
 </div>
 
-<!-- FAMILY VIEW -->
+<!-- ══════════════════════════════════════
+     MONTH LIST VIEW
+══════════════════════════════════════ -->
+<div id="list-view">
+  <div class="list-filter-bar">
+    <button class="lf-btn active" data-lf="all">All Schools</button>
+    <button class="lf-btn tommy-f" data-lf="tommy">Tommy (RL)</button>
+    <button class="lf-btn emily-f" data-lf="emily">Emily (NCDS)</button>
+    <button class="lf-btn sophie-f" data-lf="sophie">Sophie (Tenacre)</button>
+  </div>
+  <div id="month-list-body"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FAMILY VIEW
+══════════════════════════════════════ -->
 <div id="family-view">
 <div class="kid-strip">
   <div class="kid-card tommy">
@@ -194,10 +279,7 @@
   </div>
 </div>
 
-<!-- MAIN LAYOUT -->
 <div class="layout">
-
-  <!-- Calendar -->
   <div class="cal-wrap">
     <div class="legend">
       <span class="li"><span class="ld" style="background:#3b82f6"></span>Tommy (RL)</span>
@@ -209,178 +291,343 @@
     <div id="calendar"></div>
   </div>
 
-  <!-- Sidebar -->
   <div class="sidebar">
-    <div class="notice">⚠️ NCDS calendar & all sports feeds not yet connected. Links above go direct to team sites.</div>
-
     <div class="card">
       <div class="card-title">Upcoming (60 days)</div>
       <div id="upcoming-list">Loading…</div>
     </div>
-
     <div class="card">
       <div class="card-title">School Calendars</div>
       <a class="school-link tommy-link" href="https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar" target="_blank">📘 Roxbury Latin</a>
-      <a class="school-link emily-link" href="https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs" target="_blank">📗 NCDS Key Dates</a>
+      <a class="school-link emily-link"  href="https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs" target="_blank">📗 NCDS Key Dates</a>
       <span class="school-link sophie-link" style="cursor:default;">📙 Tenacre — loaded ✓</span>
     </div>
   </div>
 </div>
-</div> <!-- end #family-view -->
+</div><!-- end #family-view -->
+
 
 <script>
+// ─────────────────────────────────────────────────────────────
+// COLORS
+// ─────────────────────────────────────────────────────────────
 const T = '#3b82f6'; // Tommy
 const E = '#ec4899'; // Emily
 const S = '#10b981'; // Sophie
 const X = '#475569'; // No School / Holiday
 const F = '#f59e0b'; // Multi-kid
 
+// ─────────────────────────────────────────────────────────────
+// ALL EVENTS
+// ─────────────────────────────────────────────────────────────
 const ALL_EVENTS = [
-  // ── ROXBURY LATIN (Tommy) ─────────────────────────────────────────
-  { title: 'RL: Class I → Beaver Brook', start: '2026-08-21', color: T, kid: 'tommy' },
-  { title: 'RL: New Student Orientation', start: '2026-08-25', color: T, kid: 'tommy' },
-  { title: 'RL: Fall Term Begins', start: '2026-08-26', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Labor Day', start: '2026-09-07', color: X, kid: 'tommy' },
-  { title: 'RL: Class VI Beaver Brook', start: '2026-09-18', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Columbus Day', start: '2026-10-12', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 1', start: '2026-10-16', color: T, kid: 'tommy' },
+  // ── ROXBURY LATIN (Tommy) ─────────────────────────────────
+  { title: 'RL: Class I → Beaver Brook',         start: '2026-08-21', color: T, kid: 'tommy' },
+  { title: 'RL: New Student Orientation',         start: '2026-08-25', color: T, kid: 'tommy' },
+  { title: 'RL: Fall Term Begins',                start: '2026-08-26', color: T, kid: 'tommy' },
+  { title: 'RL: No School — Labor Day',           start: '2026-09-07', color: X, kid: 'tommy' },
+  { title: 'RL: Class VI Beaver Brook',           start: '2026-09-18', color: T, kid: 'tommy' },
+  { title: 'RL: No School — Columbus Day',        start: '2026-10-12', color: X, kid: 'tommy' },
+  { title: 'RL: End Marking Period 1',            start: '2026-10-16', color: T, kid: 'tommy' },
   { title: 'RL: No School (Class I college visits)', start: '2026-10-19', color: X, kid: 'tommy' },
-  { title: 'RL: Start Marking Period 2', start: '2026-10-20', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Faculty Day', start: '2026-10-26', color: X, kid: 'tommy' },
-  { title: 'RL: Thanksgiving Break', start: '2026-11-25', end: '2026-11-28', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 2', start: '2026-12-09', color: T, kid: 'tommy' },
-  { title: 'RL: Midyear Exams Begin', start: '2026-12-14', color: T, kid: 'tommy' },
-  { title: 'RL: Midyear Exams End', start: '2026-12-18', color: T, kid: 'tommy' },
-  { title: 'RL: Glee Club Holiday Concert 🎶', start: '2026-12-18', color: T, kid: 'tommy' },
-  { title: 'RL: Winter Break', start: '2026-12-18', end: '2027-01-05', color: X, kid: 'tommy' },
-  { title: 'RL: Winter Term Begins', start: '2027-01-05', color: T, kid: 'tommy' },
-  { title: 'RL: No School — MLK Day', start: '2027-01-18', color: X, kid: 'tommy' },
-  { title: 'RL: No School — PD Day', start: '2027-02-01', color: X, kid: 'tommy' },
-  { title: 'RL: No School — Presidents Day', start: '2027-02-15', color: X, kid: 'tommy' },
-  { title: 'RL: No School', start: '2027-02-16', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 3', start: '2027-03-05', color: T, kid: 'tommy' },
-  { title: 'RL: Start Marking Period 4', start: '2027-03-08', color: T, kid: 'tommy' },
-  { title: 'RL: Spring Break', start: '2027-03-12', end: '2027-03-30', color: X, kid: 'tommy' },
-  { title: 'RL: Spring Term Begins', start: '2027-03-30', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Patriots Day', start: '2027-04-19', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 4', start: '2027-05-24', color: T, kid: 'tommy' },
-  { title: 'RL: Final Exams Begin', start: '2027-05-27', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Memorial Day', start: '2027-05-31', color: X, kid: 'tommy' },
-  { title: 'RL: Final Exams End', start: '2027-06-02', color: T, kid: 'tommy' },
-  { title: 'RL: Prize Day 🏆', start: '2027-06-04', color: T, kid: 'tommy' },
+  { title: 'RL: Start Marking Period 2',          start: '2026-10-20', color: T, kid: 'tommy' },
+  { title: 'RL: No School — Faculty Day',         start: '2026-10-26', color: X, kid: 'tommy' },
+  { title: 'RL: Thanksgiving Break',              start: '2026-11-25', end: '2026-11-28', color: X, kid: 'tommy' },
+  { title: 'RL: End Marking Period 2',            start: '2026-12-09', color: T, kid: 'tommy' },
+  { title: 'RL: Midyear Exams Begin',             start: '2026-12-14', color: T, kid: 'tommy' },
+  { title: 'RL: Midyear Exams End',               start: '2026-12-18', color: T, kid: 'tommy' },
+  { title: 'RL: Glee Club Holiday Concert 🎶',    start: '2026-12-18', color: T, kid: 'tommy' },
+  { title: 'RL: Winter Break',                    start: '2026-12-18', end: '2027-01-05', color: X, kid: 'tommy' },
+  { title: 'RL: Winter Term Begins',              start: '2027-01-05', color: T, kid: 'tommy' },
+  { title: 'RL: No School — MLK Day',             start: '2027-01-18', color: X, kid: 'tommy' },
+  { title: 'RL: No School — PD Day',              start: '2027-02-01', color: X, kid: 'tommy' },
+  { title: 'RL: No School — Presidents Day',      start: '2027-02-15', color: X, kid: 'tommy' },
+  { title: 'RL: No School',                       start: '2027-02-16', color: X, kid: 'tommy' },
+  { title: 'RL: End Marking Period 3',            start: '2027-03-05', color: T, kid: 'tommy' },
+  { title: 'RL: Start Marking Period 4',          start: '2027-03-08', color: T, kid: 'tommy' },
+  { title: 'RL: Spring Break',                    start: '2027-03-12', end: '2027-03-30', color: X, kid: 'tommy' },
+  { title: 'RL: Spring Term Begins',              start: '2027-03-30', color: T, kid: 'tommy' },
+  { title: 'RL: No School — Patriots Day',        start: '2027-04-19', color: X, kid: 'tommy' },
+  { title: 'RL: End Marking Period 4',            start: '2027-05-24', color: T, kid: 'tommy' },
+  { title: 'RL: Final Exams Begin',               start: '2027-05-27', color: T, kid: 'tommy' },
+  { title: 'RL: No School — Memorial Day',        start: '2027-05-31', color: X, kid: 'tommy' },
+  { title: 'RL: Final Exams End',                 start: '2027-06-02', color: T, kid: 'tommy' },
+  { title: 'RL: Prize Day 🏆',                    start: '2027-06-04', color: T, kid: 'tommy' },
 
-  // ── NCDS (Emily) ──────────────────────────────────────────────────
-  { title: 'NCDS: Opening Day', start: '2026-08-26', color: E, kid: 'emily' },
-  { title: 'NCDS: No Classes', start: '2026-09-04', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — Labor Day', start: '2026-09-07', color: X, kid: 'emily' },
+  // ── NCDS (Emily) ──────────────────────────────────────────
+  { title: 'NCDS: Opening Day',                   start: '2026-08-26', color: E, kid: 'emily' },
+  { title: 'NCDS: No Classes',                    start: '2026-09-04', color: X, kid: 'emily' },
+  { title: 'NCDS: No Classes — Labor Day',        start: '2026-09-07', color: X, kid: 'emily' },
   { title: "NCDS: Grandparents' & Grandfriends' Day — Early Dismissal 12pm", start: '2026-10-09', color: E, kid: 'emily' },
   { title: "NCDS: No Classes — Indigenous Peoples' Day", start: '2026-10-12', color: X, kid: 'emily' },
   { title: 'NCDS: Family Conferences — No Classes', start: '2026-11-05', color: E, kid: 'emily' },
   { title: 'NCDS: Family Conferences — No Classes', start: '2026-11-12', color: E, kid: 'emily' },
-  { title: 'NCDS: Thanksgiving Break', start: '2026-11-23', end: '2026-11-28', color: X, kid: 'emily' },
-  { title: 'NCDS: Early Dismissal 12pm', start: '2026-12-18', color: E, kid: 'emily' },
-  { title: 'NCDS: Christmas Break', start: '2026-12-21', end: '2027-01-02', color: X, kid: 'emily' },
-  { title: 'NCDS: PD Day — No Classes', start: '2027-01-04', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — MLK Day', start: '2027-01-18', color: X, kid: 'emily' },
+  { title: 'NCDS: Thanksgiving Break',            start: '2026-11-23', end: '2026-11-28', color: X, kid: 'emily' },
+  { title: 'NCDS: Early Dismissal 12pm',          start: '2026-12-18', color: E, kid: 'emily' },
+  { title: 'NCDS: Christmas Break',               start: '2026-12-21', end: '2027-01-02', color: X, kid: 'emily' },
+  { title: 'NCDS: PD Day — No Classes',           start: '2027-01-04', color: X, kid: 'emily' },
+  { title: 'NCDS: No Classes — MLK Day',          start: '2027-01-18', color: X, kid: 'emily' },
   { title: 'NCDS: Faculty Work Day — No Classes', start: '2027-01-19', color: X, kid: 'emily' },
-  { title: 'NCDS: PD Day — No Classes', start: '2027-02-08', color: X, kid: 'emily' },
-  { title: "NCDS: No Classes — Presidents' Day", start: '2027-02-15', color: X, kid: 'emily' },
-  { title: "NCDS: Head's Holiday — No Classes", start: '2027-02-16', color: X, kid: 'emily' },
-  { title: 'NCDS: Spring Break', start: '2027-03-15', end: '2027-03-27', color: X, kid: 'emily' },
+  { title: 'NCDS: PD Day — No Classes',           start: '2027-02-08', color: X, kid: 'emily' },
+  { title: "NCDS: No Classes — Presidents' Day",  start: '2027-02-15', color: X, kid: 'emily' },
+  { title: "NCDS: Head's Holiday — No Classes",   start: '2027-02-16', color: X, kid: 'emily' },
+  { title: 'NCDS: Spring Break',                  start: '2027-03-15', end: '2027-03-27', color: X, kid: 'emily' },
   { title: 'NCDS: Family Conferences — No Classes', start: '2027-04-09', color: E, kid: 'emily' },
-  { title: "NCDS: No Classes — Patriots' Day", start: '2027-04-19', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — Memorial Day', start: '2027-05-31', color: X, kid: 'emily' },
-  { title: 'NCDS: Commencement 🎓', start: '2027-06-04', color: E, kid: 'emily' },
-  { title: 'NCDS: Last Day (Gr. 5–11)', start: '2027-06-08', color: E, kid: 'emily' },
+  { title: "NCDS: No Classes — Patriots' Day",    start: '2027-04-19', color: X, kid: 'emily' },
+  { title: 'NCDS: No Classes — Memorial Day',     start: '2027-05-31', color: X, kid: 'emily' },
+  { title: 'NCDS: Commencement 🎓',               start: '2027-06-04', color: E, kid: 'emily' },
+  { title: 'NCDS: Last Day (Gr. 5–11)',           start: '2027-06-08', color: E, kid: 'emily' },
 
-  // ── TENACRE (Sophie) ──────────────────────────────────────────────
-  { title: 'Tenacre: First Day (Half-Day)', start: '2026-09-08', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Regular Day Begins', start: '2026-09-09', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Half Day', start: '2026-09-11', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Yom Kippur', start: '2026-09-21', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Back to School Night PK–2', start: '2026-09-24', color: S, kid: 'sophie' },
+  // ── TENACRE (Sophie) ──────────────────────────────────────
+  { title: 'Tenacre: First Day (Half-Day)',        start: '2026-09-08', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Regular Day Begins',          start: '2026-09-09', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Half Day',                    start: '2026-09-11', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — Yom Kippur',      start: '2026-09-21', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Back to School Night PK–2',   start: '2026-09-24', color: S, kid: 'sophie' },
   { title: 'Tenacre: Back to School Night Gr.3–6', start: '2026-10-01', color: S, kid: 'sophie' },
   { title: 'Tenacre: No School — Indigenous Peoples Day', start: '2026-10-12', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Apple Pie Run 🍎', start: '2026-10-17', color: S, kid: 'sophie' },
-  { title: 'Tenacre: PT Conferences (Eve)', start: '2026-10-28', color: S, kid: 'sophie' },
-  { title: 'Tenacre: 12:15 Dismissal + PT Conf', start: '2026-10-29', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — PT Conferences', start: '2026-10-30', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Open House', start: '2026-11-07', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Veterans Day', start: '2026-11-11', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Thanksgiving Break', start: '2026-11-25', end: '2026-11-28', color: X, kid: 'sophie' },
-  { title: 'Tenacre: December Lights (PK–2) 🎄', start: '2026-12-11', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Apple Pie Run 🍎',            start: '2026-10-17', color: S, kid: 'sophie' },
+  { title: 'Tenacre: PT Conferences (Eve)',         start: '2026-10-28', color: S, kid: 'sophie' },
+  { title: 'Tenacre: 12:15 Dismissal + PT Conf',   start: '2026-10-29', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — PT Conferences',  start: '2026-10-30', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Open House',                  start: '2026-11-07', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — Veterans Day',    start: '2026-11-11', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Thanksgiving Break',          start: '2026-11-25', end: '2026-11-28', color: X, kid: 'sophie' },
+  { title: 'Tenacre: December Lights (PK–2) 🎄',  start: '2026-12-11', color: S, kid: 'sophie' },
   { title: 'Tenacre: December Celebration (3–6) 🎄', start: '2026-12-17', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Winter Break', start: '2026-12-21', end: '2027-01-02', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Classes Resume', start: '2027-01-04', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — MLK Day', start: '2027-01-18', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Report Writing', start: '2027-01-19', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Presidents Day', start: '2027-02-15', color: X, kid: 'sophie' },
-  { title: 'Tenacre: PT Conferences (Eve)', start: '2027-02-24', color: S, kid: 'sophie' },
-  { title: 'Tenacre: 12:15 Dismissal + PT Conf', start: '2027-02-25', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — PT Conferences', start: '2027-02-26', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Spring Break', start: '2027-03-15', end: '2027-03-27', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Classes Resume', start: '2027-03-29', color: S, kid: 'sophie' },
-  { title: 'Tenacre: GrandFriends Day 🌸', start: '2027-04-09', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Patriots Day', start: '2027-04-19', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Tenacre Fair 🎪', start: '2027-05-08', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Apple Blossom 🌸', start: '2027-05-20', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Spring Musical (Parent) 🎭', start: '2027-05-26', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Winter Break',                start: '2026-12-21', end: '2027-01-02', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Classes Resume',              start: '2027-01-04', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — MLK Day',         start: '2027-01-18', color: X, kid: 'sophie' },
+  { title: 'Tenacre: No School — Report Writing',  start: '2027-01-19', color: X, kid: 'sophie' },
+  { title: 'Tenacre: No School — Presidents Day',  start: '2027-02-15', color: X, kid: 'sophie' },
+  { title: 'Tenacre: PT Conferences (Eve)',         start: '2027-02-24', color: S, kid: 'sophie' },
+  { title: 'Tenacre: 12:15 Dismissal + PT Conf',   start: '2027-02-25', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — PT Conferences',  start: '2027-02-26', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Spring Break',                start: '2027-03-15', end: '2027-03-27', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Classes Resume',              start: '2027-03-29', color: S, kid: 'sophie' },
+  { title: 'Tenacre: GrandFriends Day 🌸',         start: '2027-04-09', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — Patriots Day',    start: '2027-04-19', color: X, kid: 'sophie' },
+  { title: 'Tenacre: Tenacre Fair 🎪',             start: '2027-05-08', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Apple Blossom 🌸',            start: '2027-05-20', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Spring Musical (Parent) 🎭',  start: '2027-05-26', color: S, kid: 'sophie' },
   { title: 'Tenacre: Spring Musical (Student + Parent) 🎭', start: '2027-05-27', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Report Writing', start: '2027-05-28', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Memorial Day', start: '2027-05-31', color: X, kid: 'sophie' },
-  { title: 'Tenacre: 6th Grade Good-Bye Evening', start: '2027-06-10', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Last Day of School 🎉', start: '2027-06-11', color: S, kid: 'sophie' },
+  { title: 'Tenacre: No School — Report Writing',  start: '2027-05-28', color: X, kid: 'sophie' },
+  { title: 'Tenacre: No School — Memorial Day',    start: '2027-05-31', color: X, kid: 'sophie' },
+  { title: 'Tenacre: 6th Grade Good-Bye Evening',  start: '2027-06-10', color: S, kid: 'sophie' },
+  { title: 'Tenacre: Last Day of School 🎉',       start: '2027-06-11', color: S, kid: 'sophie' },
 ];
 
-// ── Academic-only events for Master Cal (no sports, all three schools) ──
-const ACADEMIC_EVENTS = ALL_EVENTS; // currently all events are academic; sports will be separate
+// ─────────────────────────────────────────────────────────────
+// HIDDEN EVENTS — persisted in localStorage
+// ─────────────────────────────────────────────────────────────
+function eventKey(e) { return e.title + '|' + e.start; }
 
-let masterCal = null;
+let hiddenKeys = new Set(JSON.parse(localStorage.getItem('sked_hidden') || '[]'));
 
-function switchView(view) {
-  const familyView = document.getElementById('family-view');
-  const masterView = document.getElementById('master-view');
-  const btnFamily  = document.getElementById('btn-family');
-  const btnMaster  = document.getElementById('btn-master');
-  if (view === 'family') {
-    familyView.style.display = '';
-    masterView.style.display = 'none';
-    btnFamily.classList.add('active');
-    btnMaster.classList.remove('active');
-  } else {
-    familyView.style.display = 'none';
-    masterView.style.display = '';
-    btnFamily.classList.remove('active');
-    btnMaster.classList.add('active');
-    if (!masterCal) initMasterCal();
-  }
+function saveHidden() {
+  localStorage.setItem('sked_hidden', JSON.stringify([...hiddenKeys]));
+  updateRestoreBtn();
 }
 
+function hideEvent(key) {
+  hiddenKeys.add(key);
+  saveHidden();
+}
+
+function restoreAll() {
+  hiddenKeys.clear();
+  saveHidden();
+  refreshAllViews();
+}
+
+function updateRestoreBtn() {
+  const n = hiddenKeys.size;
+  document.getElementById('hidden-count').textContent = n;
+  document.getElementById('restore-btn').style.display = n > 0 ? '' : 'none';
+}
+
+function visibleEvents() {
+  return ALL_EVENTS.filter(e => !hiddenKeys.has(eventKey(e)));
+}
+
+// ─────────────────────────────────────────────────────────────
+// EDIT MODE
+// ─────────────────────────────────────────────────────────────
+let editMode = false;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  const btn = document.getElementById('edit-toggle-btn');
+  if (editMode) {
+    btn.classList.add('active');
+    btn.textContent = '✕ Done Editing';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '✏️ Edit';
+  }
+  // Re-render list view pills to show/hide X buttons
+  if (currentView === 'list') renderMonthList();
+}
+
+// ─────────────────────────────────────────────────────────────
+// VIEW MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+let currentView = 'family';
+let masterCal = null;
+let familyCal = null;
+
+function switchView(view) {
+  currentView = view;
+  ['family','master','list'].forEach(v => {
+    document.getElementById(v === 'family' ? 'family-view' : v + '-view').style.display = v === view ? '' : 'none';
+    document.getElementById('btn-' + v).classList.toggle('active', v === view);
+  });
+  if (view === 'master' && !masterCal) initMasterCal();
+  if (view === 'list') renderMonthList();
+}
+
+function refreshAllViews() {
+  // Refresh family cal
+  if (familyCal) {
+    familyCal.removeAllEvents();
+    getFilteredEvents().forEach(e => familyCal.addEvent(e));
+    renderUpcoming();
+  }
+  // Refresh master cal
+  if (masterCal) {
+    masterCal.removeAllEvents();
+    visibleEvents().forEach(e => masterCal.addEvent(e));
+  }
+  // Refresh list if visible
+  if (currentView === 'list') renderMonthList();
+}
+
+// ─────────────────────────────────────────────────────────────
+// MASTER CALENDAR
+// ─────────────────────────────────────────────────────────────
 function initMasterCal() {
   masterCal = new FullCalendar.Calendar(document.getElementById('master-calendar'), {
     initialView: 'dayGridMonth',
     initialDate: '2026-08-01',
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listYear' },
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth' },
     height: 680,
-    events: ACADEMIC_EVENTS,
+    events: visibleEvents(),
     eventClassNames(arg) {
       const t = arg.event.title.toLowerCase();
-      if (t.includes('break') || t.includes('vacation') || t.includes('holiday')) return ['break-row'];
+      if (t.includes('break') || t.includes('vacation') || t.includes('holiday') || t.includes('no school') || t.includes('no classes')) return ['break-row'];
       return [];
     },
-    eventDidMount(info) {
-      info.el.title = info.event.title;
+    eventDidMount(info) { info.el.title = info.event.title; },
+    eventClick(info) {
+      if (!editMode) return;
+      const ev = ALL_EVENTS.find(e => e.title === info.event.title && e.start === info.event.startStr.split('T')[0]);
+      if (ev) {
+        hideEvent(eventKey(ev));
+        info.event.remove();
+        renderUpcoming();
+        if (currentView === 'list') renderMonthList();
+      }
     }
   });
   masterCal.render();
 }
 
+// ─────────────────────────────────────────────────────────────
+// MONTH LIST VIEW
+// ─────────────────────────────────────────────────────────────
+const MONTHS = [
+  '2026-08','2026-09','2026-10','2026-11','2026-12',
+  '2027-01','2027-02','2027-03','2027-04','2027-05','2027-06'
+];
+const MONTH_LABELS = {
+  '2026-08': 'August 2026',   '2026-09': 'September 2026', '2026-10': 'October 2026',
+  '2026-11': 'November 2026', '2026-12': 'December 2026',  '2027-01': 'January 2027',
+  '2027-02': 'February 2027', '2027-03': 'March 2027',     '2027-04': 'April 2027',
+  '2027-05': 'May 2027',      '2027-06': 'June 2027'
+};
+
+let listFilter = 'all';
+
+function renderMonthList() {
+  const evs = visibleEvents().filter(e => listFilter === 'all' || e.kid === listFilter);
+
+  // Expand multi-day events (break ranges) — show only start date
+  // Group by date
+  const byDate = {};
+  evs.forEach(e => {
+    const d = e.start;
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(e);
+  });
+
+  const html = MONTHS.map(ym => {
+    const [y, m] = ym.split('-').map(Number);
+    const label = MONTH_LABELS[ym];
+
+    // dates in this month with events
+    const dates = Object.keys(byDate)
+      .filter(d => d.startsWith(ym))
+      .sort();
+
+    if (!dates.length) return `
+      <div class="month-block">
+        <div class="month-heading">${label}</div>
+        <div class="ml-empty">No key dates this month</div>
+      </div>`;
+
+    const rows = dates.map(d => {
+      const dayObj = new Date(d + 'T00:00:00');
+      const dayLabel = dayObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const pills = byDate[d].map(ev => {
+        const cls = ev.kid === 'tommy' ? 'tommy' : ev.kid === 'emily' ? 'emily' : ev.kid === 'sophie' ? 'sophie' : 'noschool';
+        const key = eventKey(ev).replace(/'/g, "\\'");
+        const shortTitle = ev.title.replace(/^(RL|NCDS|Tenacre): ?/, '');
+        return `<span class="ml-pill ${cls}" data-key="${key}">
+          ${shortTitle}
+          <span class="del-x" title="Hide this event" onclick="hideFromList('${key}')">✕</span>
+        </span>`;
+      }).join('');
+      return `<div class="ml-row"><span class="ml-date">${dayLabel}</span><div class="ml-pills">${pills}</div></div>`;
+    }).join('');
+
+    return `<div class="month-block">
+      <div class="month-heading">${label} <span>${dates.length} date${dates.length > 1 ? 's' : ''}</span></div>
+      <div class="month-events">${rows}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('month-list-body').innerHTML = html;
+}
+
+function hideFromList(key) {
+  hiddenKeys.add(key);
+  saveHidden();
+  renderMonthList();
+  // also refresh calendars
+  if (familyCal) { familyCal.removeAllEvents(); getFilteredEvents().forEach(e => familyCal.addEvent(e)); renderUpcoming(); }
+  if (masterCal) { masterCal.removeAllEvents(); visibleEvents().forEach(e => masterCal.addEvent(e)); }
+}
+
+// list filter tabs
+document.querySelectorAll('.lf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    listFilter = btn.dataset.lf;
+    document.querySelectorAll('.lf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMonthList();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// FAMILY CALENDAR
+// ─────────────────────────────────────────────────────────────
 let activeKid = 'all';
 
 function getFilteredEvents() {
-  if (activeKid === 'all') return ALL_EVENTS;
-  // when filtering to a kid, show their events plus shared no-school days
-  return ALL_EVENTS.filter(e => e.kid === activeKid);
+  const evs = visibleEvents();
+  if (activeKid === 'all') return evs;
+  return evs.filter(e => e.kid === activeKid);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -389,62 +636,70 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('today-label').textContent =
     now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 
-  // Calendar
-  const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+  updateRestoreBtn();
+
+  // Family Calendar
+  familyCal = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
     initialDate: '2026-08-01',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
     height: 540,
     events: getFilteredEvents(),
-    eventMouseEnter(info) {
-      info.el.title = info.event.title;
+    eventMouseEnter(info) { info.el.title = info.event.title; },
+    eventClick(info) {
+      if (!editMode) return;
+      const ev = ALL_EVENTS.find(e => e.title === info.event.title && e.start === info.event.startStr.split('T')[0]);
+      if (ev) {
+        hideEvent(eventKey(ev));
+        info.event.remove();
+        renderUpcoming();
+        if (masterCal) masterCal.getEventById && masterCal.removeAllEvents() && visibleEvents().forEach(e => masterCal.addEvent(e));
+      }
     }
   });
-  cal.render();
-
-  function renderUpcoming() {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 60);
-    const evs = getFilteredEvents()
-      .filter(e => { const d = new Date(e.start); return d >= today && d <= cutoff; })
-      .sort((a,b) => new Date(a.start) - new Date(b.start))
-      .slice(0, 12);
-
-    const el = document.getElementById('upcoming-list');
-    if (!evs.length) {
-      el.innerHTML = '<p style="font-size:11px;color:#64748b">No events in next 60 days.</p>';
-      return;
-    }
-    el.innerHTML = evs.map(e => {
-      const d = new Date(e.start + 'T00:00:00');
-      const label = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      return `<div class="ev-item">
-        <span class="ev-dot" style="background:${e.color}"></span>
-        <div>
-          <div class="ev-title">${e.title}</div>
-          <div class="ev-date">${label}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
+  familyCal.render();
 
   renderUpcoming();
 
-  // Filter buttons
+  // Filter tabs (header)
   document.querySelectorAll('.filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const kid = btn.dataset.kid;
       activeKid = kid;
-      document.querySelectorAll('.filter-tab').forEach(b => {
-        b.className = 'filter-tab';
-      });
+      document.querySelectorAll('.filter-tab').forEach(b => b.className = 'filter-tab');
       btn.classList.add('active-' + kid);
-      cal.removeAllEvents();
-      getFilteredEvents().forEach(e => cal.addEvent(e));
+      familyCal.removeAllEvents();
+      getFilteredEvents().forEach(e => familyCal.addEvent(e));
       renderUpcoming();
     });
   });
 });
+
+function renderUpcoming() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 60);
+  const evs = getFilteredEvents()
+    .filter(e => { const d = new Date(e.start); return d >= today && d <= cutoff; })
+    .sort((a,b) => new Date(a.start) - new Date(b.start))
+    .slice(0, 12);
+
+  const el = document.getElementById('upcoming-list');
+  if (!evs.length) {
+    el.innerHTML = '<p style="font-size:11px;color:#64748b">No events in next 60 days.</p>';
+    return;
+  }
+  el.innerHTML = evs.map(e => {
+    const d = new Date(e.start + 'T00:00:00');
+    const label = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return `<div class="ev-item">
+      <span class="ev-dot" style="background:${e.color}"></span>
+      <div>
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-date">${label}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
