@@ -480,10 +480,14 @@ let familyCal = null;
 function switchView(view) {
   currentView = view;
   ['family','master','list'].forEach(v => {
-    document.getElementById(v === 'family' ? 'family-view' : v + '-view').style.display = v === view ? '' : 'none';
+    const el = document.getElementById(v === 'family' ? 'family-view' : v + '-view');
+    el.style.display = v === view ? 'block' : 'none';
     document.getElementById('btn-' + v).classList.toggle('active', v === view);
   });
-  if (view === 'master' && !masterCal) initMasterCal();
+  if (view === 'master') {
+    if (!masterCal) initMasterCal();
+    else { masterCal.removeAllEvents(); visibleEvents().forEach(e => masterCal.addEvent(e)); setTimeout(() => masterCal.updateSize(), 50); }
+  }
   if (view === 'list') renderMonthList();
 }
 
