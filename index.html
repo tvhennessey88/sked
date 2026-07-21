@@ -175,6 +175,54 @@
     .chip { font-size:11px; padding:4px 8px; }
     .evt { font-size:10px; }
   }
+/* WEEKLY/DAILY kid columns */
+.week-grid-cols { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.week-day-cols { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:8px; min-height:200px; }
+.week-day-cols.today { border-color:var(--T); border-width:2px; background:#eff6ff; }
+.week-day-cols h4 { margin:0 0 8px; text-align:center; font-size:13px; color:#374151; }
+.week-day-cols h4 .daynum-lg { font-size:20px; font-weight:700; color:#111827; margin-left:4px; }
+.kid-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; }
+.kid-col { min-width:0; }
+.kid-col-h { text-align:center; font-size:11px; font-weight:700; padding:2px 0; margin-bottom:4px; }
+.kid-col-body { display:flex; flex-direction:column; gap:3px; }
+.kid-col-empty { color:#d1d5db; text-align:center; font-size:11px; padding:8px 0; }
+.kid-col .evt { font-size:11px; padding:3px 5px; }
+.day-kid-cols { max-width:1100px; margin:0 auto; }
+.day-kid-cols .kid-cols { gap:12px; }
+.day-kid-cols .kid-col { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; min-height:400px; }
+.day-kid-cols .kid-col-h { font-size:16px; padding:4px 0 8px; }
+.day-kid-cols .evt { font-size:13px; padding:6px 8px; }
+@media(max-width:900px){
+  .week-grid-cols { grid-template-columns:1fr; }
+  .week-day-cols { min-height:auto; }
+}
+@media(max-width:600px){
+  .day-kid-cols .kid-cols { grid-template-columns:1fr; }
+}
+
+/* ANNUAL macro cells */
+.ann-grid-big { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.ann-cell { min-height:56px; border:1px solid #f3f4f6; border-radius:5px; padding:3px; background:#fafafa; cursor:pointer; font-size:11px; overflow:hidden; }
+.ann-cell:hover { background:#eff6ff; border-color:var(--T); }
+.ann-cell.other { color:#d1d5db; background:#fff; }
+.ann-cell.today { background:#fef3c7; border-color:#f59e0b; }
+.ann-num { font-weight:600; font-size:12px; color:#374151; margin-bottom:2px; }
+.ann-cell.other .ann-num { color:#d1d5db; }
+.ann-lbl { font-size:10px; padding:1px 3px; border-radius:3px; margin-bottom:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; }
+.ann-lbl.ann-off { background:#fee2e2; color:#991b1b; font-weight:600; }
+.ann-lbl.ann-tour { background:#fef3c7; color:#92400e; font-weight:600; border-left:2px solid #eab308; }
+
+/* Overview edit mode */
+.ov-edit-bar { display:flex; align-items:center; gap:12px; margin:0 0 14px; flex-wrap:wrap; }
+.ov-edit-btn { background:#fff; border:1px solid #d1d5db; border-radius:6px; padding:6px 12px; font-size:13px; cursor:pointer; font-weight:600; }
+.ov-edit-btn.on { background:#dc2626; color:#fff; border-color:#dc2626; }
+.ov-edit-btn:hover { background:#f3f4f6; }
+.ov-edit-btn.on:hover { background:#b91c1c; }
+.ov-edit-hint { color:#6b7280; font-size:12px; font-style:italic; }
+.ov-restore-btn { background:#eff6ff; border:1px solid var(--T); color:var(--T); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; }
+.ov-del { background:#dc2626; color:#fff; border:none; border-radius:50%; width:16px; height:16px; font-size:10px; line-height:1; cursor:pointer; margin-left:6px; padding:0; vertical-align:middle; }
+.ov-del:hover { background:#991b1b; }
+
 /* ANNUAL big view */
 .annual-grid-big { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
 .ann-month { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
@@ -615,6 +663,7 @@ const savedFilters = JSON.parse(localStorage.getItem(FILTER_KEY) || 'null');
 let filters = savedFilters || { kids: {T:true,E:true,S:true,F:true}, games:true, practices:true, academics:true };
 let currentView = 'monthly';
 let currentDate = new Date();
+let overviewEditMode = false;
 currentDate.setHours(0,0,0,0);
 
 // ============ FAMILY CAL LOADING + NORMALIZATION ============
@@ -795,36 +844,72 @@ function renderMonthly() {
   document.getElementById('view-monthly').innerHTML = html;
 }
 
+function isMacro(e) {
+  // Macro = holidays / kids days off / tournaments / showcases
+  return e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase';
+}
 function renderAnnual() {
-  // Always start at CURRENT calendar month (not tracked currentDate)
+  // Always start at CURRENT calendar month
   const today = new Date();
   const startY = today.getFullYear(), startM = today.getMonth();
-  const idx = buildIndex(allEvents().filter(passesFilter));
   const todayKey = dateKey(today);
-  let html = `<div class="nav-bar"><h2>Next 12 Months</h2></div><div class="annual-grid-big">`;
+  const macros = allEvents().filter(e => passesFilter(e) && isMacro(e));
+  // Build per-date map of macro events
+  const dayMap = {};
+  macros.forEach(e => {
+    eventDates(e).forEach(k => {
+      (dayMap[k] = dayMap[k] || []).push(e);
+    });
+  });
+  let html = `<div class="nav-bar"><h2>Next 12 Months — Macro View</h2><span style="color:var(--muted);font-size:12px;">Holidays · Days off · Tournaments · Showcases</span></div><div class="annual-grid-big">`;
   for (let mi = 0; mi < 12; mi++) {
     const d0 = new Date(startY, startM+mi, 1);
     const y = d0.getFullYear(), m = d0.getMonth();
     const startDay = d0.getDay();
     const gridStart = new Date(y,m,1-startDay);
     const monthName = d0.toLocaleString('en-US',{month:'long',year:'numeric'});
-    html += `<div class="ann-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="ann-grid">`;
+    html += `<div class="ann-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="ann-grid-big">`;
     ['S','M','T','W','T','F','S'].forEach(x => html += `<div class="ann-mh">${x}</div>`);
     for (let i = 0; i < 42; i++) {
       const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
       const k = dateKey(d);
       const inMonth = d.getMonth() === m;
       const isToday = k === todayKey;
-      const dayEvts = idx[k]||[];
-      const kids = new Set(dayEvts.map(e => e.kid));
-      const dots = ['T','E','S','F'].filter(x => kids.has(x)).map(x => `<span class="ann-dot ${x}"></span>`).join('');
-      const count = dayEvts.length;
-      html += `<div class="ann-day ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}" title="${k}${count?` — ${count} event${count>1?'s':''}`:''}">${d.getDate()}<div class="ann-dots">${dots}</div></div>`;
+      const evts = (dayMap[k]||[]).slice(0,3);
+      const labels = evts.map(e => {
+        const cls = e.type === 'noschool' ? 'ann-off' : 'ann-tour';
+        const shortTitle = (e.title||'').replace(/^(RL|NCDS|Tenacre):\s*/,'').slice(0,22);
+        return `<div class="ann-lbl ${cls}" title="${escapeHtml(e.title||'')}">${escapeHtml(shortTitle)}</div>`;
+      }).join('');
+      html += `<div class="ann-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}"><div class="ann-num">${d.getDate()}</div>${labels}</div>`;
     }
     html += `</div></div>`;
   }
   html += `</div>`;
   document.getElementById('view-annual').innerHTML = html;
+}
+
+function dayKidColumns(evts) {
+  // Returns HTML for T/E/S columns. F (family) events show in all three.
+  const cols = { T:[], E:[], S:[] };
+  sortDayEvents(evts).forEach(e => {
+    if (e.kid === 'F') { cols.T.push(e); cols.E.push(e); cols.S.push(e); }
+    else if (cols[e.kid]) cols[e.kid].push(e);
+  });
+  const KIDS = [
+    { k:'T', name:'Tommy', color:'var(--T)' },
+    { k:'E', name:'Emily', color:'var(--E)' },
+    { k:'S', name:'Sophie', color:'var(--S)' },
+  ];
+  return `<div class="kid-cols">` + KIDS.map(({k,name,color}) => {
+    const items = cols[k];
+    return `<div class="kid-col">
+      <div class="kid-col-h" style="color:${color};border-bottom:2px solid ${color}">${name}</div>
+      <div class="kid-col-body">
+        ${items.length === 0 ? '<div class="kid-col-empty">—</div>' : items.map(e => pillHTML(e, {compact:true})).join('')}
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
 }
 
 function renderWeekly() {
@@ -838,17 +923,15 @@ function renderWeekly() {
     <button data-nav="today">This week</button>
     <button data-nav="next">›</button>
     <h2>Week of ${rangeStr}</h2>
-  </div><div class="week-grid">`;
+  </div><div class="week-grid-cols">`;
   for (let i = 0; i < 7; i++) {
     const d = new Date(start); d.setDate(start.getDate()+i);
     const k = dateKey(d);
-    const evts = sortDayEvents(idx[k]||[]);
-    const allday = evts.filter(e => e.allDay);
-    const timed = evts.filter(e => !e.allDay);
+    const evts = idx[k]||[];
     const dow = d.toLocaleString('en-US',{weekday:'short'});
-    html += `<div class="week-day ${k===todayKey?'today':''}"><h4>${dow}<br><span class="daynum-lg">${d.getDate()}</span></h4>
-      ${allday.map(e => `<div class="allday-bubble"><span class="init ${e.kid}">${e.kid}</span> ${e.title}</div>`).join('')}
-      ${timed.map(e => pillHTML(e)).join('')}
+    html += `<div class="week-day-cols ${k===todayKey?'today':''}">
+      <h4 data-jump-day="${k}" style="cursor:pointer">${dow} <span class="daynum-lg">${d.getDate()}</span></h4>
+      ${dayKidColumns(evts)}
     </div>`;
   }
   html += `</div>`;
@@ -858,32 +941,15 @@ function renderWeekly() {
 function renderDaily() {
   const k = dateKey(currentDate);
   const idx = buildIndex(allEvents().filter(passesFilter));
-  const evts = sortDayEvents(idx[k]||[]);
-  const allday = evts.filter(e => e.allDay);
-  const timed = evts.filter(e => !e.allDay);
+  const evts = idx[k]||[];
   const label = currentDate.toLocaleString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  // group timed by hour
-  const groups = {};
-  timed.forEach(e => {
-    const h = new Date(e.start).getHours();
-    (groups[h] = groups[h] || []).push(e);
-  });
-  const hours = Object.keys(groups).map(Number).sort((a,b)=>a-b);
   let html = `<div class="nav-bar">
     <button data-nav="prev">‹</button>
     <button data-nav="today">Today</button>
     <button data-nav="next">›</button>
     <h2>${label}</h2>
-  </div><div class="day-timeline">
-    <div class="allday-list">${allday.map(e => `<div class="allday-bubble"><span class="init ${e.kid}">${e.kid}</span> ${e.title}</div>`).join('')}</div>
-    <div class="timed-list">
-      ${hours.length === 0 && allday.length === 0 ? '<p style="color:var(--muted); text-align:center; padding:40px;">No events</p>' : ''}
-      ${hours.map(h => {
-        const label = (h%12||12) + (h>=12?'p':'a');
-        return `<div class="timeblock"><div class="time-label">${label}</div><div class="time-events">${groups[h].map(pillHTML).join('')}</div></div>`;
-      }).join('')}
-    </div>
-  </div>`;
+  </div>
+  <div class="day-kid-cols">${dayKidColumns(evts)}</div>`;
   document.getElementById('view-daily').innerHTML = html;
 }
 
@@ -943,12 +1009,15 @@ function renderOverview() {
     Tenacre: { name: 'Tenacre', color: 'var(--S)', kid: 'S' },
   };
 
+  function delBtn(e) {
+    return overviewEditMode ? `<button class="ov-del" data-del="${escapeHtml(e.id)}" title="Delete from all views">✕</button>` : '';
+  }
   function schoolCell(events) {
     if (!events.length) return '<span class="ov-empty">—</span>';
     return events.map(e => {
       const isOff = e.type === 'noschool';
       const link = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${escapeHtml(cleanTitle(e))}</a>` : escapeHtml(cleanTitle(e));
-      return `<div class="ov-acad-item ${isOff?'off':''}">${isOff?'🚫 ':''}${link}</div>`;
+      return `<div class="ov-acad-item ${isOff?'off':''}">${isOff?'🚫 ':''}${link}${delBtn(e)}</div>`;
     }).join('');
   }
 
@@ -983,7 +1052,7 @@ function renderOverview() {
         <div class="ov-school">${schoolCell(rl)}</div>
         <div class="ov-school">${schoolCell(nc)}</div>
         <div class="ov-school">${schoolCell(te)}</div>
-        <div class="ov-tour">${tour.length ? tour.map(t => `<div class="ov-tour-item"><span class="init ${t.kid}">${t.kid}</span> ${t.url?`<a href="${t.url}" target="_blank" rel="noopener">${escapeHtml(t.title)}</a>`:escapeHtml(t.title)}</div>`).join('') : '<span class="ov-empty">—</span>'}</div>
+        <div class="ov-tour">${tour.length ? tour.map(t => `<div class="ov-tour-item"><span class="init ${t.kid}">${t.kid}</span> ${t.url?`<a href="${t.url}" target="_blank" rel="noopener">${escapeHtml(t.title)}</a>`:escapeHtml(t.title)}${delBtn(t)}</div>`).join('') : '<span class="ov-empty">—</span>'}</div>
       </div>`;
     });
     listHtml += `</div>`;
@@ -1004,7 +1073,13 @@ function renderOverview() {
     return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
   }).join('');
 
+  const editBar = `<div class="ov-edit-bar">
+    <button id="ov-edit-toggle" class="ov-edit-btn ${overviewEditMode?'on':''}">${overviewEditMode?'✓ Done editing':'✎ Edit (delete events)'}</button>
+    ${overviewEditMode?'<span class="ov-edit-hint">Click the ✕ next to any event to remove it from all views.</span>':''}
+    ${hiddenIds.size?`<button id="ov-restore" class="ov-restore-btn">Restore ${hiddenIds.size} deleted</button>`:''}
+  </div>`;
   document.getElementById('view-overview').innerHTML = `
+    ${editBar}
     <div class="scorecard">
       <div class="stat"><div class="num" style="color:#eab308">${stats.allOff}</div><div class="lbl">All-kids-off days</div></div>
       <div class="stat"><div class="num" style="color:var(--tournament)">${stats.tournaments}</div><div class="lbl">Tournaments / Showcases</div></div>
@@ -1110,6 +1185,21 @@ document.body.addEventListener('click', (e) => {
     currentDate = new Date(y, m-1, 1);
     currentView = 'monthly';
     render();
+    return;
+  }
+  // Overview: toggle edit mode
+  if (e.target.closest('#ov-edit-toggle')) {
+    overviewEditMode = !overviewEditMode;
+    render();
+    return;
+  }
+  // Overview: restore all deleted
+  if (e.target.closest('#ov-restore')) {
+    if (confirm(`Restore ${hiddenIds.size} deleted events?`)) {
+      hiddenIds.clear();
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify([]));
+      render();
+    }
     return;
   }
   // Delete X on events
