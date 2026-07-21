@@ -187,6 +187,33 @@
 
     /* operational events */
     .ml-pill.sports { background: rgba(251,191,36,0.12); color: #fcd34d; border: 1px solid rgba(251,191,36,0.2); }
+
+    /* ── TRACKING VIEW ── */
+    #tracking-view { padding: 16px 20px 30px; display: none; }
+    .tracking-intro { font-size: 11px; color: #64748b; background: #1e293b; border: 1px dashed #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; line-height: 1.6; }
+    .tracking-kid-section { margin-bottom: 28px; }
+    .tracking-kid-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+    .tracking-kid-name { font-size: 14px; font-weight: 800; color: #f1f5f9; }
+    .tr-row {
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+      padding: 12px 16px; display: grid; grid-template-columns: 1fr auto;
+      gap: 12px; align-items: center; margin-bottom: 8px;
+    }
+    .tr-row:hover { border-color: #475569; }
+    .tr-name { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 3px; }
+    .tr-dates { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+    .tr-note { font-size: 11px; color: #64748b; }
+    .tr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+    .tr-badge {
+      font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .tr-badge.active   { background: rgba(16,185,129,0.2);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .tr-badge.upcoming { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+    .tr-badge.watch    { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+    .tr-badge.past     { background: rgba(71,85,105,0.2);   color: #64748b; border: 1px solid #334155; }
+    .tr-link { font-size: 11px; color: #60a5fa; text-decoration: none; }
+    .tr-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -210,7 +237,8 @@
   <div class="view-toggle">
     <button class="view-btn active" id="btn-family" onclick="switchView('family')">🏠 Family</button>
     <button class="view-btn" id="btn-master" onclick="switchView('master')">📅 Master Cal</button>
-    <button class="view-btn" id="btn-list"   onclick="switchView('list')">📋 Month List</button>
+    <button class="view-btn" id="btn-list"     onclick="switchView('list')">📋 Month List</button>
+    <button class="view-btn" id="btn-tracking" onclick="switchView('tracking')">📌 Tracking</button>
   </div>
   <div style="display:flex;align-items:center;gap:6px;">
     <button class="edit-btn" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ Edit</button>
@@ -322,6 +350,16 @@
   </div>
 </div>
 </div><!-- end #family-view -->
+
+<!-- ══════════════════════════════════════
+     TRACKING VIEW
+══════════════════════════════════════ -->
+<div id="tracking-view">
+  <div class="tracking-intro">
+    📌 Events to watch for registration. Forward relevant emails or texts to <strong>amy@coalition.ventures</strong> and they'll be added automatically. Amy checks these links monthly for updates.
+  </div>
+  <div id="tracking-body"></div>
+</div>
 
 
 <script>
@@ -448,6 +486,75 @@ const ALL_EVENTS = [
   { title: 'Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-24', color: '#f59e0b', kid: 'tommy', level: 'operational' },
   { title: 'Lax: Galactic Games PrimeTime (Hampton NH)',   start: '2027-01-23', end: '2027-01-25', color: '#f59e0b', kid: 'tommy', level: 'operational' },
   { title: 'Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-02-21', color: '#f59e0b', kid: 'tommy', level: 'operational' },
+  { title: 'Lax: Future Phenoms Newport (ML8)',            start: '2026-07-20', end: '2026-07-22', color: '#f59e0b', kid: 'tommy', level: 'operational' },
+
+  // ── EMILY — Mass Elite Tournaments ─────────────────────
+  { title: 'ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Heart & Hustle (Fitchburg)',               start: '2026-06-20', end: '2026-06-22', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Summer Ascender (Waltham)',                start: '2026-06-27', end: '2026-06-29', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-06-23', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-06-30', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-07-07', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-07-14', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-07-21', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Summer League (Milton)',        start: '2026-07-28', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: The Northern Rise (Devens)',               start: '2026-07-18', end: '2026-07-20', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Intrasquad 5v5 (Weston)',                  start: '2026-09-20', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: September Sixes (Taunton)',                start: '2026-09-27', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Love 2 Lax (Ft Devens)',                   start: '2026-10-03', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Fall Fear (Ft Devens)',                    start: '2026-10-12', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Ghost Games (Farmington CT)',              start: '2026-10-24', end: '2026-10-26', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Turkey Challenge (Marlboro)',              start: '2026-11-27', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-07', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-14', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-21', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-28', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: E, kid: 'emily', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: E, kid: 'emily', level: 'operational' },
+
+  // ── EMILY — WPC Soccer practices (daily level — for future daily view) ─
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-24', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-26', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-31', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-02', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-07', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-09', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-14', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-16', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-21', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-23', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-28', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-30', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-05', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-07', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-12', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-14', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-19', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-21', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-26', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-28', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-02', color: E, kid: 'emily', level: 'daily' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-04', color: E, kid: 'emily', level: 'daily' },
+
+  // ── SOPHIE — Mass Elite Tournaments ────────────────────
+  { title: 'ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Heart & Hustle (Fitchburg)',               start: '2026-06-20', end: '2026-06-22', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Summer Ascender (Waltham)',                start: '2026-06-27', end: '2026-06-29', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: The Northern Rise (Devens)',               start: '2026-07-18', end: '2026-07-20', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Intrasquad 5v5 (Weston)',                  start: '2026-09-20', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: September Sixes (Taunton)',                start: '2026-09-27', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Love 2 Lax (Ft Devens)',                   start: '2026-10-03', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Fall Fear (Ft Devens)',                    start: '2026-10-12', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Ghost Games (Farmington CT)',              start: '2026-10-24', end: '2026-10-26', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Turkey Challenge (Marlboro)',              start: '2026-11-27', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-07', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-14', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-21', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-28', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: S, kid: 'sophie', level: 'operational' },
+  { title: 'ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: S, kid: 'sophie', level: 'operational' },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -549,7 +656,7 @@ function initMasterCal() {
     initialDate: '2026-08-01',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth' },
     height: 680,
-    events: visibleEvents(),
+    events: nonDailyEvents(),
     eventClassNames(arg) {
       const t = arg.event.title.toLowerCase();
       if (t.includes('break') || t.includes('vacation') || t.includes('holiday') || t.includes('no school') || t.includes('no classes')) return ['break-row'];
@@ -793,6 +900,64 @@ function renderUpcoming() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+// TRACKING TAB — registration events to watch
+// ─────────────────────────────────────────────────────────────
+const TRACKING_ITEMS = [
+  // Tommy — Class of 2030
+  { kid: 'tommy', name: 'Future Phenoms Newport (ML8)', dates: 'Jul 20–21, 2026',
+    url: 'https://www.ml8events.com/events/future-phenoms-newport',
+    note: 'Newport, RI · 2029/2030 showcase · Happening now', status: 'active' },
+  { kid: 'tommy', name: 'The Spotlight (ML8)', dates: 'Oct 17–18, 2026',
+    url: 'https://www.ml8events.com/events/the-spotlight',
+    note: '2029/2030 · Register at ml8events.com', status: 'upcoming' },
+  { kid: 'tommy', name: 'Best in Class Fall Showcase', dates: 'Oct 25, 2026',
+    url: 'https://www.1stclasslax.com/best-in-class-fall',
+    note: 'Chase Fieldhouse, Wilmington DE · 2029/2030 · Open registration', status: 'upcoming' },
+  { kid: 'tommy', name: 'One Percent Winter Showcase', dates: 'Dec 19, 2026',
+    url: 'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/',
+    note: 'Patch Reef Park, Boca Raton FL · 2029/2030 · $525', status: 'upcoming' },
+  { kid: 'tommy', name: 'Future Phenoms Florida (ML8)', dates: 'Jan 9–10, 2027',
+    url: 'https://www.ml8events.com/events/future-phenoms',
+    note: '2029/2030 · Registration open', status: 'upcoming' },
+  { kid: 'tommy', name: 'NLF Futures at IMG Academy', dates: 'Jan 17–19, 2027 (est.)',
+    url: 'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/',
+    note: 'IMG Academy, Bradenton FL · 2027 dates TBD — check back', status: 'watch' },
+  // Emily — Class of 2032
+  { kid: 'emily', name: 'American Select Tryouts', dates: 'Spring 2027 (dates TBD)',
+    url: 'https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event',
+    note: 'Class of 2032 · Check site for 2027 regional dates', status: 'watch' },
+];
+
+function renderTracking() {
+  const byKid = {
+    tommy: { label: '🥍 Tommy — Class of 2030', color: '#3b82f6', items: TRACKING_ITEMS.filter(i => i.kid === 'tommy') },
+    emily: { label: '🥍 Emily — Class of 2032',  color: '#ec4899', items: TRACKING_ITEMS.filter(i => i.kid === 'emily') },
+  };
+
+  const badgeLabel = { active: '🟢 Now', upcoming: 'Register', watch: '👁 Watch', past: 'Past' };
+
+  document.getElementById('tracking-body').innerHTML = Object.values(byKid).map(s => `
+    <div class="tracking-kid-section">
+      <div class="tracking-kid-header">
+        <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0"></span>
+        <span class="tracking-kid-name">${s.label}</span>
+      </div>
+      ${s.items.map(e => `
+        <div class="tr-row">
+          <div>
+            <div class="tr-name">${e.name}</div>
+            <div class="tr-dates">📅 ${e.dates}</div>
+            <div class="tr-note">${e.note}</div>
+          </div>
+          <div class="tr-right">
+            <span class="tr-badge ${e.status}">${badgeLabel[e.status]}</span>
+            <a class="tr-link" href="${e.url}" target="_blank">↗ Details</a>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
 }
 </script>
 </body>
