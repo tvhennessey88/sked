@@ -187,6 +187,9 @@
 
     /* operational events */
     .ml-pill.sports { background: rgba(251,191,36,0.12); color: #fcd34d; border: 1px solid rgba(251,191,36,0.2); }
+    /* practice events */
+    .ml-pill.practice { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); font-style: italic; }
+    .lf-btn.practice-on { background: rgba(148,163,184,0.15); border-color: #94a3b8; color: #94a3b8; }
 
     /* ── TRACKING VIEW ── */
     #tracking-view { padding: 16px 20px 30px; display: none; }
@@ -274,6 +277,10 @@
     <button class="lf-btn sophie-f" data-lf="sophie">Sophie (Tenacre)</button>
     <div class="lf-sep"></div>
     <button class="lf-btn" id="sports-toggle-btn" onclick="toggleSports()">🏆 Show Sports</button>
+    <div class="lf-sep"></div>
+    <button class="lf-btn" id="practice-t-btn" onclick="togglePractice('tommy')" title="Tommy practices">🏃 T</button>
+    <button class="lf-btn" id="practice-e-btn" onclick="togglePractice('emily')" title="Emily practices">🏃 E</button>
+    <button class="lf-btn" id="practice-s-btn" onclick="togglePractice('sophie')" title="Sophie practices">🏃 S</button>
   </div>
   <div id="month-list-body"></div>
 </div>
@@ -487,6 +494,103 @@ const ALL_EVENTS = [
   { title: 'T — Lax: Galactic Games PrimeTime (Hampton NH)',   start: '2027-01-23', end: '2027-01-25', color: '#f59e0b', kid: 'tommy', level: 'operational' },
   { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-02-21', color: '#f59e0b', kid: 'tommy', level: 'operational' },
   { title: 'T — Lax: Future Phenoms Newport (ML8)',            start: '2026-07-20', end: '2026-07-22', color: '#f59e0b', kid: 'tommy', level: 'operational' },
+  // missing eval
+  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-31', color: '#f59e0b', kid: 'tommy', level: 'operational' },
+
+  // ── TOMMY — LAXACHUSETTS PRACTICES (Nov 2026 – Mar 2027) ──────
+  // Mon Skills @ Winchester 7:30-8:30pm
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-11-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-11-09', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-11-16', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-11-23', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-11-30', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2026-12-07', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-01-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-01-11', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-01-25', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-02-01', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-02-08', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-02-22', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Winchester)', start: '2027-03-01', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Tue Skills @ Sudbury 7:30-9:00pm
+  { title: 'T — Lax: Skills (Sudbury)', start: '2026-11-24', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2026-12-01', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2026-12-08', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2026-12-15', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-01-05', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-01-12', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-01-19', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-01-26', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-02-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-02-09', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-02-23', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Sudbury)', start: '2027-03-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Tue Shooting/Speed @ Union Pt 8:00-9:00pm
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2026-11-17', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2026-11-24', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2026-12-01', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2026-12-08', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2026-12-15', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-01-05', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-01-12', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-01-19', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-01-26', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-02-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-02-09', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-02-23', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting/Speed (Union Pt)', start: '2027-03-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Wed Attack/Defense @ Union Pt 7:00-8:00pm
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2026-11-18', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2026-12-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2026-12-09', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2026-12-16', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-01-06', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-01-13', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-01-20', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-01-27', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-02-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-02-10', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-02-24', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Attack/Defense (Union Pt)', start: '2027-03-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Wed Skills @ Norwood 7:30-9:00pm
+  { title: 'T — Lax: Skills (Norwood)', start: '2026-11-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2026-11-11', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2026-11-18', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2026-12-02', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2026-12-09', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-01-06', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-01-13', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-01-20', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-01-27', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-02-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-02-10', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-02-24', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills (Norwood)', start: '2027-03-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Thu Skills+FullField @ Union Pt 7:40-9:00pm
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2026-11-19', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2026-12-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2026-12-10', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2026-12-17', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-01-07', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-01-14', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-01-21', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-01-28', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-02-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-02-11', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-02-25', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Skills+Full-Field (Union Pt)', start: '2027-03-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  // Thu Shooting @ Sudbury 8:00-9:00pm
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2026-12-03', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2026-12-10', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2026-12-17', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-01-07', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-01-14', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-01-21', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-01-28', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-02-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-02-11', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-02-25', color: '#f59e0b', kid: 'tommy', level: 'practice' },
+  { title: 'T — Lax: Shooting (Sudbury)', start: '2027-03-04', color: '#f59e0b', kid: 'tommy', level: 'practice' },
 
   // ── EMILY — Mass Elite Tournaments ─────────────────────
   { title: 'E — ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: E, kid: 'emily', level: 'operational' },
@@ -512,30 +616,40 @@ const ALL_EVENTS = [
   { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: E, kid: 'emily', level: 'operational' },
   { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: E, kid: 'emily', level: 'operational' },
   { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: E, kid: 'emily', level: 'operational' },
+  // ── EMILY — Mass Elite Practices (Fall 2026) ───────────────────
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-12', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-18', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-09-19', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-26', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-01', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-10', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-15', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-10-17', color: E, kid: 'emily', level: 'practice' },
+  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-10-24', color: E, kid: 'emily', level: 'practice' },
 
-  // ── EMILY — WPC Soccer practices (daily level — for future daily view) ─
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-24', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-26', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-31', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-02', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-07', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-09', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-14', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-16', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-21', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-23', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-28', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-30', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-05', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-07', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-12', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-14', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-19', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-21', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-26', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-28', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-02', color: E, kid: 'emily', level: 'daily' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-04', color: E, kid: 'emily', level: 'daily' },
+  // ── EMILY — WPC Soccer practices ────────────────────────────────────
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-24', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-26', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-31', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-02', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-07', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-09', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-14', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-16', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-21', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-23', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-28', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-30', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-05', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-07', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-12', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-14', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-19', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-21', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-26', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-28', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-02', color: E, kid: 'emily', level: 'practice' },
+  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-04', color: E, kid: 'emily', level: 'practice' },
 
   // ── SOPHIE — Mass Elite Tournaments ────────────────────
   { title: 'S — ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: S, kid: 'sophie', level: 'operational' },
@@ -555,6 +669,15 @@ const ALL_EVENTS = [
   { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: S, kid: 'sophie', level: 'operational' },
   { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: S, kid: 'sophie', level: 'operational' },
   { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: S, kid: 'sophie', level: 'operational' },
+  // ── SOPHIE — Mass Elite Practices (Fall 2026) ───────────────────
+  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-12', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-17', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Forekicks Marlboro)', start: '2026-09-19', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-26', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Union Pt)',         start: '2026-10-08', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Union Pt)',         start: '2026-10-10', color: S, kid: 'sophie', level: 'practice' },
+  { title: 'S — ME: Practice (Forekicks Marlboro)', start: '2026-10-17', color: S, kid: 'sophie', level: 'practice' },
+
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -722,6 +845,7 @@ const MONTH_LABELS = {
 
 let listFilter = 'all';
 let showSports = false;
+const showPractice = { tommy: false, emily: false, sophie: false };
 
 function toggleSports() {
   showSports = !showSports;
@@ -736,9 +860,24 @@ function toggleSports() {
   renderMonthList();
 }
 
+function togglePractice(kid) {
+  showPractice[kid] = !showPractice[kid];
+  const btn = document.getElementById('practice-' + kid[0] + '-btn');
+  const labels = { tommy: 'T', emily: 'E', sophie: 'S' };
+  if (showPractice[kid]) {
+    btn.classList.add('practice-on');
+    btn.textContent = '🏃 ' + labels[kid] + ' On';
+  } else {
+    btn.classList.remove('practice-on');
+    btn.textContent = '🏃 ' + labels[kid];
+  }
+  refreshAllViews();
+}
+
 function renderMonthList() {
   const evs = visibleEvents().filter(e => {
     if (e.level === 'daily') return false;
+    if (e.level === 'practice' && !showPractice[e.kid]) return false;
     if (listFilter !== 'all' && e.kid !== listFilter) return false;
     if (!showSports && e.level === 'operational') return false;
     return true;
@@ -784,7 +923,8 @@ function renderMonthList() {
       const dayLabel = fmtDate(d);
       const pills = byDate[d].map(ev => {
         const isOp = ev.level === 'operational';
-        const cls = isOp ? 'sports' : ev.kid === 'tommy' ? 'tommy' : ev.kid === 'emily' ? 'emily' : ev.kid === 'sophie' ? 'sophie' : 'noschool';
+        const isPrac = ev.level === 'practice';
+        const cls = isOp ? 'sports' : isPrac ? 'practice' : ev.kid === 'tommy' ? 'tommy' : ev.kid === 'emily' ? 'emily' : ev.kid === 'sophie' ? 'sophie' : 'noschool';
         const key = eventKey(ev).replace(/'/g, "\\'");
         return `<span class="ml-pill ${cls}" data-key="${key}">
           ${ev.title}
@@ -828,7 +968,13 @@ document.querySelectorAll('.lf-btn').forEach(btn => {
 // ─────────────────────────────────────────────────────────────
 let activeKid = 'all';
 
-function nonDailyEvents() { return visibleEvents().filter(e => e.level !== 'daily'); }
+function nonDailyEvents() {
+  return visibleEvents().filter(e => {
+    if (e.level === 'daily') return false;
+    if (e.level === 'practice' && !showPractice[e.kid]) return false;
+    return true;
+  });
+}
 
 function getFilteredEvents() {
   const evs = nonDailyEvents();
