@@ -770,8 +770,25 @@ function normalizeStatic() {
   });
 }
 
+let scrapedMEEvents = [];
+function normalizeMEScraped(raw) {
+  return raw.map((e,i) => ({
+    id: 'me_' + i,
+    kid: e.kid === 'Emily' ? 'E' : (e.kid === 'Sophie' ? 'S' : 'F'),
+    type: 'practice',
+    title: e.title,
+    start: `${e.start}T${e.time_start}:00`,
+    end:   `${e.start}T${e.time_end}:00`,
+    allDay: false,
+    location: e.location || '',
+    link: 'https://www.masselite.com/team/schedules/practice-schedule/',
+    source: 'Mass Elite',
+  }));
+}
 function allEvents() {
-  return [...normalizeStatic(), ...familyEvents];
+  // Skip legacy static "ME: Practice" entries when scraped data is present (avoid dupes)
+  const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /^ME: Practice/.test(e.title)));
+  return [...staticEvts, ...familyEvents, ...scrapedMEEvents];
 }
 
 // ============ HELPERS ============
@@ -1250,13 +1267,14 @@ document.body.addEventListener('click', (e) => {
 });
 
 // ============ INIT: load family_cal.json then render ============
-fetch('family_cal.json')
-  .then(r => r.ok ? r.json() : [])
-  .then(data => {
-    familyEvents = normalizeFamilyCal(data);
-    render();
-  })
-  .catch(() => { familyEvents = []; render(); });
+Promise.all([
+  fetch('family_cal.json').then(r => r.ok ? r.json() : []).catch(()=>[]),
+  fetch('masselite_practices.json').then(r => r.ok ? r.json() : []).catch(()=>[]),
+]).then(([fam, me]) => {
+  familyEvents = normalizeFamilyCal(fam);
+  scrapedMEEvents = normalizeMEScraped(me);
+  render();
+});
 
 // initial render immediately (before family cal loads)
 render();
