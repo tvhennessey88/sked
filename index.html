@@ -92,6 +92,32 @@
   .mini-day .dot.E { background:var(--E); }
   .mini-day .dot.S { background:var(--S); }
   .mini-day .dot.F { background:var(--F); }
+  /* Overview month grid */
+  .ov-months { display:flex; flex-direction:column; gap:24px; margin-top:16px; }
+  .ov-month { border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .ov-month h3 { margin:0 0 10px; }
+  .ov-columns { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+  .ov-left .mini-grid { font-size:12px; gap:2px; }
+  .ovcell { padding:4px 2px; text-align:center; border-radius:4px; background:#f8fafc; min-height:32px; position:relative; }
+  .ovcell.other { color:#cbd5e1; background:transparent; }
+  .ovcell.today { outline:2px solid #0ea5e9; }
+  .ovcell.all-off { background:#fef3c7; color:#78350f; font-weight:700; }
+  .ovcell.some-off { background:#fef9c3; }
+  .ovcell .dots { display:flex; justify-content:center; gap:2px; margin-top:2px; height:5px; }
+  .ovcell .dot { width:5px; height:5px; border-radius:50%; }
+  .dot.T { background:var(--T); } .dot.E { background:var(--E); } .dot.S { background:var(--S); } .dot.F { background:var(--F); }
+  .all-off-list { margin:8px 0 0; font-size:13px; color:#78350f; background:#fef3c7; padding:6px 10px; border-radius:4px; }
+  .ov-right h4 { margin:0 0 8px; font-size:14px; color:var(--muted); }
+  .tour-item { padding:6px 8px; border-left:3px solid #eab308; background:#fefce8; margin-bottom:4px; font-size:13px; border-radius:0 4px 4px 0; }
+  .tour-date { color:var(--muted); font-weight:600; margin-right:6px; }
+  .init { display:inline-block; width:16px; height:16px; border-radius:50%; text-align:center; font-size:10px; font-weight:700; color:white; margin-right:4px; line-height:16px; }
+  .init.T { background:var(--T); } .init.E { background:var(--E); } .init.S { background:var(--S); } .init.F { background:var(--F); }
+  .ov-legend { display:flex; gap:12px; align-items:center; font-size:13px; margin:10px 0; color:var(--muted); flex-wrap:wrap; }
+  .lg-swatch { display:inline-block; width:16px; height:16px; border-radius:3px; vertical-align:middle; }
+  .lg-swatch.all-off { background:#fef3c7; border:1px solid #fbbf24; }
+  .lg-swatch.some-off { background:#fef9c3; }
+  .muted-sm { color:var(--muted); font-size:13px; }
+  @media (max-width: 720px) { .ov-columns { grid-template-columns: 1fr; } }
 
   /* Weekly view */
   .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
@@ -588,21 +614,33 @@ function normalizeFamilyCal(raw) {
 }
 
 // Normalize static events
+const KID_MAP = { tommy:'T', emily:'E', sophie:'S' };
+function classifyStatic(e) {
+  const t = e.title;
+  const tl = t.toLowerCase();
+  if (e.level === 'practice') return 'practice';
+  if (e.level === 'operational') {
+    if (/game|jamboree/.test(tl)) return 'game';
+    return 'tournament';
+  }
+  // Academic (no level set) — RL/NCDS/Tenacre
+  if (/no school|no classes|break|vacation|thanksgiving|holiday|patriots day|mlk|presidents|labor day|off day|pt conferences —|—\s*(pt conferences|report writing|professional)/i.test(t)) return 'noschool';
+  return 'academic';
+}
 function normalizeStatic() {
-  return STATIC_EVENTS.map(e => {
-    // static events have: date (YYYY-MM-DD), title, kid (T/E/S), type, source, url, time?
+  return STATIC_EVENTS.map((e,i) => {
     return {
-      id: 'st_' + (e.id || (e.date+'_'+e.title).replace(/\s/g,'_')),
-      kid: e.kid || 'F',
-      type: e.type,
+      id: 'st_' + i,
+      kid: KID_MAP[e.kid] || 'F',
+      type: classifyStatic(e),
       title: e.title,
-      start: e.time ? e.date + 'T' + e.time : e.date,
-      end: e.date,
-      allDay: !e.time,
-      location: e.location || '',
+      start: e.start,
+      // static end is inclusive → bump by 1 day so eventDates exclusive-end logic includes final day
+      end: e.end ? (new Date(new Date(e.end).getTime() + 86400000)).toISOString().slice(0,10) : e.start,
+      allDay: true,
+      location: '',
       link: e.url || '',
-      source: e.source || '',
-      time: e.time || null,
+      source: e.title.split(':')[0].trim(),
     };
   });
 }
@@ -806,37 +844,81 @@ function renderDaily() {
 }
 
 function renderOverview() {
-  const evts = allEvents();
-  const stats = {
-    T: evts.filter(e => e.kid==='T' && !hiddenIds.has(e.id)).length,
-    E: evts.filter(e => e.kid==='E' && !hiddenIds.has(e.id)).length,
-    S: evts.filter(e => e.kid==='S' && !hiddenIds.has(e.id)).length,
-    F: evts.filter(e => e.kid==='F' && !hiddenIds.has(e.id)).length,
-    sports: evts.filter(e => ['tournament','showcase','game'].includes(e.type)).length,
-    practices: evts.filter(e => e.type==='practice').length,
-    noschool: evts.filter(e => e.type==='noschool').length,
-  };
-  // Show tournaments/showcases only in overview right column, academic left
-  const showSports = filters.games;
-  const idx = {};
-  evts.filter(e => !hiddenIds.has(e.id)).forEach(e => {
-    if (!filters.kids[e.kid]) return;
-    const k = e.start.slice(0,10);
-    (idx[k] = idx[k] || []).push(e);
+  const evts = allEvents().filter(e => !hiddenIds.has(e.id));
+  // Compute "all kids off" days: date has a no-school for T AND E AND S
+  const offByKid = { T:new Set(), E:new Set(), S:new Set() };
+  const academicByDate = {};
+  const tournaments = [];
+  evts.forEach(e => {
+    if (e.type === 'noschool' && offByKid[e.kid]) {
+      eventDates(e).forEach(k => offByKid[e.kid].add(k));
+    }
+    if (e.type === 'academic' || e.type === 'noschool') {
+      eventDates(e).forEach(k => { (academicByDate[k] = academicByDate[k] || []).push(e); });
+    }
+    if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') {
+      tournaments.push(e);
+    }
   });
-  const rows = Object.keys(idx).sort().slice(0, 200).map(k => {
-    const items = idx[k];
-    const academic = items.filter(e => ['academic','noschool'].includes(e.type));
-    const sports = items.filter(e => ['tournament','showcase'].includes(e.type));
-    if (academic.length === 0 && (!showSports || sports.length === 0)) return '';
-    const d = new Date(k+'T12:00');
-    const label = d.toLocaleString('en-US',{month:'short',day:'numeric',weekday:'short'});
-    return `<div class="overview-row">
-      <div class="overview-date">${label}</div>
-      <div class="overview-col">${academic.map(pillHTML).join('')}</div>
-      <div class="overview-col">${showSports ? sports.map(pillHTML).join('') : ''}</div>
+  const allOffDays = [...offByKid.T].filter(d => offByKid.E.has(d) && offByKid.S.has(d)).sort();
+
+  // Build 12-month view starting from current month
+  const startY = currentDate.getFullYear(), startM = currentDate.getMonth();
+  const todayKey = dateKey(new Date());
+
+  function buildMonth(y, m) {
+    const monthName = new Date(y,m,1).toLocaleString('en-US',{month:'long',year:'numeric'});
+    const startDay = new Date(y,m,1).getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const gridStart = new Date(y,m,1-startDay);
+    let cells = '';
+    ['S','M','T','W','T','F','S'].forEach(x => cells += `<div class="mh">${x}</div>`);
+    for (let i=0; i<42; i++) {
+      const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+      const k = dateKey(d);
+      const inMonth = d.getMonth() === m;
+      const isToday = k === todayKey;
+      const allOff = allOffDays.includes(k);
+      const offT = offByKid.T.has(k), offE = offByKid.E.has(k), offS = offByKid.S.has(k);
+      const anyOff = offT || offE || offS;
+      let cls = 'ovcell';
+      if (!inMonth) cls += ' other';
+      if (isToday) cls += ' today';
+      if (allOff) cls += ' all-off';
+      else if (anyOff) cls += ' some-off';
+      const dots = [offT&&'T',offE&&'E',offS&&'S'].filter(Boolean).map(x => `<span class="dot ${x}"></span>`).join('');
+      cells += `<div class="${cls}" title="${k}">${d.getDate()}<div class="dots">${dots}</div></div>`;
+    }
+    // Month tournaments
+    const monthTours = tournaments.filter(t => {
+      const td = new Date(t.start.slice(0,10));
+      return td.getFullYear()===y && td.getMonth()===m;
+    }).sort((a,b) => a.start.localeCompare(b.start));
+    // Month all-off list
+    const monthAllOff = allOffDays.filter(d => { const dt=new Date(d); return dt.getFullYear()===y && dt.getMonth()===m; });
+    return `<div class="ov-month">
+      <h3>${monthName}</h3>
+      <div class="ov-columns">
+        <div class="ov-left">
+          <div class="mini-grid">${cells}</div>
+          ${monthAllOff.length ? `<p class="all-off-list">🎉 <strong>All kids off:</strong> ${monthAllOff.map(d => new Date(d).toLocaleString('en-US',{month:'short',day:'numeric'})).join(' · ')}</p>` : ''}
+        </div>
+        <div class="ov-right">
+          <h4>🏆 Tournaments / Showcases</h4>
+          ${monthTours.length ? monthTours.map(t => {
+            const d1 = new Date(t.start.slice(0,10));
+            const endD = t.end && t.end !== t.start ? new Date(new Date(t.end).getTime()-86400000) : null;
+            const dateStr = endD && dateKey(endD) !== dateKey(d1)
+              ? `${d1.toLocaleString('en-US',{month:'short',day:'numeric'})}–${endD.toLocaleString('en-US',{day:'numeric'})}`
+              : d1.toLocaleString('en-US',{month:'short',day:'numeric'});
+            return `<div class="tour-item"><span class="init ${t.kid}">${t.kid}</span><span class="tour-date">${dateStr}</span> ${t.title}</div>`;
+          }).join('') : '<p class="muted-sm">None scheduled.</p>'}
+        </div>
+      </div>
     </div>`;
-  }).join('');
+  }
+  let monthsHtml = '';
+  for (let mi=0; mi<12; mi++) monthsHtml += buildMonth(startY, startM+mi);
 
   const bySource = { T:[], E:[], S:[], F:[] };
   SOURCES.forEach(s => bySource[s.kid].push(s));
@@ -845,19 +927,28 @@ function renderOverview() {
     return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
   }).join('');
 
+  // Scorecard
+  const stats = {
+    allOff: allOffDays.length,
+    tournaments: tournaments.length,
+    practices: evts.filter(e => e.type==='practice').length,
+    academicEvents: Object.keys(academicByDate).length,
+  };
+
   document.getElementById('view-overview').innerHTML = `
     <div class="scorecard">
-      <div class="stat"><div class="num" style="color:var(--T)">${stats.T}</div><div class="lbl">Tommy events</div></div>
-      <div class="stat"><div class="num" style="color:var(--E)">${stats.E}</div><div class="lbl">Emily events</div></div>
-      <div class="stat"><div class="num" style="color:var(--S)">${stats.S}</div><div class="lbl">Sophie events</div></div>
-      <div class="stat"><div class="num" style="color:var(--F)">${stats.F}</div><div class="lbl">Family events</div></div>
-      <div class="stat"><div class="num" style="color:var(--tournament)">${stats.sports}</div><div class="lbl">Games / Tournaments</div></div>
+      <div class="stat"><div class="num" style="color:#eab308">${stats.allOff}</div><div class="lbl">All-kids-off days</div></div>
+      <div class="stat"><div class="num" style="color:var(--tournament)">${stats.tournaments}</div><div class="lbl">Tournaments / Showcases</div></div>
       <div class="stat"><div class="num">${stats.practices}</div><div class="lbl">Practices</div></div>
-      <div class="stat"><div class="num">${stats.noschool}</div><div class="lbl">No-school days</div></div>
+      <div class="stat"><div class="num">${stats.academicEvents}</div><div class="lbl">Academic dates tracked</div></div>
     </div>
+    <div class="ov-legend">
+      <span class="lg-swatch all-off"></span> All three kids off
+      <span class="lg-swatch some-off"></span> Some kids off
+      <span class="dot T"></span> T <span class="dot E"></span> E <span class="dot S"></span> S
+    </div>
+    <div class="ov-months">${monthsHtml}</div>
     <div class="sources"><h3>📡 Data Sources</h3><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">${srcHtml}</div></div>
-    <h3 style="margin:20px 0 10px;">Strategic Calendar — Academic (left) / Sports (right)</h3>
-    <div class="overview-table">${rows || '<p style="padding:20px; text-align:center; color:var(--muted);">No events match current filters.</p>'}</div>
   `;
 }
 
