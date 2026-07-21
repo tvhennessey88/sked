@@ -1,208 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <title>Hennessey Family Scheduler</title>
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
-a{color:inherit}
+  :root {
+    --T:#2563eb; --E:#db2777; --S:#16a34a; --F:#7c3aed;
+    --T-bg:#dbeafe; --E-bg:#fce7f3; --S-bg:#dcfce7; --F-bg:#ede9fe;
+    --tournament:#fbbf24; --tournament-bg:#fef3c7;
+    --game:#10b981; --game-bg:#d1fae5;
+    --practice-bg:#f3f4f6; --practice-txt:#6b7280;
+    --showcase:#a855f7; --showcase-bg:#f3e8ff;
+    --noschool:#94a3b8; --noschool-bg:#f1f5f9;
+    --academic:#0ea5e9; --academic-bg:#e0f2fe;
+    --family:#8b5cf6; --family-bg:#f5f3ff;
+    --bg:#f9fafb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+  header { background:linear-gradient(135deg,#1e40af,#7c3aed); color:#fff; padding:16px 20px; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; opacity:.9; font-size:13px; }
+  nav.tabs { background:#fff; border-bottom:1px solid var(--border); display:flex; overflow-x:auto; padding:0 12px; position:sticky; top:0; z-index:10; }
+  nav.tabs button { background:none; border:none; padding:12px 14px; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  nav.tabs button.active { color:var(--T); border-bottom-color:var(--T); }
+  nav.tabs button:hover { color:var(--text); }
+  #filters { background:#fff; padding:10px 14px; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .chip { padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; cursor:pointer; font-weight:500; user-select:none; }
+  .chip.active { background:var(--T); color:#fff; border-color:var(--T); }
+  .chip.T.active { background:var(--T); border-color:var(--T); }
+  .chip.E.active { background:var(--E); border-color:var(--E); }
+  .chip.S.active { background:var(--S); border-color:var(--S); }
+  .chip.F.active { background:var(--F); border-color:var(--F); }
+  .chip.games.active { background:var(--tournament); border-color:var(--tournament); color:#78350f; }
+  .chip.practices.active { background:var(--practice-txt); border-color:var(--practice-txt); }
+  .divider { width:1px; height:20px; background:var(--border); margin:0 4px; }
+  main { padding:14px; max-width:1400px; margin:0 auto; }
+  .view { display:none; }
+  .view.active { display:block; }
+  .nav-bar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .nav-bar button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px; }
+  .nav-bar h2 { margin:0; font-size:18px; flex:1; min-width:150px; }
 
-/* HEADER */
-.header{background:#1e293b;border-bottom:1px solid #334155;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header h1{font-size:16px;font-weight:700;color:#f1f5f9}
-.header .today{font-size:11px;color:#94a3b8;margin-left:10px}
+  /* Event pill - shared */
+  .evt {
+    display:block; padding:4px 6px; border-radius:5px; font-size:11px; line-height:1.3;
+    cursor:pointer; margin-bottom:2px; border-left:3px solid transparent;
+    text-decoration:none; color:inherit; position:relative;
+    word-wrap:break-word; overflow-wrap:break-word; white-space:normal;
+  }
+  .evt:hover { filter:brightness(0.95); }
+  .evt .init { font-weight:700; margin-right:3px; }
+  .evt .init.T { color:var(--T); }
+  .evt .init.E { color:var(--E); }
+  .evt .init.S { color:var(--S); }
+  .evt .init.F { color:var(--F); }
+  .evt .time { font-size:10px; opacity:.7; margin-right:3px; font-variant-numeric:tabular-nums; }
+  .evt.academic { background:var(--academic-bg); border-left-color:var(--academic); }
+  .evt.noschool { background:var(--noschool-bg); border-left-color:var(--noschool); font-weight:600; }
+  .evt.tournament { background:var(--tournament-bg); border-left-color:var(--tournament); font-weight:600; }
+  .evt.showcase { background:var(--showcase-bg); border-left-color:var(--showcase); font-weight:600; }
+  .evt.game { background:var(--game-bg); border-left-color:var(--game); }
+  .evt.practice { background:var(--practice-bg); border-left-color:#d1d5db; color:var(--practice-txt); font-style:italic; }
+  .evt.family { background:var(--family-bg); border-left-color:var(--family); }
+  .evt .del { position:absolute; top:1px; right:2px; font-size:10px; padding:0 3px; color:#dc2626; opacity:0; background:rgba(255,255,255,.8); border-radius:3px; }
+  .evt:hover .del { opacity:1; }
 
-/* TOOLBAR */
-.view-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 0;flex-wrap:wrap;gap:8px}
-.view-toggle{display:flex;gap:5px;flex-wrap:wrap}
-.view-btn{padding:6px 14px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#64748b;transition:all .15s}
-.view-btn:hover{border-color:#64748b;color:#cbd5e1}
-.view-btn.active{background:#1e293b;border-color:#475569;color:#f1f5f9}
-.edit-btn{padding:5px 12px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:#94a3b8}
-.edit-btn:hover{border-color:#ef4444;color:#fca5a5}
-.edit-btn.active{background:rgba(239,68,68,.15);border-color:#ef4444;color:#fca5a5}
-.restore-btn{padding:5px 10px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:#64748b;margin-left:5px}
+  /* Monthly grid */
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .cal-head { background:#f3f4f6; padding:8px; text-align:center; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+  .cal-cell { background:#fff; min-height:110px; padding:4px; overflow:hidden; }
+  .cal-cell.other { background:#fafafa; opacity:.5; }
+  .cal-cell.today { background:#fffbeb; }
+  .cal-cell .daynum { font-size:11px; font-weight:600; color:var(--muted); margin-bottom:2px; }
+  .cal-cell.today .daynum { color:var(--tournament); }
 
-/* UNIVERSAL FILTER BAR */
-.filter-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 20px 0}
-.fb-btn{padding:5px 13px;border-radius:20px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:600;background:transparent;color:#64748b}
-.fb-btn:hover{border-color:#64748b;color:#cbd5e1}
-.fb-btn.active{background:#1e293b;border-color:#475569;color:#f1f5f9}
-.fb-btn.tommy.active{background:rgba(59,130,246,.2);border-color:#3b82f6;color:#93c5fd}
-.fb-btn.emily.active{background:rgba(236,72,153,.2);border-color:#ec4899;color:#f9a8d4}
-.fb-btn.sophie.active{background:rgba(16,185,129,.2);border-color:#10b981;color:#6ee7b7}
-.fb-btn.sports.active{background:rgba(251,191,36,.15);border-color:#fbbf24;color:#fbbf24}
-.fb-btn.practice.active{background:rgba(148,163,184,.15);border-color:#94a3b8;color:#94a3b8}
-.fb-sep{width:1px;height:18px;background:#334155;margin:0 4px}
+  /* Annual grid */
+  .annual-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .mini-month { background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px; }
+  .mini-month h3 { margin:0 0 6px; font-size:13px; text-align:center; cursor:pointer; color:var(--T); }
+  .mini-month h3:hover { text-decoration:underline; }
+  .mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; font-size:10px; }
+  .mini-grid .mh { text-align:center; color:var(--muted); font-weight:600; padding:2px 0; }
+  .mini-day { text-align:center; padding:3px 0; border-radius:3px; position:relative; }
+  .mini-day.other { color:#d1d5db; }
+  .mini-day.today { background:var(--tournament-bg); font-weight:700; }
+  .mini-day .dots { display:flex; justify-content:center; gap:1px; margin-top:1px; height:4px; }
+  .mini-day .dot { width:3px; height:3px; border-radius:50%; }
+  .mini-day .dot.T { background:var(--T); }
+  .mini-day .dot.E { background:var(--E); }
+  .mini-day .dot.S { background:var(--S); }
+  .mini-day .dot.F { background:var(--F); }
 
-/* CALENDAR CONTAINER */
-.cal-wrap{margin:14px 20px 30px;background:#1e293b;border-radius:12px;border:1px solid #334155;padding:18px}
-.fc{--fc-border-color:#334155;--fc-today-bg-color:rgba(59,130,246,.08);--fc-page-bg-color:transparent}
-.fc .fc-col-header-cell-cushion{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;text-decoration:none}
-.fc .fc-daygrid-day-number{font-size:11px;color:#94a3b8;text-decoration:none}
-.fc .fc-toolbar-title{font-size:15px !important;font-weight:700;color:#f1f5f9}
-.fc .fc-button{background:#334155 !important;border-color:#334155 !important;color:#e2e8f0 !important;font-size:11px !important;border-radius:6px !important;padding:4px 10px !important}
-.fc .fc-button:hover{background:#475569 !important}
-.fc .fc-button-active{background:#3b82f6 !important;border-color:#3b82f6 !important}
-.fc .fc-multimonth{border:none !important}
-.fc .fc-multimonth-title{color:#f1f5f9 !important;font-size:13px !important;font-weight:800 !important;padding:8px 0 !important}
+  /* Weekly view */
+  .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .week-day { background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px; min-height:400px; }
+  .week-day.today { border-color:var(--tournament); background:#fffbeb; }
+  .week-day h4 { margin:0 0 6px; font-size:12px; color:var(--muted); text-align:center; padding-bottom:6px; border-bottom:1px solid var(--border); }
+  .week-day .daynum-lg { font-size:20px; color:var(--text); }
+  .allday-bubble { background:#e0f2fe; border-radius:6px; padding:3px 6px; margin-bottom:4px; font-size:11px; font-weight:600; border-left:3px solid var(--academic); }
 
-/* EVENTS — HYBRID COLOR: initial colored by kid, bg by event type */
-.fc-event{border-radius:5px !important;border:none !important;font-size:10px !important;padding:2px 5px !important;cursor:pointer !important;line-height:1.3 !important}
-.evt{display:inline-flex;align-items:center;gap:4px}
-.evt .ini{font-weight:900;font-size:11px;padding:0 4px;border-radius:3px;background:rgba(0,0,0,.25)}
-.evt .ini.T{color:#93c5fd}
-.evt .ini.E{color:#f9a8d4}
-.evt .ini.S{color:#6ee7b7}
-.evt .txt{font-weight:600}
+  /* Daily view */
+  .day-timeline { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px; }
+  .day-timeline h3 { margin:0 0 10px; }
+  .allday-list { display:flex; flex-wrap:wrap; gap:6px; padding:8px 10px; background:#f0f9ff; border-radius:6px; margin-bottom:12px; }
+  .allday-list:empty { display:none; }
+  .timed-list .timeblock { display:flex; gap:12px; padding:6px 0; border-top:1px solid #f3f4f6; }
+  .timed-list .time-label { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:60px; padding-top:3px; }
+  .timed-list .time-events { flex:1; }
 
-/* type backgrounds — same class used both in FC events and Overview pills */
-.type-academic{background:rgba(96,165,250,.14) !important;color:#dbeafe !important}
-.type-academic.k-emily{background:rgba(244,114,182,.14) !important;color:#fce7f3 !important}
-.type-academic.k-sophie{background:rgba(52,211,153,.14) !important;color:#d1fae5 !important}
-.type-noschool{background:rgba(71,85,105,.35) !important;color:#cbd5e1 !important}
-.type-tournament{background:rgba(251,191,36,.22) !important;color:#fde68a !important;border-left:3px solid #fbbf24 !important}
-.type-game{background:rgba(16,185,129,.22) !important;color:#a7f3d0 !important;border-left:3px solid #10b981 !important}
-.type-practice{background:rgba(148,163,184,.14) !important;color:#cbd5e1 !important;font-style:italic}
+  /* Overview */
+  .scorecard { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+  .stat { background:#fff; padding:12px; border-radius:8px; border:1px solid var(--border); }
+  .stat .num { font-size:24px; font-weight:700; color:var(--T); }
+  .stat .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+  .sources { background:#fff; padding:14px; border-radius:8px; border:1px solid var(--border); margin-bottom:20px; }
+  .sources h3 { margin:0 0 10px; font-size:15px; }
+  .sources ul { margin:0; padding-left:18px; font-size:13px; }
+  .sources li { margin:3px 0; }
+  .sources a { color:var(--T); text-decoration:none; }
+  .sources a:hover { text-decoration:underline; }
+  .overview-table { background:#fff; border-radius:8px; border:1px solid var(--border); overflow:hidden; }
+  .overview-row { display:grid; grid-template-columns:120px 1fr 1fr; gap:12px; padding:10px 14px; border-bottom:1px solid #f3f4f6; align-items:start; }
+  .overview-row:last-child { border-bottom:0; }
+  .overview-date { font-weight:600; color:var(--muted); font-size:12px; }
+  .overview-col { display:flex; flex-direction:column; gap:3px; }
 
-body.edit-mode .fc-event:hover{outline:2px solid #ef4444 !important;opacity:.7}
-body.edit-mode .fc-event{cursor:crosshair !important}
+  /* Tracking */
+  .track-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  .track-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
+  .track-card h4 { margin:0 0 4px; font-size:14px; }
+  .track-card .who { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px; }
+  .track-card .who.T { background:var(--T-bg); color:var(--T); }
+  .track-card .who.E { background:var(--E-bg); color:var(--E); }
+  .track-card p { margin:4px 0; font-size:12px; color:var(--muted); }
 
-/* OVERVIEW */
-#overview-view{padding:14px 20px 30px}
-.ov-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.ov-card{background:#1e293b;border-radius:12px;border:1px solid #334155;padding:14px}
-.ov-card h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:10px}
-.ov-kid{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #334155}
-.ov-kid:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.ov-kid-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
-.ov-kid-h .dot{width:10px;height:10px;border-radius:50%}
-.ov-kid-src{font-size:11px;color:#94a3b8;margin-left:18px;line-height:1.7}
-.ov-kid-src a{color:#60a5fa;text-decoration:none}
-.ov-kid-src a:hover{text-decoration:underline}
-.ov-month{margin-bottom:24px}
-.ov-month-h{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;padding-bottom:8px;border-bottom:1px solid #334155;margin-bottom:8px;display:flex;justify-content:space-between}
-.ov-row{display:grid;grid-template-columns:60px 1fr 1fr;gap:12px;padding:5px 8px;border-radius:6px;align-items:baseline}
-.ov-row:hover{background:#1e293b}
-.ov-date{font-size:11px;font-weight:700;color:#64748b;white-space:nowrap}
-.ov-col{display:flex;flex-wrap:wrap;gap:4px}
-.ov-col.right{border-left:2px solid #334155;padding-left:10px}
-.ov-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;line-height:1.4}
-.ov-pill:hover{filter:brightness(1.15)}
-.ov-pill .del-x{cursor:pointer;font-size:12px;opacity:.6;margin-left:3px}
-.ov-pill .del-x:hover{opacity:1;color:#ef4444}
-body:not(.edit-mode) .ov-pill .del-x{display:none}
-.all-out-banner{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
-.ao-label{font-size:12px;font-weight:800;color:#fbbf24}
-.ao-range{font-size:10px;color:#78716c}
-
-/* TRACKING */
-#tracking-view{padding:16px 20px 30px}
-.tracking-intro{font-size:11px;color:#64748b;background:#1e293b;border:1px dashed #334155;border-radius:8px;padding:10px 14px;margin-bottom:20px;line-height:1.6}
-.tr-kid-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px solid #334155;padding-bottom:8px;font-size:14px;font-weight:800;color:#f1f5f9}
-.tr-row{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:8px}
-.tr-name{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:3px}
-.tr-dates{font-size:11px;color:#94a3b8;margin-bottom:3px}
-.tr-note{font-size:11px;color:#64748b}
-.tr-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
-.tr-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
-.tr-badge.active{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3)}
-.tr-badge.upcoming{background:rgba(59,130,246,.15);color:#60a5fa}
-.tr-badge.watch{background:rgba(251,191,36,.12);color:#fbbf24}
-.tr-badge.past{background:rgba(71,85,105,.2);color:#64748b}
-.tr-link{font-size:11px;color:#60a5fa;text-decoration:none}
-.tr-link:hover{text-decoration:underline}
-
-/* SCORECARD */
-.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.score-cell{padding:10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid #334155}
-.score-cell h4{font-size:12px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
-.score-cell .n{font-size:22px;font-weight:900;line-height:1}
-.score-cell .n.t{color:#93c5fd}
-.score-cell .n.e{color:#f9a8d4}
-.score-cell .n.s{color:#6ee7b7}
-.score-cell .sub{font-size:10px;color:#94a3b8;margin-top:3px}
-
-.color-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:11px;color:#94a3b8}
-.color-legend .swatch{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+  @media (max-width: 720px) {
+    main { padding:8px; }
+    .cal-cell { min-height:70px; font-size:10px; padding:2px; }
+    .cal-cell .daynum { font-size:10px; }
+    .annual-grid { grid-template-columns:1fr 1fr; }
+    .week-grid { grid-template-columns:1fr; }
+    .week-day { min-height:auto; }
+    .overview-row { grid-template-columns:1fr; gap:6px; }
+    header h1 { font-size:16px; }
+    nav.tabs button { padding:10px 10px; font-size:13px; }
+    .chip { font-size:11px; padding:4px 8px; }
+    .evt { font-size:10px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div><span style="font-size:16px">🏠</span> <strong>Hennessey Family</strong> <span class="today" id="today-label"></span></div>
+<header>
+  <h1>🏠 Hennessey Family Scheduler</h1>
+  <p>Tommy · Emily · Sophie — annual, monthly, weekly, daily views</p>
+</header>
+
+<nav class="tabs">
+  <button data-view="annual">📆 Annual</button>
+  <button data-view="monthly" class="active">🗓️ Monthly</button>
+  <button data-view="weekly">📅 Weekly</button>
+  <button data-view="daily">📍 Daily</button>
+  <button data-view="overview">📋 Overview</button>
+  <button data-view="tracking">📌 Tracking</button>
+</nav>
+
+<div id="filters">
+  <span class="chip kid T active" data-kid="T">T Tommy</span>
+  <span class="chip kid E active" data-kid="E">E Emily</span>
+  <span class="chip kid S active" data-kid="S">S Sophie</span>
+  <span class="chip kid F active" data-kid="F">F Family</span>
+  <span class="divider"></span>
+  <span class="chip games active" data-type="games">🏆 Games/Tournaments</span>
+  <span class="chip practices active" data-type="practices">🏃 Practices</span>
+  <span class="chip academics active" data-type="academics">🏫 Academics</span>
 </div>
 
-<div class="view-toolbar">
-  <div class="view-toggle">
-    <button class="view-btn" data-view="annual">📆 Annual</button>
-    <button class="view-btn active" data-view="monthly">🗓️ Monthly</button>
-    <button class="view-btn" data-view="weekly">📅 Weekly</button>
-    <button class="view-btn" data-view="daily">📍 Daily</button>
-    <button class="view-btn" data-view="overview">📋 Overview</button>
-    <button class="view-btn" data-view="tracking">📌 Tracking</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:6px">
-    <button class="edit-btn" id="edit-toggle-btn">✏️ Edit</button>
-    <button class="restore-btn" id="restore-btn" style="display:none">↩ Restore (<span id="hidden-count">0</span>)</button>
-  </div>
-</div>
-
-<div class="filter-bar" id="filter-bar">
-  <button class="fb-btn active" data-kid="all">All Kids</button>
-  <button class="fb-btn tommy" data-kid="tommy">T · Tommy</button>
-  <button class="fb-btn emily" data-kid="emily">E · Emily</button>
-  <button class="fb-btn sophie" data-kid="sophie">S · Sophie</button>
-  <span class="fb-sep"></span>
-  <button class="fb-btn sports" id="sports-toggle">🏆 Games / Tournaments</button>
-  <button class="fb-btn practice" id="practice-toggle">🏃 Practices</button>
-</div>
-
-<!-- CAL VIEWS -->
-<div id="annual-view" style="display:none"><div class="cal-wrap"><div id="cal-annual"></div></div></div>
-<div id="monthly-view"><div class="cal-wrap"><div id="cal-monthly"></div></div></div>
-<div id="weekly-view" style="display:none"><div class="cal-wrap"><div id="cal-weekly"></div></div></div>
-<div id="daily-view" style="display:none"><div class="cal-wrap"><div id="cal-daily"></div></div></div>
-
-<!-- OVERVIEW -->
-<div id="overview-view" style="display:none">
-  <div class="ov-top">
-    <div class="ov-card">
-      <h3>📊 Scorecard — School Year 2026–27</h3>
-      <div class="score-grid" id="scorecard"></div>
-    </div>
-    <div class="ov-card">
-      <h3>📡 Data Sources</h3>
-      <div id="data-sources"></div>
-    </div>
-  </div>
-  <div class="color-legend">
-    <span><span class="swatch" style="background:rgba(96,165,250,.4)"></span>Academic (kid-tinted)</span>
-    <span><span class="swatch" style="background:rgba(71,85,105,.6)"></span>No School</span>
-    <span><span class="swatch" style="background:rgba(251,191,36,.4);border-left:3px solid #fbbf24"></span>Tournament / Showcase</span>
-    <span><span class="swatch" style="background:rgba(16,185,129,.4);border-left:3px solid #10b981"></span>Game</span>
-    <span><span class="swatch" style="background:rgba(148,163,184,.3)"></span>Practice</span>
-    <span style="margin-left:12px;color:#64748b">Kid: <strong style="color:#93c5fd">T</strong> · <strong style="color:#f9a8d4">E</strong> · <strong style="color:#6ee7b7">S</strong></span>
-  </div>
-  <div id="overview-body"></div>
-</div>
-
-<!-- TRACKING -->
-<div id="tracking-view" style="display:none">
-  <div class="tracking-intro">
-    📌 Registration watch. Forward emails/texts to <strong>amy@coalition.ventures</strong> — Amy adds them here and checks these links monthly.
-  </div>
-  <div id="tracking-body"></div>
-</div>
+<main>
+  <section class="view" id="view-annual"></section>
+  <section class="view active" id="view-monthly"></section>
+  <section class="view" id="view-weekly"></section>
+  <section class="view" id="view-daily"></section>
+  <section class="view" id="view-overview"></section>
+  <section class="view" id="view-tracking"></section>
+</main>
 
 <script>
-// ─── COLORS ─────────────────────────────────
-const T='#3b82f6', E='#ec4899', S='#10b981', X='#475569', F='#f59e0b';
-const ALL_EVENTS = [
+// ============ DATA (schools/sports events) ============
+const STATIC_EVENTS = [
   // ── ROXBURY LATIN (Tommy) ─────────────────────────────────
   { title: 'RL: Class I → Beaver Brook',         start: '2026-08-21', color: T, kid: 'tommy' },
   { title: 'RL: New Student Orientation',         start: '2026-08-25', color: T, kid: 'tommy' },
@@ -500,7 +487,6 @@ const ALL_EVENTS = [
   { title: 'S — ME: Practice (Forekicks Marlboro)', start: '2026-10-17', color: S, kid: 'sophie', level: 'practice' },
 
 ];
-
 const ALL_KIDS_OUT = [
   { start: '2026-09-04', end: '2026-09-07', label: 'All Out — Fri Sep 4 + Labor Day Weekend (Tenacre not yet started)' },
   { start: '2026-10-12', end: '2026-10-12', label: 'Columbus / Indigenous Peoples Day' },
@@ -512,7 +498,6 @@ const ALL_KIDS_OUT = [
   { start: '2027-04-19', end: '2027-04-19', label: "Patriots' Day" },
   { start: '2027-05-31', end: '2027-05-31', label: 'Memorial Day' },
 ];
-
 const TRACKING_ITEMS = [
   // Tommy — Class of 2030
   { kid: 'tommy', name: 'Future Phenoms Newport (ML8)', dates: 'Jul 20–21, 2026',
@@ -539,352 +524,449 @@ const TRACKING_ITEMS = [
     note: 'Class of 2032 · Check site for 2027 regional dates', status: 'watch' },
 ];
 
-const MONTHS = [
-  '2026-08','2026-09','2026-10','2026-11','2026-12',
-  '2027-01','2027-02','2027-03','2027-04','2027-05','2027-06'
+// ============ DATA SOURCES ============
+const SOURCES = [
+  { kid:'T', label:'Roxbury Latin (Tommy)', url:'https://www.roxburylatin.org/calendar' },
+  { kid:'T', label:'Laxachusetts Winter Skills', url:'https://www.jrminutemenlax.net/page/show/4976531' },
+  { kid:'T', label:'Laxachusetts Monthly Cal', url:'https://docs.google.com/spreadsheets/d/13IL_m-m-ZDe3kdnLxSUr1YXB8U2Yz73ck7sj7cDmATE/edit' },
+  { kid:'E', label:'NCDS (Emily)', url:'https://www.ncds.org/calendar' },
+  { kid:'E', label:'Mass Elite Practice', url:'https://www.masselite.com/team/schedules/practice-schedule/' },
+  { kid:'E', label:'WPC Soccer (TeamSnap)', url:'https://go.teamsnap.com/' },
+  { kid:'S', label:'Tenacre (Sophie)', url:'https://www.tenacrecds.org/calendar' },
+  { kid:'S', label:'Mass Elite Practice', url:'https://www.masselite.com/team/schedules/practice-schedule/' },
+  { kid:'F', label:'Hennessey Family Google Calendar', url:'https://calendar.google.com/calendar/u/0?cid=ZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ' },
 ];
-const MONTH_LABELS = {
-  '2026-08': 'August 2026',   '2026-09': 'September 2026', '2026-10': 'October 2026',
-  '2026-11': 'November 2026', '2026-12': 'December 2026',  '2027-01': 'January 2027',
-  '2027-02': 'February 2027', '2027-03': 'March 2027',     '2027-04': 'April 2027',
-  '2027-05': 'May 2027',      '2027-06': 'June 2027'
-};
 
-
-// ─── HELPERS ────────────────────────────────
-function initial(kid){ return kid==='tommy'?'T':kid==='emily'?'E':kid==='sophie'?'S':'·'; }
-
-function eventType(e){
-  if(e.level==='operational') return /Practice/i.test(e.title) ? 'practice' : (/Game/i.test(e.title) ? 'game' : 'tournament');
-  if(e.level==='practice') return 'practice';
-  if(e.level==='daily') return 'daily';
-  if(e.color===X) return 'noschool';
-  return 'academic';
-}
-
-function sourceUrl(e){
-  const t=e.title;
-  if(t.startsWith('RL:')) return 'https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar';
-  if(t.startsWith('NCDS:')) return 'https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs';
-  if(t.startsWith('Tenacre:')) return 'https://www.tenacreschool.org/parents-current-families/school-calendar';
-  if(/Achievelax/i.test(t)) return 'https://www.achievelax.com/leagues-4/fall-and-winter-indoor-leagues/';
-  if(/ME: Practice/i.test(t)) return 'https://www.masselite.com/team/schedules/practice-schedule/';
-  if(/ME:/.test(t)) return 'https://www.masselite.com/team/schedules/tournament-schedule/';
-  if(/WPC/i.test(t)) return 'https://go.teamsnap.com/';
-  if(/LX:|Laxachusetts|Jr Minutemen|MinuteMen/i.test(t)) return 'https://www.jrminutemenlax.net/page/show/4976531-2025-2026-winter-skills-training-calendar-';
-  return null;
-}
-
-function displayTitle(e){
-  if(/^[TES] — /.test(e.title)) return e.title;
-  const ini = initial(e.kid);
-  if(!ini || ini==='·') return e.title;
-  return ini + ' — ' + e.title;
-}
-
-function eventKey(e){ return e.title + '|' + e.start; }
-
-// ─── STATE ──────────────────────────────────
-let hiddenKeys = new Set(JSON.parse(localStorage.getItem('sked_hidden')||'[]'));
-let editMode = false;
-let activeKid = 'all';
-let showSports = false;
-let showPractice = false;
+// ============ STATE ============
+const HIDDEN_KEY = 'sked_hidden_ids_v3';
+let hiddenIds = new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'));
+const FILTER_KEY = 'sked_filters_v3';
+const savedFilters = JSON.parse(localStorage.getItem(FILTER_KEY) || 'null');
+let filters = savedFilters || { kids: {T:true,E:true,S:true,F:true}, games:true, practices:true, academics:true };
 let currentView = 'monthly';
+let currentDate = new Date();
+currentDate.setHours(0,0,0,0);
 
-// ─── HIDE/RESTORE ───────────────────────────
-function saveHidden(){ localStorage.setItem('sked_hidden', JSON.stringify([...hiddenKeys])); updateRestoreBtn(); }
-function updateRestoreBtn(){
-  const n=hiddenKeys.size;
-  document.getElementById('hidden-count').textContent=n;
-  document.getElementById('restore-btn').style.display = n>0 ? '' : 'none';
+// ============ FAMILY CAL LOADING + NORMALIZATION ============
+let familyEvents = [];
+
+function inferKid(title) {
+  const t = title.toLowerCase();
+  if (t.includes('tommy')) return 'T';
+  if (t.includes('emily')) return 'E';
+  if (t.includes('sophie')) return 'S';
+  if (t.includes('laura')) return 'F';
+  return 'F';
 }
-document.getElementById('restore-btn').onclick = ()=>{ hiddenKeys.clear(); saveHidden(); refreshAll(); };
-
-function toggleEdit(){
-  editMode = !editMode;
-  document.body.classList.toggle('edit-mode', editMode);
-  document.getElementById('edit-toggle-btn').classList.toggle('active', editMode);
-  document.getElementById('edit-toggle-btn').textContent = editMode ? '✏️ Editing' : '✏️ Edit';
-}
-document.getElementById('edit-toggle-btn').onclick = toggleEdit;
-
-// ─── FILTERING ──────────────────────────────
-function passesFilter(e){
-  if(hiddenKeys.has(eventKey(e))) return false;
-  if(activeKid !== 'all' && e.kid !== activeKid) return false;
-  const t = eventType(e);
-  if(t==='daily') return false;
-  if(t==='tournament' || t==='game') return showSports;
-  if(t==='practice') return showPractice;
-  return true; // academic + noschool always shown
+function inferType(title) {
+  const t = title.toLowerCase();
+  if (/tournament|showcase/.test(t)) return 'tournament';
+  if (/game|jamboree/.test(t)) return 'game';
+  if (/practice|training|s&c/.test(t)) return 'practice';
+  return 'family';
 }
 
-function passesOverview(e){
-  if(hiddenKeys.has(eventKey(e))) return false;
-  if(activeKid !== 'all' && e.kid !== activeKid) return false;
-  const t = eventType(e);
-  // Overview is strategic: only academic + noschool, or tournaments if sports toggled
-  if(t==='academic' || t==='noschool') return true;
-  if((t==='tournament' || /Showcase|Tournament/i.test(e.title)) && showSports) return true;
-  return false;
+function normalizeFamilyCal(raw) {
+  return raw.map(e => {
+    const kid = inferKid(e.title);
+    const type = inferType(e.title);
+    let start = e.start, end = e.end, allDay = e.allDay;
+    return {
+      id: 'fc_' + e.id,
+      kid: kid,
+      type: type,
+      title: e.title.replace(/^(Tommy|Emily|Sophie|Laura)[\s\-–—]*/i, ''),
+      start: start,
+      end: end,
+      allDay: allDay,
+      location: e.location || '',
+      link: e.link,
+      source: 'FamilyCal',
+    };
+  });
 }
 
-// ─── FC EVENT BUILDER ───────────────────────
-function toFcEvent(e){
-  const type = eventType(e);
-  const ini = initial(e.kid);
-  return {
-    title: displayTitle(e),
-    start: e.start,
-    end: e.end,
-    allDay: true,
-    url: sourceUrl(e) || undefined,
-    classNames: ['type-' + type, 'k-' + (e.kid || 'x')],
-    extendedProps: { raw: e, type, ini }
+// Normalize static events
+function normalizeStatic() {
+  return STATIC_EVENTS.map(e => {
+    // static events have: date (YYYY-MM-DD), title, kid (T/E/S), type, source, url, time?
+    return {
+      id: 'st_' + (e.id || (e.date+'_'+e.title).replace(/\s/g,'_')),
+      kid: e.kid || 'F',
+      type: e.type,
+      title: e.title,
+      start: e.time ? e.date + 'T' + e.time : e.date,
+      end: e.date,
+      allDay: !e.time,
+      location: e.location || '',
+      link: e.url || '',
+      source: e.source || '',
+      time: e.time || null,
+    };
+  });
+}
+
+function allEvents() {
+  return [...normalizeStatic(), ...familyEvents];
+}
+
+// ============ HELPERS ============
+function fmtTime(iso) {
+  if (!iso || iso.length <= 10) return '';
+  const d = new Date(iso);
+  let h = d.getHours(), m = d.getMinutes();
+  const ap = h >= 12 ? 'p' : 'a';
+  h = h % 12 || 12;
+  return m ? `${h}:${String(m).padStart(2,'0')}${ap}` : `${h}${ap}`;
+}
+function dateKey(d) {
+  return d.toISOString().slice(0,10);
+}
+function eventDates(e) {
+  // returns array of YYYY-MM-DD strings this event occupies
+  const start = new Date(e.start.slice(0,10));
+  const end = e.end ? new Date(e.end.slice(0,10)) : start;
+  const dates = [];
+  const d = new Date(start);
+  while (d < end || d.getTime() === end.getTime()) {
+    dates.push(dateKey(d));
+    d.setDate(d.getDate()+1);
+    if (dates.length > 60) break; // safety
+    if (e.allDay && d.getTime() === end.getTime()) break; // exclude exclusive end for allday
+  }
+  return dates.length ? dates : [dateKey(start)];
+}
+function passesFilter(e) {
+  if (hiddenIds.has(e.id)) return false;
+  if (!filters.kids[e.kid]) return false;
+  if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') return filters.games;
+  if (e.type === 'practice') return filters.practices;
+  if (e.type === 'academic' || e.type === 'noschool') return filters.academics;
+  return true; // family always shown when kid is on
+}
+function sortDayEvents(events) {
+  return events.slice().sort((a,b) => {
+    if (a.allDay && !b.allDay) return -1;
+    if (!a.allDay && b.allDay) return 1;
+    return (a.start||'').localeCompare(b.start||'');
+  });
+}
+function buildIndex(events) {
+  const idx = {};
+  events.forEach(e => {
+    eventDates(e).forEach(k => {
+      (idx[k] = idx[k] || []).push(e);
+    });
+  });
+  return idx;
+}
+
+// ============ EVENT PILL RENDER ============
+function pillHTML(e, opts={}) {
+  const cls = e.type === 'noschool' ? 'noschool' :
+              e.type === 'tournament' ? 'tournament' :
+              e.type === 'showcase' ? 'showcase' :
+              e.type === 'game' ? 'game' :
+              e.type === 'practice' ? 'practice' :
+              e.type === 'family' ? 'family' :
+              e.type === 'academic' ? 'academic' : 'academic';
+  const time = !e.allDay ? `<span class="time">${fmtTime(e.start)}</span>` : '';
+  const init = `<span class="init ${e.kid}">${e.kid}</span>`;
+  const href = e.link ? ` href="${e.link}" target="_blank" rel="noopener"` : '';
+  const tag = e.link ? 'a' : 'div';
+  return `<${tag} class="evt ${cls}"${href} data-id="${e.id}">${init}${time}${e.title}<span class="del" data-del="${e.id}">✕</span></${tag}>`;
+}
+
+// ============ VIEWS ============
+function renderMonthly() {
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  const first = new Date(y,m,1);
+  const startDay = first.getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const gridStart = new Date(y,m,1-startDay);
+  const todayKey = dateKey(new Date());
+  const idx = buildIndex(allEvents().filter(passesFilter));
+  const monthName = first.toLocaleString('en-US',{month:'long',year:'numeric'});
+  let html = `<div class="nav-bar">
+    <button data-nav="prev">‹</button>
+    <button data-nav="today">Today</button>
+    <button data-nav="next">›</button>
+    <h2>${monthName}</h2>
+  </div>
+  <div class="cal-grid">`;
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => html += `<div class="cal-head">${d}</div>`);
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+    const k = dateKey(d);
+    const inMonth = d.getMonth() === m;
+    const isToday = k === todayKey;
+    const evts = sortDayEvents(idx[k] || []);
+    html += `<div class="cal-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-date="${k}">
+      <div class="daynum">${d.getDate()}</div>
+      ${evts.map(e => pillHTML(e)).join('')}
+    </div>`;
+  }
+  html += `</div>`;
+  document.getElementById('view-monthly').innerHTML = html;
+}
+
+function renderAnnual() {
+  const startY = currentDate.getFullYear(), startM = currentDate.getMonth();
+  const idx = buildIndex(allEvents().filter(passesFilter));
+  const todayKey = dateKey(new Date());
+  let html = `<div class="nav-bar">
+    <button data-nav="prev">‹ Prev year</button>
+    <button data-nav="today">Reset</button>
+    <button data-nav="next">Next year ›</button>
+    <h2>12 months from ${new Date(startY,startM,1).toLocaleString('en-US',{month:'long',year:'numeric'})}</h2>
+  </div><div class="annual-grid">`;
+  for (let mi = 0; mi < 12; mi++) {
+    const d0 = new Date(startY, startM+mi, 1);
+    const y = d0.getFullYear(), m = d0.getMonth();
+    const startDay = d0.getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const gridStart = new Date(y,m,1-startDay);
+    const monthName = d0.toLocaleString('en-US',{month:'short',year:'numeric'});
+    html += `<div class="mini-month"><h3 data-jump="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="mini-grid">`;
+    ['S','M','T','W','T','F','S'].forEach(x => html += `<div class="mh">${x}</div>`);
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+      const k = dateKey(d);
+      const inMonth = d.getMonth() === m;
+      const isToday = k === todayKey;
+      const kids = new Set((idx[k]||[]).map(e => e.kid));
+      const dots = ['T','E','S','F'].filter(x => kids.has(x)).map(x => `<span class="dot ${x}"></span>`).join('');
+      html += `<div class="mini-day ${inMonth?'':'other'} ${isToday?'today':''}">${d.getDate()}<div class="dots">${dots}</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+  html += `</div>`;
+  document.getElementById('view-annual').innerHTML = html;
+}
+
+function renderWeekly() {
+  const start = new Date(currentDate); start.setDate(start.getDate() - start.getDay());
+  const todayKey = dateKey(new Date());
+  const idx = buildIndex(allEvents().filter(passesFilter));
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const rangeStr = `${start.toLocaleString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  let html = `<div class="nav-bar">
+    <button data-nav="prev">‹</button>
+    <button data-nav="today">This week</button>
+    <button data-nav="next">›</button>
+    <h2>Week of ${rangeStr}</h2>
+  </div><div class="week-grid">`;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const k = dateKey(d);
+    const evts = sortDayEvents(idx[k]||[]);
+    const allday = evts.filter(e => e.allDay);
+    const timed = evts.filter(e => !e.allDay);
+    const dow = d.toLocaleString('en-US',{weekday:'short'});
+    html += `<div class="week-day ${k===todayKey?'today':''}"><h4>${dow}<br><span class="daynum-lg">${d.getDate()}</span></h4>
+      ${allday.map(e => `<div class="allday-bubble"><span class="init ${e.kid}">${e.kid}</span> ${e.title}</div>`).join('')}
+      ${timed.map(e => pillHTML(e)).join('')}
+    </div>`;
+  }
+  html += `</div>`;
+  document.getElementById('view-weekly').innerHTML = html;
+}
+
+function renderDaily() {
+  const k = dateKey(currentDate);
+  const idx = buildIndex(allEvents().filter(passesFilter));
+  const evts = sortDayEvents(idx[k]||[]);
+  const allday = evts.filter(e => e.allDay);
+  const timed = evts.filter(e => !e.allDay);
+  const label = currentDate.toLocaleString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  // group timed by hour
+  const groups = {};
+  timed.forEach(e => {
+    const h = new Date(e.start).getHours();
+    (groups[h] = groups[h] || []).push(e);
+  });
+  const hours = Object.keys(groups).map(Number).sort((a,b)=>a-b);
+  let html = `<div class="nav-bar">
+    <button data-nav="prev">‹</button>
+    <button data-nav="today">Today</button>
+    <button data-nav="next">›</button>
+    <h2>${label}</h2>
+  </div><div class="day-timeline">
+    <div class="allday-list">${allday.map(e => `<div class="allday-bubble"><span class="init ${e.kid}">${e.kid}</span> ${e.title}</div>`).join('')}</div>
+    <div class="timed-list">
+      ${hours.length === 0 && allday.length === 0 ? '<p style="color:var(--muted); text-align:center; padding:40px;">No events</p>' : ''}
+      ${hours.map(h => {
+        const label = (h%12||12) + (h>=12?'p':'a');
+        return `<div class="timeblock"><div class="time-label">${label}</div><div class="time-events">${groups[h].map(pillHTML).join('')}</div></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  document.getElementById('view-daily').innerHTML = html;
+}
+
+function renderOverview() {
+  const evts = allEvents();
+  const stats = {
+    T: evts.filter(e => e.kid==='T' && !hiddenIds.has(e.id)).length,
+    E: evts.filter(e => e.kid==='E' && !hiddenIds.has(e.id)).length,
+    S: evts.filter(e => e.kid==='S' && !hiddenIds.has(e.id)).length,
+    F: evts.filter(e => e.kid==='F' && !hiddenIds.has(e.id)).length,
+    sports: evts.filter(e => ['tournament','showcase','game'].includes(e.type)).length,
+    practices: evts.filter(e => e.type==='practice').length,
+    noschool: evts.filter(e => e.type==='noschool').length,
   };
-}
-
-// ─── CALENDARS ──────────────────────────────
-let calAnnual, calMonthly, calWeekly, calDaily;
-
-function commonCalOpts(view){
-  return {
-    initialView: view,
-    height: 'auto',
-    firstDay: 0,
-    eventClick: function(info){
-      if(editMode){
-        info.jsEvent.preventDefault();
-        hiddenKeys.add(eventKey(info.event.extendedProps.raw));
-        saveHidden();
-        refreshAll();
-        return;
-      }
-      if(!info.event.url){ info.jsEvent.preventDefault(); }
-    },
-    eventContent: function(arg){
-      const ini = arg.event.extendedProps.ini;
-      const title = arg.event.title.replace(/^[TES] — /,'');
-      return { html: `<div class="evt"><span class="ini ${ini}">${ini}</span><span class="txt">${title}</span></div>` };
-    },
-    events: []
-  };
-}
-
-function loadEvents(cal){
-  cal.removeAllEvents();
-  ALL_EVENTS.filter(passesFilter).forEach(e => cal.addEvent(toFcEvent(e)));
-}
-
-function initCals(){
-  const a = document.getElementById('cal-annual');
-  calAnnual = new FullCalendar.Calendar(a, {
-    ...commonCalOpts('multiMonthYear'),
-    initialDate: '2026-09-01',
-    multiMonthMaxColumns: 3,
-    headerToolbar: { left:'prev,next today', center:'title', right:'' }
+  // Show tournaments/showcases only in overview right column, academic left
+  const showSports = filters.games;
+  const idx = {};
+  evts.filter(e => !hiddenIds.has(e.id)).forEach(e => {
+    if (!filters.kids[e.kid]) return;
+    const k = e.start.slice(0,10);
+    (idx[k] = idx[k] || []).push(e);
   });
-
-  calMonthly = new FullCalendar.Calendar(document.getElementById('cal-monthly'), {
-    ...commonCalOpts('dayGridMonth'),
-    initialDate: getInitialDate(),
-    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth' },
-    dayMaxEventRows: 6
-  });
-
-  calWeekly = new FullCalendar.Calendar(document.getElementById('cal-weekly'), {
-    ...commonCalOpts('dayGridWeek'),
-    initialDate: getInitialDate(),
-    headerToolbar: { left:'prev,next today', center:'title', right:'' }
-  });
-
-  calDaily = new FullCalendar.Calendar(document.getElementById('cal-daily'), {
-    ...commonCalOpts('dayGridDay'),
-    initialDate: getInitialDate(),
-    headerToolbar: { left:'prev,next today', center:'title', right:'' }
-  });
-}
-
-function getInitialDate(){
-  const now = new Date();
-  // Anchor to schedule range
-  if(now < new Date('2026-08-01')) return '2026-09-01';
-  if(now > new Date('2027-06-30')) return '2027-05-01';
-  return now.toISOString().slice(0,10);
-}
-
-function renderCurrentCal(){
-  if(currentView==='annual'){ loadEvents(calAnnual); calAnnual.render(); }
-  if(currentView==='monthly'){ loadEvents(calMonthly); calMonthly.render(); }
-  if(currentView==='weekly'){ loadEvents(calWeekly); calWeekly.render(); }
-  if(currentView==='daily'){ loadEvents(calDaily); calDaily.render(); }
-}
-
-// ─── OVERVIEW ───────────────────────────────
-function fmtDate(d){ return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
-
-function getMonthAllOut(ym){
-  return ALL_KIDS_OUT.filter(ao => {
-    const s=ao.start.slice(0,7), e=ao.end.slice(0,7);
-    return ym>=s && ym<=e;
-  });
-}
-
-function renderOverview(){
-  // Scorecard
-  const stats = { tommy:0, emily:0, sophie:0, tournaments:0, practices:0, noSchoolDays:0 };
-  ALL_EVENTS.forEach(e => {
-    if(hiddenKeys.has(eventKey(e))) return;
-    const t = eventType(e);
-    if(t==='daily') return;
-    if(e.kid==='tommy') stats.tommy++;
-    if(e.kid==='emily') stats.emily++;
-    if(e.kid==='sophie') stats.sophie++;
-    if(t==='tournament' || t==='game') stats.tournaments++;
-    if(t==='practice') stats.practices++;
-    if(t==='noschool') stats.noSchoolDays++;
-  });
-  document.getElementById('scorecard').innerHTML = `
-    <div class="score-cell"><h4>Tommy</h4><div class="n t">${stats.tommy}</div><div class="sub">events tracked</div></div>
-    <div class="score-cell"><h4>Emily</h4><div class="n e">${stats.emily}</div><div class="sub">events tracked</div></div>
-    <div class="score-cell"><h4>Sophie</h4><div class="n s">${stats.sophie}</div><div class="sub">events tracked</div></div>
-    <div class="score-cell"><h4>🏆 Sports</h4><div class="n" style="color:#fcd34d">${stats.tournaments}</div><div class="sub">games/tournaments</div></div>
-    <div class="score-cell"><h4>🏃 Practices</h4><div class="n" style="color:#94a3b8">${stats.practices}</div><div class="sub">total sessions</div></div>
-    <div class="score-cell"><h4>🏖️ No-School</h4><div class="n" style="color:#cbd5e1">${stats.noSchoolDays}</div><div class="sub">days</div></div>
-  `;
-
-  // Data sources
-  document.getElementById('data-sources').innerHTML = `
-    <div class="ov-kid">
-      <div class="ov-kid-h"><span class="dot" style="background:#3b82f6"></span>Tommy — Class of 2030</div>
-      <div class="ov-kid-src">
-        📘 <a href="https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar" target="_blank">Roxbury Latin</a> — academic<br>
-        🥍 <a href="https://www.jrminutemenlax.net/page/show/4976531-2025-2026-winter-skills-training-calendar-" target="_blank">Laxachusetts</a> — training + tournaments
-      </div>
-    </div>
-    <div class="ov-kid">
-      <div class="ov-kid-h"><span class="dot" style="background:#ec4899"></span>Emily — Class of 2032</div>
-      <div class="ov-kid-src">
-        📗 <a href="https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs" target="_blank">Newton Country Day</a> — academic<br>
-        🥍 <a href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">Mass Elite</a> — tournaments + <a href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">practices</a><br>
-        ⚽ <a href="https://go.teamsnap.com/" target="_blank">WPC Soccer</a> — practices via TeamSnap
-      </div>
-    </div>
-    <div class="ov-kid">
-      <div class="ov-kid-h"><span class="dot" style="background:#10b981"></span>Sophie — Class of 2034</div>
-      <div class="ov-kid-src">
-        📙 <a href="https://www.tenacreschool.org/parents-current-families/school-calendar" target="_blank">Tenacre</a> — academic<br>
-        🥍 <a href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">Mass Elite</a> — tournaments + <a href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">practices</a><br>
-        🏆 <a href="https://www.achievelax.com/leagues-4/fall-and-winter-indoor-leagues/" target="_blank">Achieve Lax</a> — indoor sessions
-      </div>
-    </div>
-  `;
-
-  // Overview body — academic left, sports right
-  const evs = ALL_EVENTS.filter(passesOverview);
-  const byDate = {};
-  evs.forEach(e => { (byDate[e.start] = byDate[e.start] || []).push(e); });
-
-  const html = MONTHS.map(ym => {
-    const label = MONTH_LABELS[ym];
-    const banners = getMonthAllOut(ym).map(ao => {
-      const dr = ao.start===ao.end ? fmtDate(ao.start) : `${fmtDate(ao.start)} – ${fmtDate(ao.end)}`;
-      return `<div class="all-out-banner"><span style="font-size:18px">🏖️</span><div><div class="ao-label">All 3 Kids Out — ${ao.label}</div><div class="ao-range">${dr}</div></div></div>`;
-    }).join('');
-    const dates = Object.keys(byDate).filter(d => d.startsWith(ym)).sort();
-    if(!dates.length && !banners) return `<div class="ov-month"><div class="ov-month-h">${label}<span style="font-size:11px;font-weight:400;color:#475569">No dates</span></div></div>`;
-    const rows = dates.map(d => {
-      const dayLabel = fmtDate(d);
-      const acad = [], sport = [];
-      byDate[d].forEach(ev => {
-        const t = eventType(ev);
-        const url = sourceUrl(ev);
-        const ini = initial(ev.kid);
-        const key = eventKey(ev).replace(/'/g,"\\'");
-        const pill = `<a class="ov-pill type-${t} k-${ev.kid}" ${url?`href="${url}" target="_blank"`:''}>
-          <span class="ini ${ini}" style="font-weight:900;padding:0 4px;border-radius:3px;background:rgba(0,0,0,.25)">${ini}</span>
-          <span>${ev.title.replace(/^[TES] — /,'')}</span>
-          <span class="del-x" onclick="event.preventDefault();event.stopPropagation();hideOne('${key}')">✕</span>
-        </a>`;
-        if(t==='tournament' || t==='game') sport.push(pill); else acad.push(pill);
-      });
-      return `<div class="ov-row"><span class="ov-date">${dayLabel}</span><div class="ov-col">${acad.join('')}</div><div class="ov-col right">${sport.join('')}</div></div>`;
-    }).join('');
-    return `<div class="ov-month"><div class="ov-month-h">${label}<span style="font-size:11px;font-weight:400;color:#475569">${dates.length} date${dates.length!==1?'s':''}</span></div>${banners}<div>${rows}</div></div>`;
+  const rows = Object.keys(idx).sort().slice(0, 200).map(k => {
+    const items = idx[k];
+    const academic = items.filter(e => ['academic','noschool'].includes(e.type));
+    const sports = items.filter(e => ['tournament','showcase'].includes(e.type));
+    if (academic.length === 0 && (!showSports || sports.length === 0)) return '';
+    const d = new Date(k+'T12:00');
+    const label = d.toLocaleString('en-US',{month:'short',day:'numeric',weekday:'short'});
+    return `<div class="overview-row">
+      <div class="overview-date">${label}</div>
+      <div class="overview-col">${academic.map(pillHTML).join('')}</div>
+      <div class="overview-col">${showSports ? sports.map(pillHTML).join('') : ''}</div>
+    </div>`;
   }).join('');
-  document.getElementById('overview-body').innerHTML = html;
+
+  const bySource = { T:[], E:[], S:[], F:[] };
+  SOURCES.forEach(s => bySource[s.kid].push(s));
+  const srcHtml = ['T','E','S','F'].map(k => {
+    const kName = {T:'Tommy',E:'Emily',S:'Sophie',F:'Family'}[k];
+    return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
+  }).join('');
+
+  document.getElementById('view-overview').innerHTML = `
+    <div class="scorecard">
+      <div class="stat"><div class="num" style="color:var(--T)">${stats.T}</div><div class="lbl">Tommy events</div></div>
+      <div class="stat"><div class="num" style="color:var(--E)">${stats.E}</div><div class="lbl">Emily events</div></div>
+      <div class="stat"><div class="num" style="color:var(--S)">${stats.S}</div><div class="lbl">Sophie events</div></div>
+      <div class="stat"><div class="num" style="color:var(--F)">${stats.F}</div><div class="lbl">Family events</div></div>
+      <div class="stat"><div class="num" style="color:var(--tournament)">${stats.sports}</div><div class="lbl">Games / Tournaments</div></div>
+      <div class="stat"><div class="num">${stats.practices}</div><div class="lbl">Practices</div></div>
+      <div class="stat"><div class="num">${stats.noschool}</div><div class="lbl">No-school days</div></div>
+    </div>
+    <div class="sources"><h3>📡 Data Sources</h3><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">${srcHtml}</div></div>
+    <h3 style="margin:20px 0 10px;">Strategic Calendar — Academic (left) / Sports (right)</h3>
+    <div class="overview-table">${rows || '<p style="padding:20px; text-align:center; color:var(--muted);">No events match current filters.</p>'}</div>
+  `;
 }
 
-function hideOne(key){ hiddenKeys.add(key); saveHidden(); refreshAll(); }
-
-// ─── TRACKING ───────────────────────────────
-function renderTracking(){
-  const byKid = {
-    tommy: { label:'🥍 Tommy — Class of 2030', color:'#3b82f6', items: TRACKING_ITEMS.filter(i=>i.kid==='tommy') },
-    emily: { label:'🥍 Emily — Class of 2032', color:'#ec4899', items: TRACKING_ITEMS.filter(i=>i.kid==='emily') }
-  };
-  const badgeLabel = { active:'🟢 Now', upcoming:'Register', watch:'👁 Watch', past:'Past' };
-  document.getElementById('tracking-body').innerHTML = Object.values(byKid).map(s => `
-    <div style="margin-bottom:28px">
-      <div class="tr-kid-h"><span style="width:10px;height:10px;border-radius:50%;background:${s.color}"></span>${s.label}</div>
-      ${s.items.map(e => `
-        <div class="tr-row">
-          <div><div class="tr-name">${e.name}</div><div class="tr-dates">📅 ${e.dates}</div><div class="tr-note">${e.note}</div></div>
-          <div class="tr-right"><span class="tr-badge ${e.status}">${badgeLabel[e.status]}</span><a class="tr-link" href="${e.url}" target="_blank">↗ Details</a></div>
-        </div>`).join('')}
-    </div>`).join('');
+function renderTracking() {
+  const cards = TRACKING_ITEMS.map(t => `
+    <div class="track-card">
+      <span class="who ${t.kid}">${t.kid}</span>
+      <h4 style="display:inline;">${t.title}</h4>
+      <p><strong>${t.status || 'Watch'}</strong> · ${t.window || ''}</p>
+      <p>${t.notes || ''}</p>
+      ${t.url ? `<p><a href="${t.url}" target="_blank" rel="noopener">Open registration →</a></p>` : ''}
+    </div>
+  `).join('');
+  document.getElementById('view-tracking').innerHTML = `<h2 style="margin:0 0 12px;">📌 Registration Watch</h2><div class="track-grid">${cards}</div>`;
 }
 
-// ─── VIEW SWITCH ────────────────────────────
-function switchView(v){
-  currentView = v;
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  ['annual','monthly','weekly','daily','overview','tracking'].forEach(name => {
-    document.getElementById(name + '-view').style.display = (name === v ? '' : 'none');
+// ============ RENDER DISPATCH ============
+function render() {
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-'+currentView));
+  if (currentView === 'annual') renderAnnual();
+  else if (currentView === 'monthly') renderMonthly();
+  else if (currentView === 'weekly') renderWeekly();
+  else if (currentView === 'daily') renderDaily();
+  else if (currentView === 'overview') renderOverview();
+  else if (currentView === 'tracking') renderTracking();
+}
+
+// ============ EVENT WIRING ============
+document.querySelectorAll('nav.tabs button').forEach(b => {
+  b.addEventListener('click', () => { currentView = b.dataset.view; render(); });
+});
+document.querySelectorAll('#filters .chip.kid').forEach(c => {
+  c.addEventListener('click', () => {
+    const k = c.dataset.kid;
+    filters.kids[k] = !filters.kids[k];
+    c.classList.toggle('active', filters.kids[k]);
+    localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
+    render();
   });
-  // Filter bar shown for all except tracking
-  document.getElementById('filter-bar').style.display = v==='tracking' ? 'none' : '';
-  if(v==='overview') renderOverview();
-  else if(v==='tracking') renderTracking();
-  else renderCurrentCal();
-}
-
-document.querySelectorAll('.view-btn').forEach(b => b.onclick = ()=>switchView(b.dataset.view));
-
-// Kid filter
-document.querySelectorAll('.fb-btn[data-kid]').forEach(b => b.onclick = ()=>{
-  activeKid = b.dataset.kid;
-  document.querySelectorAll('.fb-btn[data-kid]').forEach(x => x.classList.toggle('active', x.dataset.kid === activeKid));
-  refreshAll();
+});
+document.querySelectorAll('#filters .chip[data-type]').forEach(c => {
+  c.addEventListener('click', () => {
+    const t = c.dataset.type;
+    filters[t] = !filters[t];
+    c.classList.toggle('active', filters[t]);
+    localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
+    render();
+  });
 });
 
-// Sports/practice toggles
-document.getElementById('sports-toggle').onclick = ()=>{
-  showSports = !showSports;
-  document.getElementById('sports-toggle').classList.toggle('active', showSports);
-  refreshAll();
-};
-document.getElementById('practice-toggle').onclick = ()=>{
-  showPractice = !showPractice;
-  document.getElementById('practice-toggle').classList.toggle('active', showPractice);
-  refreshAll();
-};
-
-function refreshAll(){
-  if(currentView==='overview') renderOverview();
-  else if(currentView==='tracking') renderTracking();
-  else renderCurrentCal();
+// Apply saved filter state to UI
+function syncFilterUI() {
+  document.querySelectorAll('#filters .chip.kid').forEach(c => c.classList.toggle('active', filters.kids[c.dataset.kid]));
+  document.querySelectorAll('#filters .chip[data-type]').forEach(c => c.classList.toggle('active', !!filters[c.dataset.type]));
 }
+syncFilterUI();
 
-// ─── INIT ───────────────────────────────────
-document.getElementById('today-label').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-updateRestoreBtn();
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  initCals();
-  switchView('monthly');
+// Nav bar (delegate)
+document.body.addEventListener('click', (e) => {
+  const nav = e.target.closest('[data-nav]');
+  if (nav) {
+    const action = nav.dataset.nav;
+    if (action === 'today') currentDate = new Date();
+    else if (action === 'prev') {
+      if (currentView === 'monthly') currentDate.setMonth(currentDate.getMonth()-1);
+      else if (currentView === 'weekly') currentDate.setDate(currentDate.getDate()-7);
+      else if (currentView === 'daily') currentDate.setDate(currentDate.getDate()-1);
+      else if (currentView === 'annual') currentDate.setFullYear(currentDate.getFullYear()-1);
+    } else if (action === 'next') {
+      if (currentView === 'monthly') currentDate.setMonth(currentDate.getMonth()+1);
+      else if (currentView === 'weekly') currentDate.setDate(currentDate.getDate()+7);
+      else if (currentView === 'daily') currentDate.setDate(currentDate.getDate()+1);
+      else if (currentView === 'annual') currentDate.setFullYear(currentDate.getFullYear()+1);
+    }
+    currentDate.setHours(0,0,0,0);
+    render();
+    return;
+  }
+  // Annual mini-month jump
+  const jump = e.target.closest('[data-jump]');
+  if (jump) {
+    const [y,m] = jump.dataset.jump.split('-').map(Number);
+    currentDate = new Date(y, m-1, 1);
+    currentView = 'monthly';
+    render();
+    return;
+  }
+  // Delete X on events
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    e.preventDefault(); e.stopPropagation();
+    hiddenIds.add(del.dataset.del);
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hiddenIds]));
+    render();
+    return;
+  }
 });
+
+// ============ INIT: load family_cal.json then render ============
+fetch('family_cal.json')
+  .then(r => r.ok ? r.json() : [])
+  .then(data => {
+    familyEvents = normalizeFamilyCal(data);
+    render();
+  })
+  .catch(() => { familyEvents = []; render(); });
+
+// initial render immediately (before family cal loads)
+render();
 </script>
 </body>
 </html>
