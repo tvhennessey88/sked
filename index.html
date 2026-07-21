@@ -1,386 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hennessey Family Scheduler</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hennessey Family Scheduler</title>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+a{color:inherit}
 
-    /* ── HEADER ── */
-    .header {
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      padding: 14px 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
-    }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    .header-left h1 { font-size: 17px; font-weight: 700; color: #f1f5f9; }
-    .header-left .today { font-size: 12px; color: #94a3b8; }
+/* HEADER */
+.header{background:#1e293b;border-bottom:1px solid #334155;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header h1{font-size:16px;font-weight:700;color:#f1f5f9}
+.header .today{font-size:11px;color:#94a3b8;margin-left:10px}
 
-    .filter-tabs { display: flex; gap: 6px; }
-    .filter-tab {
-      padding: 6px 14px; border-radius: 20px; border: 1.5px solid #334155;
-      cursor: pointer; font-size: 12px; font-weight: 600;
-      background: transparent; color: #94a3b8; transition: all 0.15s;
-    }
-    .filter-tab:hover { border-color: #64748b; color: #cbd5e1; }
-    .filter-tab.active-all    { background: #f1f5f9; color: #0f172a; border-color: #f1f5f9; }
-    .filter-tab.active-tommy  { background: #3b82f6; color: white; border-color: #3b82f6; }
-    .filter-tab.active-emily  { background: #ec4899; color: white; border-color: #ec4899; }
-    .filter-tab.active-sophie { background: #10b981; color: white; border-color: #10b981; }
+/* TOOLBAR */
+.view-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 0;flex-wrap:wrap;gap:8px}
+.view-toggle{display:flex;gap:5px;flex-wrap:wrap}
+.view-btn{padding:6px 14px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#64748b;transition:all .15s}
+.view-btn:hover{border-color:#64748b;color:#cbd5e1}
+.view-btn.active{background:#1e293b;border-color:#475569;color:#f1f5f9}
+.edit-btn{padding:5px 12px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:#94a3b8}
+.edit-btn:hover{border-color:#ef4444;color:#fca5a5}
+.edit-btn.active{background:rgba(239,68,68,.15);border-color:#ef4444;color:#fca5a5}
+.restore-btn{padding:5px 10px;border-radius:8px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:#64748b;margin-left:5px}
 
-    /* ── KID CARDS ── */
-    .kid-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 16px 20px 0; }
-    .kid-card { border-radius: 12px; padding: 14px 16px; position: relative; overflow: hidden; }
-    .kid-card::after { content:''; position:absolute; right:-16px; top:-16px; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.07); }
-    .kid-card.tommy  { background: linear-gradient(135deg,#1d4ed8,#1e40af); }
-    .kid-card.emily  { background: linear-gradient(135deg,#be185d,#9d174d); }
-    .kid-card.sophie { background: linear-gradient(135deg,#047857,#065f46); }
-    .kid-card h2 { font-size: 16px; font-weight: 800; color: white; }
-    .kid-card .school { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
-    .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px; }
-    .tag { background: rgba(255,255,255,0.18); color: white; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
-    .links { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-    .slink { font-size: 11px; color: rgba(255,255,255,0.8); text-decoration: none; }
-    .slink:hover { color: white; text-decoration: underline; }
-    .slink::before { content: '↗ '; }
+/* UNIVERSAL FILTER BAR */
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 20px 0}
+.fb-btn{padding:5px 13px;border-radius:20px;border:1.5px solid #334155;cursor:pointer;font-size:11px;font-weight:600;background:transparent;color:#64748b}
+.fb-btn:hover{border-color:#64748b;color:#cbd5e1}
+.fb-btn.active{background:#1e293b;border-color:#475569;color:#f1f5f9}
+.fb-btn.tommy.active{background:rgba(59,130,246,.2);border-color:#3b82f6;color:#93c5fd}
+.fb-btn.emily.active{background:rgba(236,72,153,.2);border-color:#ec4899;color:#f9a8d4}
+.fb-btn.sophie.active{background:rgba(16,185,129,.2);border-color:#10b981;color:#6ee7b7}
+.fb-btn.sports.active{background:rgba(251,191,36,.15);border-color:#fbbf24;color:#fbbf24}
+.fb-btn.practice.active{background:rgba(148,163,184,.15);border-color:#94a3b8;color:#94a3b8}
+.fb-sep{width:1px;height:18px;background:#334155;margin:0 4px}
 
-    /* ── LAYOUT ── */
-    .layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; padding: 16px 20px 20px; }
+/* CALENDAR CONTAINER */
+.cal-wrap{margin:14px 20px 30px;background:#1e293b;border-radius:12px;border:1px solid #334155;padding:18px}
+.fc{--fc-border-color:#334155;--fc-today-bg-color:rgba(59,130,246,.08);--fc-page-bg-color:transparent}
+.fc .fc-col-header-cell-cushion{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;text-decoration:none}
+.fc .fc-daygrid-day-number{font-size:11px;color:#94a3b8;text-decoration:none}
+.fc .fc-toolbar-title{font-size:15px !important;font-weight:700;color:#f1f5f9}
+.fc .fc-button{background:#334155 !important;border-color:#334155 !important;color:#e2e8f0 !important;font-size:11px !important;border-radius:6px !important;padding:4px 10px !important}
+.fc .fc-button:hover{background:#475569 !important}
+.fc .fc-button-active{background:#3b82f6 !important;border-color:#3b82f6 !important}
+.fc .fc-multimonth{border:none !important}
+.fc .fc-multimonth-title{color:#f1f5f9 !important;font-size:13px !important;font-weight:800 !important;padding:8px 0 !important}
 
-    /* ── CALENDAR ── */
-    .cal-wrap { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 16px; }
-    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
-    .li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; }
-    .ld { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+/* EVENTS — HYBRID COLOR: initial colored by kid, bg by event type */
+.fc-event{border-radius:5px !important;border:none !important;font-size:10px !important;padding:2px 5px !important;cursor:pointer !important;line-height:1.3 !important}
+.evt{display:inline-flex;align-items:center;gap:4px}
+.evt .ini{font-weight:900;font-size:11px;padding:0 4px;border-radius:3px;background:rgba(0,0,0,.25)}
+.evt .ini.T{color:#93c5fd}
+.evt .ini.E{color:#f9a8d4}
+.evt .ini.S{color:#6ee7b7}
+.evt .txt{font-weight:600}
 
-    /* FullCalendar overrides */
-    .fc { --fc-border-color: #334155; --fc-today-bg-color: rgba(59,130,246,0.08); --fc-page-bg-color: transparent; }
-    .fc .fc-col-header-cell-cushion { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; text-decoration: none; }
-    .fc .fc-daygrid-day-number { font-size: 11px; color: #94a3b8; text-decoration: none; }
-    .fc .fc-toolbar-title { font-size: 15px !important; font-weight: 700; color: #f1f5f9; }
-    .fc .fc-button { background: #334155 !important; border-color: #334155 !important; color: #e2e8f0 !important; font-size: 11px !important; border-radius: 6px !important; padding: 4px 10px !important; }
-    .fc .fc-button:hover { background: #475569 !important; }
-    .fc .fc-button-active { background: #3b82f6 !important; border-color: #3b82f6 !important; }
-    .fc-event { border-radius: 4px !important; border: none !important; font-size: 10px !important; padding: 1px 4px !important; cursor: pointer !important; }
-    .fc-event-title { font-weight: 600 !important; }
-    .fc .fc-daygrid-day { background: transparent; }
-    .fc .fc-scrollgrid { border-color: #334155 !important; }
+/* type backgrounds — same class used both in FC events and Overview pills */
+.type-academic{background:rgba(96,165,250,.14) !important;color:#dbeafe !important}
+.type-academic.k-emily{background:rgba(244,114,182,.14) !important;color:#fce7f3 !important}
+.type-academic.k-sophie{background:rgba(52,211,153,.14) !important;color:#d1fae5 !important}
+.type-noschool{background:rgba(71,85,105,.35) !important;color:#cbd5e1 !important}
+.type-tournament{background:rgba(251,191,36,.22) !important;color:#fde68a !important;border-left:3px solid #fbbf24 !important}
+.type-game{background:rgba(16,185,129,.22) !important;color:#a7f3d0 !important;border-left:3px solid #10b981 !important}
+.type-practice{background:rgba(148,163,184,.14) !important;color:#cbd5e1 !important;font-style:italic}
 
-    /* edit mode — events get red ring when hovering in edit mode */
-    body.edit-mode .fc-event:hover { outline: 2px solid #ef4444 !important; opacity: 0.7; }
-    body.edit-mode .fc-event { cursor: crosshair !important; }
+body.edit-mode .fc-event:hover{outline:2px solid #ef4444 !important;opacity:.7}
+body.edit-mode .fc-event{cursor:crosshair !important}
 
-    /* ── SIDEBAR ── */
-    .sidebar { display: flex; flex-direction: column; gap: 12px; }
-    .card { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 14px; }
-    .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #64748b; margin-bottom: 10px; }
+/* OVERVIEW */
+#overview-view{padding:14px 20px 30px}
+.ov-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.ov-card{background:#1e293b;border-radius:12px;border:1px solid #334155;padding:14px}
+.ov-card h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:10px}
+.ov-kid{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #334155}
+.ov-kid:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.ov-kid-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
+.ov-kid-h .dot{width:10px;height:10px;border-radius:50%}
+.ov-kid-src{font-size:11px;color:#94a3b8;margin-left:18px;line-height:1.7}
+.ov-kid-src a{color:#60a5fa;text-decoration:none}
+.ov-kid-src a:hover{text-decoration:underline}
+.ov-month{margin-bottom:24px}
+.ov-month-h{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;padding-bottom:8px;border-bottom:1px solid #334155;margin-bottom:8px;display:flex;justify-content:space-between}
+.ov-row{display:grid;grid-template-columns:60px 1fr 1fr;gap:12px;padding:5px 8px;border-radius:6px;align-items:baseline}
+.ov-row:hover{background:#1e293b}
+.ov-date{font-size:11px;font-weight:700;color:#64748b;white-space:nowrap}
+.ov-col{display:flex;flex-wrap:wrap;gap:4px}
+.ov-col.right{border-left:2px solid #334155;padding-left:10px}
+.ov-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;line-height:1.4}
+.ov-pill:hover{filter:brightness(1.15)}
+.ov-pill .del-x{cursor:pointer;font-size:12px;opacity:.6;margin-left:3px}
+.ov-pill .del-x:hover{opacity:1;color:#ef4444}
+body:not(.edit-mode) .ov-pill .del-x{display:none}
+.all-out-banner{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.ao-label{font-size:12px;font-weight:800;color:#fbbf24}
+.ao-range{font-size:10px;color:#78716c}
 
-    /* upcoming */
-    .ev-item { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid #1e293b; }
-    .ev-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-    .ev-title { font-size: 12px; font-weight: 600; line-height: 1.3; color: #e2e8f0; }
-    .ev-date  { font-size: 10px; color: #64748b; margin-top: 2px; }
+/* TRACKING */
+#tracking-view{padding:16px 20px 30px}
+.tracking-intro{font-size:11px;color:#64748b;background:#1e293b;border:1px dashed #334155;border-radius:8px;padding:10px 14px;margin-bottom:20px;line-height:1.6}
+.tr-kid-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px solid #334155;padding-bottom:8px;font-size:14px;font-weight:800;color:#f1f5f9}
+.tr-row{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:8px}
+.tr-name{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:3px}
+.tr-dates{font-size:11px;color:#94a3b8;margin-bottom:3px}
+.tr-note{font-size:11px;color:#64748b}
+.tr-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.tr-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.tr-badge.active{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3)}
+.tr-badge.upcoming{background:rgba(59,130,246,.15);color:#60a5fa}
+.tr-badge.watch{background:rgba(251,191,36,.12);color:#fbbf24}
+.tr-badge.past{background:rgba(71,85,105,.2);color:#64748b}
+.tr-link{font-size:11px;color:#60a5fa;text-decoration:none}
+.tr-link:hover{text-decoration:underline}
 
-    /* school links */
-    .school-link { display: block; font-size: 12px; font-weight: 600; text-decoration: none; padding: 6px 0; border-bottom: 1px solid #334155; }
-    .school-link:last-child { border-bottom: none; padding-bottom: 0; }
-    .school-link.tommy-link  { color: #60a5fa; }
-    .school-link.emily-link  { color: #f472b6; }
-    .school-link.sophie-link { color: #34d399; }
-    .school-link:hover { opacity: 0.8; }
+/* SCORECARD */
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.score-cell{padding:10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid #334155}
+.score-cell h4{font-size:12px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
+.score-cell .n{font-size:22px;font-weight:900;line-height:1}
+.score-cell .n.t{color:#93c5fd}
+.score-cell .n.e{color:#f9a8d4}
+.score-cell .n.s{color:#6ee7b7}
+.score-cell .sub{font-size:10px;color:#94a3b8;margin-top:3px}
 
-    /* ── VIEW TOOLBAR ── */
-    .view-toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 20px 0;
-    }
-    .view-toggle { display: flex; gap: 6px; }
-    .view-btn {
-      padding: 7px 16px; border-radius: 8px; border: 1.5px solid #334155;
-      cursor: pointer; font-size: 12px; font-weight: 700; background: transparent; color: #64748b; transition: all 0.15s;
-    }
-    .view-btn:hover { border-color: #64748b; color: #cbd5e1; }
-    .view-btn.active { background: #1e293b; border-color: #475569; color: #f1f5f9; }
-
-    /* edit mode button */
-    .edit-btn {
-      padding: 6px 14px; border-radius: 8px; border: 1.5px solid #334155;
-      cursor: pointer; font-size: 12px; font-weight: 700; background: transparent; color: #94a3b8; transition: all 0.15s;
-      display: flex; align-items: center; gap: 5px;
-    }
-    .edit-btn:hover { border-color: #ef4444; color: #fca5a5; }
-    .edit-btn.active { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #fca5a5; }
-    .restore-btn {
-      padding: 5px 12px; border-radius: 8px; border: 1.5px solid #334155;
-      cursor: pointer; font-size: 11px; font-weight: 700; background: transparent; color: #64748b;
-      margin-left: 6px;
-    }
-    .restore-btn:hover { border-color: #475569; color: #cbd5e1; }
-
-    /* ── MASTER CAL VIEW ── */
-    #master-view { padding: 16px 20px 20px; display: none; }
-    .master-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .master-legend { display: flex; flex-wrap: wrap; gap: 16px; }
-    .master-legend .li { font-size: 12px; }
-    .master-cal-wrap { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 20px; }
-    .break-row { border-radius: 4px !important; opacity: 0.55 !important; }
-
-    /* ── MONTH LIST VIEW ── */
-    #list-view { padding: 16px 20px 30px; display: none; }
-    .month-block { margin-bottom: 28px; }
-    .month-heading {
-      font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-      color: #94a3b8; padding-bottom: 8px; border-bottom: 1px solid #334155; margin-bottom: 10px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .month-heading span { font-size: 11px; font-weight: 400; color: #475569; letter-spacing: 0; text-transform: none; }
-    .month-events { display: flex; flex-direction: column; gap: 4px; }
-    .ml-row {
-      display: grid; grid-template-columns: 48px 1fr; align-items: baseline;
-      gap: 10px; padding: 4px 8px; border-radius: 6px; transition: background 0.1s;
-    }
-    .ml-row:hover { background: #1e293b; }
-    .ml-date { font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
-    .ml-pills { display: flex; flex-wrap: wrap; gap: 5px; }
-    .ml-pill {
-      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
-      display: inline-flex; align-items: center; gap: 5px; line-height: 1.4;
-    }
-    .ml-pill.tommy  { background: rgba(59,130,246,0.18); color: #93c5fd; }
-    .ml-pill.emily  { background: rgba(236,72,153,0.18); color: #f9a8d4; }
-    .ml-pill.sophie { background: rgba(16,185,129,0.18); color: #6ee7b7; }
-    .ml-pill.noschool { background: rgba(71,85,105,0.25); color: #94a3b8; }
-    .ml-pill .del-x {
-      cursor: pointer; font-size: 13px; line-height: 1; opacity: 0.6; padding: 0 2px; border-radius: 3px;
-    }
-    .ml-pill .del-x:hover { opacity: 1; color: #ef4444; }
-    body:not(.edit-mode) .ml-pill .del-x { display: none; }
-    .ml-empty { font-size: 11px; color: #475569; padding: 4px 8px; font-style: italic; }
-    .list-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; align-items: center; }
-    .lf-btn {
-      padding: 5px 13px; border-radius: 20px; border: 1.5px solid #334155;
-      cursor: pointer; font-size: 11px; font-weight: 600; background: transparent; color: #64748b;
-    }
-    .lf-btn.active { background: #1e293b; border-color: #475569; color: #f1f5f9; }
-    .lf-btn.tommy-f.active  { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #93c5fd; }
-    .lf-btn.emily-f.active  { background: rgba(236,72,153,0.2); border-color: #ec4899; color: #f9a8d4; }
-    .lf-btn.sophie-f.active { background: rgba(16,185,129,0.2); border-color: #10b981; color: #6ee7b7; }
-    .lf-sep { width: 1px; height: 18px; background: #334155; margin: 0 2px; }
-    .lf-btn.sports-on { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
-
-    /* all-kids-out banner */
-    .all-out-banner {
-      background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25);
-      border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .ao-icon { font-size: 18px; }
-    .ao-label { font-size: 12px; font-weight: 800; color: #fbbf24; line-height: 1.3; }
-    .ao-range { font-size: 10px; color: #78716c; margin-top: 1px; }
-
-    /* operational events */
-    .ml-pill.sports { background: rgba(251,191,36,0.12); color: #fcd34d; border: 1px solid rgba(251,191,36,0.2); }
-    /* practice events */
-    .ml-pill.practice { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); font-style: italic; }
-    .lf-btn.practice-on { background: rgba(148,163,184,0.15); border-color: #94a3b8; color: #94a3b8; }
-
-    /* ── TRACKING VIEW ── */
-    #tracking-view { padding: 16px 20px 30px; display: none; }
-    .tracking-intro { font-size: 11px; color: #64748b; background: #1e293b; border: 1px dashed #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; line-height: 1.6; }
-    .tracking-kid-section { margin-bottom: 28px; }
-    .tracking-kid-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
-    .tracking-kid-name { font-size: 14px; font-weight: 800; color: #f1f5f9; }
-    .tr-row {
-      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-      padding: 12px 16px; display: grid; grid-template-columns: 1fr auto;
-      gap: 12px; align-items: center; margin-bottom: 8px;
-    }
-    .tr-row:hover { border-color: #475569; }
-    .tr-name { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 3px; }
-    .tr-dates { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
-    .tr-note { font-size: 11px; color: #64748b; }
-    .tr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
-    .tr-badge {
-      font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 10px;
-      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
-    }
-    .tr-badge.active   { background: rgba(16,185,129,0.2);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-    .tr-badge.upcoming { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
-    .tr-badge.watch    { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
-    .tr-badge.past     { background: rgba(71,85,105,0.2);   color: #64748b; border: 1px solid #334155; }
-    .tr-link { font-size: 11px; color: #60a5fa; text-decoration: none; }
-    .tr-link:hover { text-decoration: underline; }
-  </style>
+.color-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:11px;color:#94a3b8}
+.color-legend .swatch{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+</style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
-  <div class="header-left">
-    <h1>🏠 Hennessey Family</h1>
-    <span class="today" id="today-label"></span>
-  </div>
-  <div class="filter-tabs">
-    <button class="filter-tab active-all" data-kid="all">All</button>
-    <button class="filter-tab" data-kid="tommy">Tommy</button>
-    <button class="filter-tab" data-kid="emily">Emily</button>
-    <button class="filter-tab" data-kid="sophie">Sophie</button>
-  </div>
+  <div><span style="font-size:16px">🏠</span> <strong>Hennessey Family</strong> <span class="today" id="today-label"></span></div>
 </div>
 
-<!-- VIEW TOOLBAR -->
 <div class="view-toolbar">
   <div class="view-toggle">
-    <button class="view-btn active" id="btn-family" onclick="switchView('family')">🏠 Family</button>
-    <button class="view-btn" id="btn-master" onclick="switchView('master')">📅 Master Cal</button>
-    <button class="view-btn" id="btn-list"     onclick="switchView('list')">📋 Month List</button>
-    <button class="view-btn" id="btn-tracking" onclick="switchView('tracking')">📌 Tracking</button>
+    <button class="view-btn" data-view="annual">📆 Annual</button>
+    <button class="view-btn active" data-view="monthly">🗓️ Monthly</button>
+    <button class="view-btn" data-view="weekly">📅 Weekly</button>
+    <button class="view-btn" data-view="daily">📍 Daily</button>
+    <button class="view-btn" data-view="overview">📋 Overview</button>
+    <button class="view-btn" data-view="tracking">📌 Tracking</button>
   </div>
-  <div style="display:flex;align-items:center;gap:6px;">
-    <button class="edit-btn" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ Edit</button>
-    <button class="restore-btn" id="restore-btn" onclick="restoreAll()" style="display:none">↩ Restore hidden (<span id="hidden-count">0</span>)</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     MASTER CAL VIEW
-══════════════════════════════════════ -->
-<div id="master-view">
-  <div class="master-cal-wrap">
-    <div class="master-header">
-      <div class="master-legend legend">
-        <span class="li"><span class="ld" style="background:#3b82f6"></span>Tommy — Roxbury Latin</span>
-        <span class="li"><span class="ld" style="background:#ec4899"></span>Emily — NCDS</span>
-        <span class="li"><span class="ld" style="background:#10b981"></span>Sophie — Tenacre</span>
-        <span class="li"><span class="ld" style="background:#475569;opacity:0.7"></span>No School / Break</span>
-      </div>
-    </div>
-    <div id="master-calendar"></div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <button class="edit-btn" id="edit-toggle-btn">✏️ Edit</button>
+    <button class="restore-btn" id="restore-btn" style="display:none">↩ Restore (<span id="hidden-count">0</span>)</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     MONTH LIST VIEW
-══════════════════════════════════════ -->
-<div id="list-view">
-  <div class="list-filter-bar">
-    <button class="lf-btn active" data-lf="all">All Schools</button>
-    <button class="lf-btn tommy-f" data-lf="tommy">Tommy (RL)</button>
-    <button class="lf-btn emily-f" data-lf="emily">Emily (NCDS)</button>
-    <button class="lf-btn sophie-f" data-lf="sophie">Sophie (Tenacre)</button>
-    <div class="lf-sep"></div>
-    <button class="lf-btn" id="sports-toggle-btn" onclick="toggleSports()">🏆 Show Sports</button>
-    <div class="lf-sep"></div>
-    <button class="lf-btn" id="practice-t-btn" onclick="togglePractice('tommy')" title="Tommy practices">🏃 T</button>
-    <button class="lf-btn" id="practice-e-btn" onclick="togglePractice('emily')" title="Emily practices">🏃 E</button>
-    <button class="lf-btn" id="practice-s-btn" onclick="togglePractice('sophie')" title="Sophie practices">🏃 S</button>
-  </div>
-  <div id="month-list-body"></div>
+<div class="filter-bar" id="filter-bar">
+  <button class="fb-btn active" data-kid="all">All Kids</button>
+  <button class="fb-btn tommy" data-kid="tommy">T · Tommy</button>
+  <button class="fb-btn emily" data-kid="emily">E · Emily</button>
+  <button class="fb-btn sophie" data-kid="sophie">S · Sophie</button>
+  <span class="fb-sep"></span>
+  <button class="fb-btn sports" id="sports-toggle">🏆 Games / Tournaments</button>
+  <button class="fb-btn practice" id="practice-toggle">🏃 Practices</button>
 </div>
 
-<!-- ══════════════════════════════════════
-     FAMILY VIEW
-══════════════════════════════════════ -->
-<div id="family-view">
-<div class="kid-strip">
-  <div class="kid-card tommy">
-    <h2>Tommy</h2>
-    <div class="school">📚 Roxbury Latin</div>
-    <div class="tags">
-      <span class="tag">🥍 Laxachusetts '30</span>
+<!-- CAL VIEWS -->
+<div id="annual-view" style="display:none"><div class="cal-wrap"><div id="cal-annual"></div></div></div>
+<div id="monthly-view"><div class="cal-wrap"><div id="cal-monthly"></div></div></div>
+<div id="weekly-view" style="display:none"><div class="cal-wrap"><div id="cal-weekly"></div></div></div>
+<div id="daily-view" style="display:none"><div class="cal-wrap"><div id="cal-daily"></div></div></div>
+
+<!-- OVERVIEW -->
+<div id="overview-view" style="display:none">
+  <div class="ov-top">
+    <div class="ov-card">
+      <h3>📊 Scorecard — School Year 2026–27</h3>
+      <div class="score-grid" id="scorecard"></div>
     </div>
-    <div class="links">
-      <a class="slink" href="https://www.jrminutemenlax.net/page/show/4976531-2025-2026-winter-skills-training-calendar-" target="_blank">Laxachusetts Calendar</a>
-      <a class="slink" href="https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar" target="_blank">RL Daily Calendar</a>
-    </div>
-  </div>
-  <div class="kid-card emily">
-    <h2>Emily</h2>
-    <div class="school">📚 Newton Country Day</div>
-    <div class="tags">
-      <span class="tag">🥍 Mass Elite '32</span>
-      <span class="tag">⚽ Town Soccer</span>
-      <span class="tag">🏆 Achieve Lax</span>
-    </div>
-    <div class="links">
-      <a class="slink" href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">ME Practice</a>
-      <a class="slink" href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">ME Tournaments</a>
+    <div class="ov-card">
+      <h3>📡 Data Sources</h3>
+      <div id="data-sources"></div>
     </div>
   </div>
-  <div class="kid-card sophie">
-    <h2>Sophie</h2>
-    <div class="school">📚 Tenacre</div>
-    <div class="tags">
-      <span class="tag">🥍 Mass Elite '34</span>
-      <span class="tag">⚽ Town Soccer</span>
-      <span class="tag">🤸 Gymnastics</span>
-    </div>
-    <div class="links">
-      <a class="slink" href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">ME Practice</a>
-      <a class="slink" href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">ME Tournaments</a>
-      <a class="slink" href="https://www.achievelax.com/leagues-4/fall-and-winter-indoor-leagues/" target="_blank">Achieve Lax Indoor</a>
-    </div>
+  <div class="color-legend">
+    <span><span class="swatch" style="background:rgba(96,165,250,.4)"></span>Academic (kid-tinted)</span>
+    <span><span class="swatch" style="background:rgba(71,85,105,.6)"></span>No School</span>
+    <span><span class="swatch" style="background:rgba(251,191,36,.4);border-left:3px solid #fbbf24"></span>Tournament / Showcase</span>
+    <span><span class="swatch" style="background:rgba(16,185,129,.4);border-left:3px solid #10b981"></span>Game</span>
+    <span><span class="swatch" style="background:rgba(148,163,184,.3)"></span>Practice</span>
+    <span style="margin-left:12px;color:#64748b">Kid: <strong style="color:#93c5fd">T</strong> · <strong style="color:#f9a8d4">E</strong> · <strong style="color:#6ee7b7">S</strong></span>
   </div>
+  <div id="overview-body"></div>
 </div>
 
-<div class="layout">
-  <div class="cal-wrap">
-    <div class="legend">
-      <span class="li"><span class="ld" style="background:#3b82f6"></span>Tommy (RL)</span>
-      <span class="li"><span class="ld" style="background:#ec4899"></span>Emily (NCDS)</span>
-      <span class="li"><span class="ld" style="background:#10b981"></span>Sophie (Tenacre)</span>
-      <span class="li"><span class="ld" style="background:#f59e0b"></span>Multi-kid</span>
-      <span class="li"><span class="ld" style="background:#475569"></span>No School</span>
-    </div>
-    <div id="calendar"></div>
-  </div>
-
-  <div class="sidebar">
-    <div class="card">
-      <div class="card-title">Upcoming (60 days)</div>
-      <div id="upcoming-list">Loading…</div>
-    </div>
-    <div class="card">
-      <div class="card-title">School Calendars</div>
-      <a class="school-link tommy-link" href="https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar" target="_blank">📘 Roxbury Latin</a>
-      <a class="school-link emily-link"  href="https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs" target="_blank">📗 NCDS Key Dates</a>
-      <span class="school-link sophie-link" style="cursor:default;">📙 Tenacre — loaded ✓</span>
-    </div>
-  </div>
-</div>
-</div><!-- end #family-view -->
-
-<!-- ══════════════════════════════════════
-     TRACKING VIEW
-══════════════════════════════════════ -->
-<div id="tracking-view">
+<!-- TRACKING -->
+<div id="tracking-view" style="display:none">
   <div class="tracking-intro">
-    📌 Events to watch for registration. Forward relevant emails or texts to <strong>amy@coalition.ventures</strong> and they'll be added automatically. Amy checks these links monthly for updates.
+    📌 Registration watch. Forward emails/texts to <strong>amy@coalition.ventures</strong> — Amy adds them here and checks these links monthly.
   </div>
   <div id="tracking-body"></div>
 </div>
 
-
 <script>
-// ─────────────────────────────────────────────────────────────
-// COLORS
-// ─────────────────────────────────────────────────────────────
-const T = '#3b82f6'; // Tommy
-const E = '#ec4899'; // Emily
-const S = '#10b981'; // Sophie
-const X = '#475569'; // No School / Holiday
-const F = '#f59e0b'; // Multi-kid
-
-// ─────────────────────────────────────────────────────────────
-// ALL EVENTS
-// ─────────────────────────────────────────────────────────────
+// ─── COLORS ─────────────────────────────────
+const T='#3b82f6', E='#ec4899', S='#10b981', X='#475569', F='#f59e0b';
 const ALL_EVENTS = [
   // ── ROXBURY LATIN (Tommy) ─────────────────────────────────
   { title: 'RL: Class I → Beaver Brook',         start: '2026-08-21', color: T, kid: 'tommy' },
@@ -680,130 +501,6 @@ const ALL_EVENTS = [
 
 ];
 
-// ─────────────────────────────────────────────────────────────
-// HIDDEN EVENTS — persisted in localStorage
-// ─────────────────────────────────────────────────────────────
-function eventKey(e) { return e.title + '|' + e.start; }
-
-let hiddenKeys = new Set(JSON.parse(localStorage.getItem('sked_hidden') || '[]'));
-
-function saveHidden() {
-  localStorage.setItem('sked_hidden', JSON.stringify([...hiddenKeys]));
-  updateRestoreBtn();
-}
-
-function hideEvent(key) {
-  hiddenKeys.add(key);
-  saveHidden();
-}
-
-function restoreAll() {
-  hiddenKeys.clear();
-  saveHidden();
-  refreshAllViews();
-}
-
-function updateRestoreBtn() {
-  const n = hiddenKeys.size;
-  document.getElementById('hidden-count').textContent = n;
-  document.getElementById('restore-btn').style.display = n > 0 ? '' : 'none';
-}
-
-function visibleEvents() {
-  return ALL_EVENTS.filter(e => !hiddenKeys.has(eventKey(e)));
-}
-
-// ─────────────────────────────────────────────────────────────
-// EDIT MODE
-// ─────────────────────────────────────────────────────────────
-let editMode = false;
-
-function toggleEditMode() {
-  editMode = !editMode;
-  document.body.classList.toggle('edit-mode', editMode);
-  const btn = document.getElementById('edit-toggle-btn');
-  if (editMode) {
-    btn.classList.add('active');
-    btn.textContent = '✕ Done Editing';
-  } else {
-    btn.classList.remove('active');
-    btn.textContent = '✏️ Edit';
-  }
-  // Re-render list view pills to show/hide X buttons
-  if (currentView === 'list') renderMonthList();
-}
-
-// ─────────────────────────────────────────────────────────────
-// VIEW MANAGEMENT
-// ─────────────────────────────────────────────────────────────
-let currentView = 'family';
-let masterCal = null;
-let familyCal = null;
-
-function switchView(view) {
-  currentView = view;
-  ['family','master','list','tracking'].forEach(v => {
-    const el = document.getElementById(v === 'family' ? 'family-view' : v + '-view');
-    el.style.display = v === view ? 'block' : 'none';
-    document.getElementById('btn-' + v).classList.toggle('active', v === view);
-  });
-  if (view === 'master') {
-    if (!masterCal) initMasterCal();
-    else { masterCal.removeAllEvents(); nonDailyEvents().forEach(e => masterCal.addEvent(e)); setTimeout(() => masterCal.updateSize(), 50); }
-  }
-  if (view === 'list') renderMonthList();
-  if (view === 'tracking') renderTracking();
-}
-
-function refreshAllViews() {
-  // Refresh family cal
-  if (familyCal) {
-    familyCal.removeAllEvents();
-    getFilteredEvents().forEach(e => familyCal.addEvent(e));
-    renderUpcoming();
-  }
-  // Refresh master cal
-  if (masterCal) {
-    masterCal.removeAllEvents();
-    visibleEvents().forEach(e => masterCal.addEvent(e));
-  }
-  // Refresh list if visible
-  if (currentView === 'list') renderMonthList();
-}
-
-// ─────────────────────────────────────────────────────────────
-// MASTER CALENDAR
-// ─────────────────────────────────────────────────────────────
-function initMasterCal() {
-  masterCal = new FullCalendar.Calendar(document.getElementById('master-calendar'), {
-    initialView: 'dayGridMonth',
-    initialDate: '2026-08-01',
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth' },
-    height: 680,
-    events: nonDailyEvents(),
-    eventClassNames(arg) {
-      const t = arg.event.title.toLowerCase();
-      if (t.includes('break') || t.includes('vacation') || t.includes('holiday') || t.includes('no school') || t.includes('no classes')) return ['break-row'];
-      return [];
-    },
-    eventDidMount(info) { info.el.title = info.event.title; },
-    eventClick(info) {
-      if (!editMode) return;
-      const ev = ALL_EVENTS.find(e => e.title === info.event.title && e.start === info.event.startStr.split('T')[0]);
-      if (ev) {
-        hideEvent(eventKey(ev));
-        info.event.remove();
-        renderUpcoming();
-        if (currentView === 'list') renderMonthList();
-      }
-    }
-  });
-  masterCal.render();
-}
-
-// ─────────────────────────────────────────────────────────────
-// ALL-KIDS-OUT PERIODS (all 3 schools simultaneously on break)
-// ─────────────────────────────────────────────────────────────
 const ALL_KIDS_OUT = [
   { start: '2026-09-04', end: '2026-09-07', label: 'All Out — Fri Sep 4 + Labor Day Weekend (Tenacre not yet started)' },
   { start: '2026-10-12', end: '2026-10-12', label: 'Columbus / Indigenous Peoples Day' },
@@ -816,246 +513,6 @@ const ALL_KIDS_OUT = [
   { start: '2027-05-31', end: '2027-05-31', label: 'Memorial Day' },
 ];
 
-function fmtDate(d) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function getMonthAllOut(ym) {
-  return ALL_KIDS_OUT.filter(ao => {
-    const [y, m] = ym.split('-');
-    const startYm = ao.start.substring(0, 7);
-    const endYm   = ao.end.substring(0, 7);
-    return ym >= startYm && ym <= endYm;
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// MONTH LIST VIEW
-// ─────────────────────────────────────────────────────────────
-const MONTHS = [
-  '2026-08','2026-09','2026-10','2026-11','2026-12',
-  '2027-01','2027-02','2027-03','2027-04','2027-05','2027-06'
-];
-const MONTH_LABELS = {
-  '2026-08': 'August 2026',   '2026-09': 'September 2026', '2026-10': 'October 2026',
-  '2026-11': 'November 2026', '2026-12': 'December 2026',  '2027-01': 'January 2027',
-  '2027-02': 'February 2027', '2027-03': 'March 2027',     '2027-04': 'April 2027',
-  '2027-05': 'May 2027',      '2027-06': 'June 2027'
-};
-
-let listFilter = 'all';
-let showSports = false;
-const showPractice = { tommy: false, emily: false, sophie: false };
-
-function toggleSports() {
-  showSports = !showSports;
-  const btn = document.getElementById('sports-toggle-btn');
-  if (showSports) {
-    btn.classList.add('sports-on');
-    btn.textContent = '🏆 Sports On';
-  } else {
-    btn.classList.remove('sports-on');
-    btn.textContent = '🏆 Show Sports';
-  }
-  renderMonthList();
-}
-
-function togglePractice(kid) {
-  showPractice[kid] = !showPractice[kid];
-  const btn = document.getElementById('practice-' + kid[0] + '-btn');
-  const labels = { tommy: 'T', emily: 'E', sophie: 'S' };
-  if (showPractice[kid]) {
-    btn.classList.add('practice-on');
-    btn.textContent = '🏃 ' + labels[kid] + ' On';
-  } else {
-    btn.classList.remove('practice-on');
-    btn.textContent = '🏃 ' + labels[kid];
-  }
-  refreshAllViews();
-}
-
-function renderMonthList() {
-  const evs = visibleEvents().filter(e => {
-    if (e.level === 'daily') return false;
-    if (e.level === 'practice' && !showPractice[e.kid]) return false;
-    if (listFilter !== 'all' && e.kid !== listFilter) return false;
-    if (!showSports && e.level === 'operational') return false;
-    return true;
-  });
-
-  // Group by date
-  const byDate = {};
-  evs.forEach(e => {
-    const d = e.start;
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(e);
-  });
-
-  const html = MONTHS.map(ym => {
-    const label = MONTH_LABELS[ym];
-
-    // all-kids-out banners for this month
-    const allOutPeriods = getMonthAllOut(ym);
-    const banners = allOutPeriods.map(ao => {
-      const isSingle = ao.start === ao.end;
-      const dateStr = isSingle ? fmtDate(ao.start) : `${fmtDate(ao.start)} – ${fmtDate(ao.end)}`;
-      return `<div class="all-out-banner">
-        <span class="ao-icon">🏖️</span>
-        <div>
-          <div class="ao-label">All 3 Kids Out — ${ao.label}</div>
-          <div class="ao-range">${dateStr}</div>
-        </div>
-      </div>`;
-    }).join('');
-
-    // dates in this month with events
-    const dates = Object.keys(byDate)
-      .filter(d => d.startsWith(ym))
-      .sort();
-
-    if (!dates.length && !banners) return `
-      <div class="month-block">
-        <div class="month-heading">${label}</div>
-        <div class="ml-empty">No key dates this month</div>
-      </div>`;
-
-    const rows = dates.map(d => {
-      const dayLabel = fmtDate(d);
-      const pills = byDate[d].map(ev => {
-        const isOp = ev.level === 'operational';
-        const isPrac = ev.level === 'practice';
-        const cls = isOp ? 'sports' : isPrac ? 'practice' : ev.kid === 'tommy' ? 'tommy' : ev.kid === 'emily' ? 'emily' : ev.kid === 'sophie' ? 'sophie' : 'noschool';
-        const key = eventKey(ev).replace(/'/g, "\\'");
-        return `<span class="ml-pill ${cls}" data-key="${key}">
-          ${ev.title}
-          <span class="del-x" title="Hide this event" onclick="hideFromList('${key}')">✕</span>
-        </span>`;
-      }).join('');
-      return `<div class="ml-row"><span class="ml-date">${dayLabel}</span><div class="ml-pills">${pills}</div></div>`;
-    }).join('');
-
-    return `<div class="month-block">
-      <div class="month-heading">${label} <span>${dates.length} date${dates.length > 1 ? 's' : ''}</span></div>
-      ${banners}
-      <div class="month-events">${rows}</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('month-list-body').innerHTML = html;
-}
-
-function hideFromList(key) {
-  hiddenKeys.add(key);
-  saveHidden();
-  renderMonthList();
-  // also refresh calendars
-  if (familyCal) { familyCal.removeAllEvents(); getFilteredEvents().forEach(e => familyCal.addEvent(e)); renderUpcoming(); }
-  if (masterCal) { masterCal.removeAllEvents(); visibleEvents().forEach(e => masterCal.addEvent(e)); }
-}
-
-// list filter tabs
-document.querySelectorAll('.lf-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    listFilter = btn.dataset.lf;
-    document.querySelectorAll('.lf-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderMonthList();
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
-// FAMILY CALENDAR
-// ─────────────────────────────────────────────────────────────
-let activeKid = 'all';
-
-function nonDailyEvents() {
-  return visibleEvents().filter(e => {
-    if (e.level === 'daily') return false;
-    if (e.level === 'practice' && !showPractice[e.kid]) return false;
-    return true;
-  });
-}
-
-function getFilteredEvents() {
-  const evs = nonDailyEvents();
-  if (activeKid === 'all') return evs;
-  return evs.filter(e => e.kid === activeKid);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Today label
-  const now = new Date();
-  document.getElementById('today-label').textContent =
-    now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-
-  updateRestoreBtn();
-
-  // Family Calendar
-  familyCal = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    initialView: 'dayGridMonth',
-    initialDate: '2026-08-01',
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-    height: 540,
-    events: getFilteredEvents(),
-    eventMouseEnter(info) { info.el.title = info.event.title; },
-    eventClick(info) {
-      if (!editMode) return;
-      const ev = ALL_EVENTS.find(e => e.title === info.event.title && e.start === info.event.startStr.split('T')[0]);
-      if (ev) {
-        hideEvent(eventKey(ev));
-        info.event.remove();
-        renderUpcoming();
-        if (masterCal) masterCal.getEventById && masterCal.removeAllEvents() && visibleEvents().forEach(e => masterCal.addEvent(e));
-      }
-    }
-  });
-  familyCal.render();
-
-  renderUpcoming();
-
-  // Filter tabs (header)
-  document.querySelectorAll('.filter-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const kid = btn.dataset.kid;
-      activeKid = kid;
-      document.querySelectorAll('.filter-tab').forEach(b => b.className = 'filter-tab');
-      btn.classList.add('active-' + kid);
-      familyCal.removeAllEvents();
-      getFilteredEvents().forEach(e => familyCal.addEvent(e));
-      renderUpcoming();
-    });
-  });
-});
-
-function renderUpcoming() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 60);
-  const evs = getFilteredEvents()
-    .filter(e => { const d = new Date(e.start); return d >= today && d <= cutoff; })
-    .sort((a,b) => new Date(a.start) - new Date(b.start))
-    .slice(0, 12);
-
-  const el = document.getElementById('upcoming-list');
-  if (!evs.length) {
-    el.innerHTML = '<p style="font-size:11px;color:#64748b">No events in next 60 days.</p>';
-    return;
-  }
-  el.innerHTML = evs.map(e => {
-    const d = new Date(e.start + 'T00:00:00');
-    const label = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-    return `<div class="ev-item">
-      <span class="ev-dot" style="background:${e.color}"></span>
-      <div>
-        <div class="ev-title">${e.title}</div>
-        <div class="ev-date">${label}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ─────────────────────────────────────────────────────────────
-// TRACKING TAB — registration events to watch
-// ─────────────────────────────────────────────────────────────
 const TRACKING_ITEMS = [
   // Tommy — Class of 2030
   { kid: 'tommy', name: 'Future Phenoms Newport (ML8)', dates: 'Jul 20–21, 2026',
@@ -1082,34 +539,352 @@ const TRACKING_ITEMS = [
     note: 'Class of 2032 · Check site for 2027 regional dates', status: 'watch' },
 ];
 
-function renderTracking() {
-  const byKid = {
-    tommy: { label: '🥍 Tommy — Class of 2030', color: '#3b82f6', items: TRACKING_ITEMS.filter(i => i.kid === 'tommy') },
-    emily: { label: '🥍 Emily — Class of 2032',  color: '#ec4899', items: TRACKING_ITEMS.filter(i => i.kid === 'emily') },
+const MONTHS = [
+  '2026-08','2026-09','2026-10','2026-11','2026-12',
+  '2027-01','2027-02','2027-03','2027-04','2027-05','2027-06'
+];
+const MONTH_LABELS = {
+  '2026-08': 'August 2026',   '2026-09': 'September 2026', '2026-10': 'October 2026',
+  '2026-11': 'November 2026', '2026-12': 'December 2026',  '2027-01': 'January 2027',
+  '2027-02': 'February 2027', '2027-03': 'March 2027',     '2027-04': 'April 2027',
+  '2027-05': 'May 2027',      '2027-06': 'June 2027'
+};
+
+
+// ─── HELPERS ────────────────────────────────
+function initial(kid){ return kid==='tommy'?'T':kid==='emily'?'E':kid==='sophie'?'S':'·'; }
+
+function eventType(e){
+  if(e.level==='operational') return /Practice/i.test(e.title) ? 'practice' : (/Game/i.test(e.title) ? 'game' : 'tournament');
+  if(e.level==='practice') return 'practice';
+  if(e.level==='daily') return 'daily';
+  if(e.color===X) return 'noschool';
+  return 'academic';
+}
+
+function sourceUrl(e){
+  const t=e.title;
+  if(t.startsWith('RL:')) return 'https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar';
+  if(t.startsWith('NCDS:')) return 'https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs';
+  if(t.startsWith('Tenacre:')) return 'https://www.tenacreschool.org/parents-current-families/school-calendar';
+  if(/Achievelax/i.test(t)) return 'https://www.achievelax.com/leagues-4/fall-and-winter-indoor-leagues/';
+  if(/ME: Practice/i.test(t)) return 'https://www.masselite.com/team/schedules/practice-schedule/';
+  if(/ME:/.test(t)) return 'https://www.masselite.com/team/schedules/tournament-schedule/';
+  if(/WPC/i.test(t)) return 'https://go.teamsnap.com/';
+  if(/LX:|Laxachusetts|Jr Minutemen|MinuteMen/i.test(t)) return 'https://www.jrminutemenlax.net/page/show/4976531-2025-2026-winter-skills-training-calendar-';
+  return null;
+}
+
+function displayTitle(e){
+  if(/^[TES] — /.test(e.title)) return e.title;
+  const ini = initial(e.kid);
+  if(!ini || ini==='·') return e.title;
+  return ini + ' — ' + e.title;
+}
+
+function eventKey(e){ return e.title + '|' + e.start; }
+
+// ─── STATE ──────────────────────────────────
+let hiddenKeys = new Set(JSON.parse(localStorage.getItem('sked_hidden')||'[]'));
+let editMode = false;
+let activeKid = 'all';
+let showSports = false;
+let showPractice = false;
+let currentView = 'monthly';
+
+// ─── HIDE/RESTORE ───────────────────────────
+function saveHidden(){ localStorage.setItem('sked_hidden', JSON.stringify([...hiddenKeys])); updateRestoreBtn(); }
+function updateRestoreBtn(){
+  const n=hiddenKeys.size;
+  document.getElementById('hidden-count').textContent=n;
+  document.getElementById('restore-btn').style.display = n>0 ? '' : 'none';
+}
+document.getElementById('restore-btn').onclick = ()=>{ hiddenKeys.clear(); saveHidden(); refreshAll(); };
+
+function toggleEdit(){
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  document.getElementById('edit-toggle-btn').classList.toggle('active', editMode);
+  document.getElementById('edit-toggle-btn').textContent = editMode ? '✏️ Editing' : '✏️ Edit';
+}
+document.getElementById('edit-toggle-btn').onclick = toggleEdit;
+
+// ─── FILTERING ──────────────────────────────
+function passesFilter(e){
+  if(hiddenKeys.has(eventKey(e))) return false;
+  if(activeKid !== 'all' && e.kid !== activeKid) return false;
+  const t = eventType(e);
+  if(t==='daily') return false;
+  if(t==='tournament' || t==='game') return showSports;
+  if(t==='practice') return showPractice;
+  return true; // academic + noschool always shown
+}
+
+function passesOverview(e){
+  if(hiddenKeys.has(eventKey(e))) return false;
+  if(activeKid !== 'all' && e.kid !== activeKid) return false;
+  const t = eventType(e);
+  // Overview is strategic: only academic + noschool, or tournaments if sports toggled
+  if(t==='academic' || t==='noschool') return true;
+  if((t==='tournament' || /Showcase|Tournament/i.test(e.title)) && showSports) return true;
+  return false;
+}
+
+// ─── FC EVENT BUILDER ───────────────────────
+function toFcEvent(e){
+  const type = eventType(e);
+  const ini = initial(e.kid);
+  return {
+    title: displayTitle(e),
+    start: e.start,
+    end: e.end,
+    allDay: true,
+    url: sourceUrl(e) || undefined,
+    classNames: ['type-' + type, 'k-' + (e.kid || 'x')],
+    extendedProps: { raw: e, type, ini }
   };
+}
 
-  const badgeLabel = { active: '🟢 Now', upcoming: 'Register', watch: '👁 Watch', past: 'Past' };
+// ─── CALENDARS ──────────────────────────────
+let calAnnual, calMonthly, calWeekly, calDaily;
 
-  document.getElementById('tracking-body').innerHTML = Object.values(byKid).map(s => `
-    <div class="tracking-kid-section">
-      <div class="tracking-kid-header">
-        <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0"></span>
-        <span class="tracking-kid-name">${s.label}</span>
+function commonCalOpts(view){
+  return {
+    initialView: view,
+    height: 'auto',
+    firstDay: 0,
+    eventClick: function(info){
+      if(editMode){
+        info.jsEvent.preventDefault();
+        hiddenKeys.add(eventKey(info.event.extendedProps.raw));
+        saveHidden();
+        refreshAll();
+        return;
+      }
+      if(!info.event.url){ info.jsEvent.preventDefault(); }
+    },
+    eventContent: function(arg){
+      const ini = arg.event.extendedProps.ini;
+      const title = arg.event.title.replace(/^[TES] — /,'');
+      return { html: `<div class="evt"><span class="ini ${ini}">${ini}</span><span class="txt">${title}</span></div>` };
+    },
+    events: []
+  };
+}
+
+function loadEvents(cal){
+  cal.removeAllEvents();
+  ALL_EVENTS.filter(passesFilter).forEach(e => cal.addEvent(toFcEvent(e)));
+}
+
+function initCals(){
+  const a = document.getElementById('cal-annual');
+  calAnnual = new FullCalendar.Calendar(a, {
+    ...commonCalOpts('multiMonthYear'),
+    initialDate: '2026-09-01',
+    multiMonthMaxColumns: 3,
+    headerToolbar: { left:'prev,next today', center:'title', right:'' }
+  });
+
+  calMonthly = new FullCalendar.Calendar(document.getElementById('cal-monthly'), {
+    ...commonCalOpts('dayGridMonth'),
+    initialDate: getInitialDate(),
+    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth' },
+    dayMaxEventRows: 6
+  });
+
+  calWeekly = new FullCalendar.Calendar(document.getElementById('cal-weekly'), {
+    ...commonCalOpts('dayGridWeek'),
+    initialDate: getInitialDate(),
+    headerToolbar: { left:'prev,next today', center:'title', right:'' }
+  });
+
+  calDaily = new FullCalendar.Calendar(document.getElementById('cal-daily'), {
+    ...commonCalOpts('dayGridDay'),
+    initialDate: getInitialDate(),
+    headerToolbar: { left:'prev,next today', center:'title', right:'' }
+  });
+}
+
+function getInitialDate(){
+  const now = new Date();
+  // Anchor to schedule range
+  if(now < new Date('2026-08-01')) return '2026-09-01';
+  if(now > new Date('2027-06-30')) return '2027-05-01';
+  return now.toISOString().slice(0,10);
+}
+
+function renderCurrentCal(){
+  if(currentView==='annual'){ loadEvents(calAnnual); calAnnual.render(); }
+  if(currentView==='monthly'){ loadEvents(calMonthly); calMonthly.render(); }
+  if(currentView==='weekly'){ loadEvents(calWeekly); calWeekly.render(); }
+  if(currentView==='daily'){ loadEvents(calDaily); calDaily.render(); }
+}
+
+// ─── OVERVIEW ───────────────────────────────
+function fmtDate(d){ return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+
+function getMonthAllOut(ym){
+  return ALL_KIDS_OUT.filter(ao => {
+    const s=ao.start.slice(0,7), e=ao.end.slice(0,7);
+    return ym>=s && ym<=e;
+  });
+}
+
+function renderOverview(){
+  // Scorecard
+  const stats = { tommy:0, emily:0, sophie:0, tournaments:0, practices:0, noSchoolDays:0 };
+  ALL_EVENTS.forEach(e => {
+    if(hiddenKeys.has(eventKey(e))) return;
+    const t = eventType(e);
+    if(t==='daily') return;
+    if(e.kid==='tommy') stats.tommy++;
+    if(e.kid==='emily') stats.emily++;
+    if(e.kid==='sophie') stats.sophie++;
+    if(t==='tournament' || t==='game') stats.tournaments++;
+    if(t==='practice') stats.practices++;
+    if(t==='noschool') stats.noSchoolDays++;
+  });
+  document.getElementById('scorecard').innerHTML = `
+    <div class="score-cell"><h4>Tommy</h4><div class="n t">${stats.tommy}</div><div class="sub">events tracked</div></div>
+    <div class="score-cell"><h4>Emily</h4><div class="n e">${stats.emily}</div><div class="sub">events tracked</div></div>
+    <div class="score-cell"><h4>Sophie</h4><div class="n s">${stats.sophie}</div><div class="sub">events tracked</div></div>
+    <div class="score-cell"><h4>🏆 Sports</h4><div class="n" style="color:#fcd34d">${stats.tournaments}</div><div class="sub">games/tournaments</div></div>
+    <div class="score-cell"><h4>🏃 Practices</h4><div class="n" style="color:#94a3b8">${stats.practices}</div><div class="sub">total sessions</div></div>
+    <div class="score-cell"><h4>🏖️ No-School</h4><div class="n" style="color:#cbd5e1">${stats.noSchoolDays}</div><div class="sub">days</div></div>
+  `;
+
+  // Data sources
+  document.getElementById('data-sources').innerHTML = `
+    <div class="ov-kid">
+      <div class="ov-kid-h"><span class="dot" style="background:#3b82f6"></span>Tommy — Class of 2030</div>
+      <div class="ov-kid-src">
+        📘 <a href="https://roxburylatin.myschoolapp.com/app/parent?svcid=edu#calendar" target="_blank">Roxbury Latin</a> — academic<br>
+        🥍 <a href="https://www.jrminutemenlax.net/page/show/4976531-2025-2026-winter-skills-training-calendar-" target="_blank">Laxachusetts</a> — training + tournaments
       </div>
+    </div>
+    <div class="ov-kid">
+      <div class="ov-kid-h"><span class="dot" style="background:#ec4899"></span>Emily — Class of 2032</div>
+      <div class="ov-kid-src">
+        📗 <a href="https://www.newtoncountryday.org/about/calendar/key-dates-and-faqs" target="_blank">Newton Country Day</a> — academic<br>
+        🥍 <a href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">Mass Elite</a> — tournaments + <a href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">practices</a><br>
+        ⚽ <a href="https://go.teamsnap.com/" target="_blank">WPC Soccer</a> — practices via TeamSnap
+      </div>
+    </div>
+    <div class="ov-kid">
+      <div class="ov-kid-h"><span class="dot" style="background:#10b981"></span>Sophie — Class of 2034</div>
+      <div class="ov-kid-src">
+        📙 <a href="https://www.tenacreschool.org/parents-current-families/school-calendar" target="_blank">Tenacre</a> — academic<br>
+        🥍 <a href="https://www.masselite.com/team/schedules/tournament-schedule/" target="_blank">Mass Elite</a> — tournaments + <a href="https://www.masselite.com/team/schedules/practice-schedule/" target="_blank">practices</a><br>
+        🏆 <a href="https://www.achievelax.com/leagues-4/fall-and-winter-indoor-leagues/" target="_blank">Achieve Lax</a> — indoor sessions
+      </div>
+    </div>
+  `;
+
+  // Overview body — academic left, sports right
+  const evs = ALL_EVENTS.filter(passesOverview);
+  const byDate = {};
+  evs.forEach(e => { (byDate[e.start] = byDate[e.start] || []).push(e); });
+
+  const html = MONTHS.map(ym => {
+    const label = MONTH_LABELS[ym];
+    const banners = getMonthAllOut(ym).map(ao => {
+      const dr = ao.start===ao.end ? fmtDate(ao.start) : `${fmtDate(ao.start)} – ${fmtDate(ao.end)}`;
+      return `<div class="all-out-banner"><span style="font-size:18px">🏖️</span><div><div class="ao-label">All 3 Kids Out — ${ao.label}</div><div class="ao-range">${dr}</div></div></div>`;
+    }).join('');
+    const dates = Object.keys(byDate).filter(d => d.startsWith(ym)).sort();
+    if(!dates.length && !banners) return `<div class="ov-month"><div class="ov-month-h">${label}<span style="font-size:11px;font-weight:400;color:#475569">No dates</span></div></div>`;
+    const rows = dates.map(d => {
+      const dayLabel = fmtDate(d);
+      const acad = [], sport = [];
+      byDate[d].forEach(ev => {
+        const t = eventType(ev);
+        const url = sourceUrl(ev);
+        const ini = initial(ev.kid);
+        const key = eventKey(ev).replace(/'/g,"\\'");
+        const pill = `<a class="ov-pill type-${t} k-${ev.kid}" ${url?`href="${url}" target="_blank"`:''}>
+          <span class="ini ${ini}" style="font-weight:900;padding:0 4px;border-radius:3px;background:rgba(0,0,0,.25)">${ini}</span>
+          <span>${ev.title.replace(/^[TES] — /,'')}</span>
+          <span class="del-x" onclick="event.preventDefault();event.stopPropagation();hideOne('${key}')">✕</span>
+        </a>`;
+        if(t==='tournament' || t==='game') sport.push(pill); else acad.push(pill);
+      });
+      return `<div class="ov-row"><span class="ov-date">${dayLabel}</span><div class="ov-col">${acad.join('')}</div><div class="ov-col right">${sport.join('')}</div></div>`;
+    }).join('');
+    return `<div class="ov-month"><div class="ov-month-h">${label}<span style="font-size:11px;font-weight:400;color:#475569">${dates.length} date${dates.length!==1?'s':''}</span></div>${banners}<div>${rows}</div></div>`;
+  }).join('');
+  document.getElementById('overview-body').innerHTML = html;
+}
+
+function hideOne(key){ hiddenKeys.add(key); saveHidden(); refreshAll(); }
+
+// ─── TRACKING ───────────────────────────────
+function renderTracking(){
+  const byKid = {
+    tommy: { label:'🥍 Tommy — Class of 2030', color:'#3b82f6', items: TRACKING_ITEMS.filter(i=>i.kid==='tommy') },
+    emily: { label:'🥍 Emily — Class of 2032', color:'#ec4899', items: TRACKING_ITEMS.filter(i=>i.kid==='emily') }
+  };
+  const badgeLabel = { active:'🟢 Now', upcoming:'Register', watch:'👁 Watch', past:'Past' };
+  document.getElementById('tracking-body').innerHTML = Object.values(byKid).map(s => `
+    <div style="margin-bottom:28px">
+      <div class="tr-kid-h"><span style="width:10px;height:10px;border-radius:50%;background:${s.color}"></span>${s.label}</div>
       ${s.items.map(e => `
         <div class="tr-row">
-          <div>
-            <div class="tr-name">${e.name}</div>
-            <div class="tr-dates">📅 ${e.dates}</div>
-            <div class="tr-note">${e.note}</div>
-          </div>
-          <div class="tr-right">
-            <span class="tr-badge ${e.status}">${badgeLabel[e.status]}</span>
-            <a class="tr-link" href="${e.url}" target="_blank">↗ Details</a>
-          </div>
+          <div><div class="tr-name">${e.name}</div><div class="tr-dates">📅 ${e.dates}</div><div class="tr-note">${e.note}</div></div>
+          <div class="tr-right"><span class="tr-badge ${e.status}">${badgeLabel[e.status]}</span><a class="tr-link" href="${e.url}" target="_blank">↗ Details</a></div>
         </div>`).join('')}
     </div>`).join('');
 }
+
+// ─── VIEW SWITCH ────────────────────────────
+function switchView(v){
+  currentView = v;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  ['annual','monthly','weekly','daily','overview','tracking'].forEach(name => {
+    document.getElementById(name + '-view').style.display = (name === v ? '' : 'none');
+  });
+  // Filter bar shown for all except tracking
+  document.getElementById('filter-bar').style.display = v==='tracking' ? 'none' : '';
+  if(v==='overview') renderOverview();
+  else if(v==='tracking') renderTracking();
+  else renderCurrentCal();
+}
+
+document.querySelectorAll('.view-btn').forEach(b => b.onclick = ()=>switchView(b.dataset.view));
+
+// Kid filter
+document.querySelectorAll('.fb-btn[data-kid]').forEach(b => b.onclick = ()=>{
+  activeKid = b.dataset.kid;
+  document.querySelectorAll('.fb-btn[data-kid]').forEach(x => x.classList.toggle('active', x.dataset.kid === activeKid));
+  refreshAll();
+});
+
+// Sports/practice toggles
+document.getElementById('sports-toggle').onclick = ()=>{
+  showSports = !showSports;
+  document.getElementById('sports-toggle').classList.toggle('active', showSports);
+  refreshAll();
+};
+document.getElementById('practice-toggle').onclick = ()=>{
+  showPractice = !showPractice;
+  document.getElementById('practice-toggle').classList.toggle('active', showPractice);
+  refreshAll();
+};
+
+function refreshAll(){
+  if(currentView==='overview') renderOverview();
+  else if(currentView==='tracking') renderTracking();
+  else renderCurrentCal();
+}
+
+// ─── INIT ───────────────────────────────────
+document.getElementById('today-label').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+updateRestoreBtn();
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  initCals();
+  switchView('monthly');
+});
 </script>
 </body>
 </html>
