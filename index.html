@@ -175,6 +175,49 @@
     .chip { font-size:11px; padding:4px 8px; }
     .evt { font-size:10px; }
   }
+/* ANNUAL big view */
+.annual-grid-big { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+.ann-month { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
+.ann-month h3 { margin:0 0 10px; font-size:16px; cursor:pointer; color:#1f2937; }
+.ann-month h3:hover { color:var(--T); text-decoration:underline; }
+.ann-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.ann-mh { font-size:11px; color:#6b7280; text-align:center; font-weight:600; padding:3px 0; }
+.ann-day { aspect-ratio:1; min-height:38px; border:1px solid #f3f4f6; border-radius:6px; padding:4px; font-size:12px; cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; background:#fafafa; }
+.ann-day:hover { background:#eff6ff; border-color:var(--T); }
+.ann-day.other { color:#d1d5db; background:#fff; }
+.ann-day.today { background:#fef3c7; border-color:#f59e0b; font-weight:700; }
+.ann-dots { display:flex; gap:2px; flex-wrap:wrap; }
+.ann-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+.ann-dot.T { background:var(--T);} .ann-dot.E { background:var(--E);} .ann-dot.S { background:var(--S);} .ann-dot.F { background:var(--F);}
+@media(max-width:900px){ .annual-grid-big { grid-template-columns:repeat(2,1fr);} }
+@media(max-width:600px){ .annual-grid-big { grid-template-columns:1fr;} }
+
+/* OVERVIEW list view */
+.ov-month-block { margin:24px 0; }
+.ov-month-h { margin:0 0 8px; font-size:20px; color:#111827; border-bottom:2px solid #e5e7eb; padding-bottom:6px; }
+.ov-list-header, .ov-list-row {
+  display:grid;
+  grid-template-columns: 130px 1fr 1fr 1fr 1.5fr;
+  gap:10px;
+  padding:8px 10px;
+  align-items:start;
+}
+.ov-list-header { font-weight:700; font-size:12px; text-transform:uppercase; color:#6b7280; background:#f9fafb; border-radius:6px; }
+.ov-list-row { border-bottom:1px solid #f3f4f6; font-size:13px; }
+.ov-list-row.all-off-row { background:#fef3c7; }
+.ov-date { font-weight:600; color:#374151; }
+.ov-school, .ov-tour { display:flex; flex-direction:column; gap:4px; }
+.ov-acad-item { background:#f3f4f6; padding:3px 7px; border-radius:4px; font-size:12px; }
+.ov-acad-item.off { background:#fee2e2; color:#991b1b; font-weight:600; }
+.ov-acad-item a, .ov-tour-item a { color:inherit; text-decoration:none; }
+.ov-acad-item a:hover, .ov-tour-item a:hover { text-decoration:underline; }
+.ov-tour-item { background:#fef9c3; padding:3px 7px; border-radius:4px; font-size:12px; border-left:3px solid var(--tournament, #eab308); }
+.ov-tour-item .init { font-weight:700; margin-right:4px; }
+.ov-empty { color:#d1d5db; font-size:12px; }
+@media(max-width:720px){
+  .ov-month-block { overflow-x:auto; }
+  .ov-list-header, .ov-list-row { min-width:820px; }
+}
 </style>
 </head>
 <body>
@@ -185,10 +228,10 @@
 </header>
 
 <nav class="tabs">
-  <button data-view="annual">📆 Annual</button>
   <button data-view="monthly" class="active">🗓️ Monthly</button>
   <button data-view="weekly">📅 Weekly</button>
   <button data-view="daily">📍 Daily</button>
+  <button data-view="annual">📆 Annual</button>
   <button data-view="overview">📋 Overview</button>
   <button data-view="tracking">📌 Tracking</button>
 </nav>
@@ -658,6 +701,9 @@ function fmtTime(iso) {
   h = h % 12 || 12;
   return m ? `${h}:${String(m).padStart(2,'0')}${ap}` : `${h}${ap}`;
 }
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function dateKey(d) {
   return d.toISOString().slice(0,10);
 }
@@ -750,32 +796,30 @@ function renderMonthly() {
 }
 
 function renderAnnual() {
-  const startY = currentDate.getFullYear(), startM = currentDate.getMonth();
+  // Always start at CURRENT calendar month (not tracked currentDate)
+  const today = new Date();
+  const startY = today.getFullYear(), startM = today.getMonth();
   const idx = buildIndex(allEvents().filter(passesFilter));
-  const todayKey = dateKey(new Date());
-  let html = `<div class="nav-bar">
-    <button data-nav="prev">‹ Prev year</button>
-    <button data-nav="today">Reset</button>
-    <button data-nav="next">Next year ›</button>
-    <h2>12 months from ${new Date(startY,startM,1).toLocaleString('en-US',{month:'long',year:'numeric'})}</h2>
-  </div><div class="annual-grid">`;
+  const todayKey = dateKey(today);
+  let html = `<div class="nav-bar"><h2>Next 12 Months</h2></div><div class="annual-grid-big">`;
   for (let mi = 0; mi < 12; mi++) {
     const d0 = new Date(startY, startM+mi, 1);
     const y = d0.getFullYear(), m = d0.getMonth();
     const startDay = d0.getDay();
-    const daysInMonth = new Date(y,m+1,0).getDate();
     const gridStart = new Date(y,m,1-startDay);
-    const monthName = d0.toLocaleString('en-US',{month:'short',year:'numeric'});
-    html += `<div class="mini-month"><h3 data-jump="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="mini-grid">`;
-    ['S','M','T','W','T','F','S'].forEach(x => html += `<div class="mh">${x}</div>`);
+    const monthName = d0.toLocaleString('en-US',{month:'long',year:'numeric'});
+    html += `<div class="ann-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="ann-grid">`;
+    ['S','M','T','W','T','F','S'].forEach(x => html += `<div class="ann-mh">${x}</div>`);
     for (let i = 0; i < 42; i++) {
       const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
       const k = dateKey(d);
       const inMonth = d.getMonth() === m;
       const isToday = k === todayKey;
-      const kids = new Set((idx[k]||[]).map(e => e.kid));
-      const dots = ['T','E','S','F'].filter(x => kids.has(x)).map(x => `<span class="dot ${x}"></span>`).join('');
-      html += `<div class="mini-day ${inMonth?'':'other'} ${isToday?'today':''}">${d.getDate()}<div class="dots">${dots}</div></div>`;
+      const dayEvts = idx[k]||[];
+      const kids = new Set(dayEvts.map(e => e.kid));
+      const dots = ['T','E','S','F'].filter(x => kids.has(x)).map(x => `<span class="ann-dot ${x}"></span>`).join('');
+      const count = dayEvts.length;
+      html += `<div class="ann-day ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}" title="${k}${count?` — ${count} event${count>1?'s':''}`:''}">${d.getDate()}<div class="ann-dots">${dots}</div></div>`;
     }
     html += `</div></div>`;
   }
@@ -843,113 +887,135 @@ function renderDaily() {
   document.getElementById('view-daily').innerHTML = html;
 }
 
+function schoolOf(e) {
+  const t = e.title || '';
+  if (t.startsWith('RL:') || t.startsWith('RL ')) return 'RL';
+  if (t.startsWith('NCDS:') || t.startsWith('NCDS ')) return 'NCDS';
+  if (t.startsWith('Tenacre:') || t.startsWith('Tenacre ')) return 'Tenacre';
+  if (e.kid === 'T') return 'RL';
+  if (e.kid === 'E') return 'NCDS';
+  if (e.kid === 'S') return 'Tenacre';
+  return '';
+}
+
 function renderOverview() {
+  const today = new Date();
+  const startY = today.getFullYear(), startM = today.getMonth();
+  const rangeStart = new Date(startY, startM, 1);
+  const rangeEnd = new Date(startY, startM+12, 0);
+
   const evts = allEvents().filter(e => !hiddenIds.has(e.id));
-  // Compute "all kids off" days: date has a no-school for T AND E AND S
+  // Gather academic (academic + noschool) and tournaments in range
+  const byDate = {}; // dateKey -> { acad: [], tour: [] }
+  function bucket(k) { return byDate[k] = byDate[k] || { acad: [], tour: [] }; }
   const offByKid = { T:new Set(), E:new Set(), S:new Set() };
-  const academicByDate = {};
-  const tournaments = [];
+
   evts.forEach(e => {
-    if (e.type === 'noschool' && offByKid[e.kid]) {
-      eventDates(e).forEach(k => offByKid[e.kid].add(k));
-    }
+    const inRange = (k) => {
+      const d = new Date(k);
+      return d >= rangeStart && d <= rangeEnd;
+    };
     if (e.type === 'academic' || e.type === 'noschool') {
-      eventDates(e).forEach(k => { (academicByDate[k] = academicByDate[k] || []).push(e); });
-    }
-    if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') {
-      tournaments.push(e);
+      eventDates(e).forEach(k => {
+        if (!inRange(k)) return;
+        bucket(k).acad.push(e);
+        if (e.type === 'noschool' && offByKid[e.kid]) offByKid[e.kid].add(k);
+      });
+    } else if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') {
+      const k = (e.start||'').slice(0,10);
+      if (k && inRange(k)) bucket(k).tour.push(e);
     }
   });
-  const allOffDays = [...offByKid.T].filter(d => offByKid.E.has(d) && offByKid.S.has(d)).sort();
 
-  // Build 12-month view starting from current month
-  const startY = currentDate.getFullYear(), startM = currentDate.getMonth();
-  const todayKey = dateKey(new Date());
+  const allDates = Object.keys(byDate).sort();
+  const allOffDays = [...offByKid.T].filter(d => offByKid.E.has(d) && offByKid.S.has(d));
 
-  function buildMonth(y, m) {
-    const monthName = new Date(y,m,1).toLocaleString('en-US',{month:'long',year:'numeric'});
-    const startDay = new Date(y,m,1).getDay();
-    const daysInMonth = new Date(y,m+1,0).getDate();
-    const gridStart = new Date(y,m,1-startDay);
-    let cells = '';
-    ['S','M','T','W','T','F','S'].forEach(x => cells += `<div class="mh">${x}</div>`);
-    for (let i=0; i<42; i++) {
-      const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
-      const k = dateKey(d);
-      const inMonth = d.getMonth() === m;
-      const isToday = k === todayKey;
-      const allOff = allOffDays.includes(k);
-      const offT = offByKid.T.has(k), offE = offByKid.E.has(k), offS = offByKid.S.has(k);
-      const anyOff = offT || offE || offS;
-      let cls = 'ovcell';
-      if (!inMonth) cls += ' other';
-      if (isToday) cls += ' today';
-      if (allOff) cls += ' all-off';
-      else if (anyOff) cls += ' some-off';
-      const dots = [offT&&'T',offE&&'E',offS&&'S'].filter(Boolean).map(x => `<span class="dot ${x}"></span>`).join('');
-      cells += `<div class="${cls}" title="${k}">${d.getDate()}<div class="dots">${dots}</div></div>`;
-    }
-    // Month tournaments
-    const monthTours = tournaments.filter(t => {
-      const td = new Date(t.start.slice(0,10));
-      return td.getFullYear()===y && td.getMonth()===m;
-    }).sort((a,b) => a.start.localeCompare(b.start));
-    // Month all-off list
-    const monthAllOff = allOffDays.filter(d => { const dt=new Date(d); return dt.getFullYear()===y && dt.getMonth()===m; });
-    return `<div class="ov-month">
-      <h3>${monthName}</h3>
-      <div class="ov-columns">
-        <div class="ov-left">
-          <div class="mini-grid">${cells}</div>
-          ${monthAllOff.length ? `<p class="all-off-list">🎉 <strong>All kids off:</strong> ${monthAllOff.map(d => new Date(d).toLocaleString('en-US',{month:'short',day:'numeric'})).join(' · ')}</p>` : ''}
-        </div>
-        <div class="ov-right">
-          <h4>🏆 Tournaments / Showcases</h4>
-          ${monthTours.length ? monthTours.map(t => {
-            const d1 = new Date(t.start.slice(0,10));
-            const endD = t.end && t.end !== t.start ? new Date(new Date(t.end).getTime()-86400000) : null;
-            const dateStr = endD && dateKey(endD) !== dateKey(d1)
-              ? `${d1.toLocaleString('en-US',{month:'short',day:'numeric'})}–${endD.toLocaleString('en-US',{day:'numeric'})}`
-              : d1.toLocaleString('en-US',{month:'short',day:'numeric'});
-            return `<div class="tour-item"><span class="init ${t.kid}">${t.kid}</span><span class="tour-date">${dateStr}</span> ${t.title}</div>`;
-          }).join('') : '<p class="muted-sm">None scheduled.</p>'}
-        </div>
-      </div>
-    </div>`;
+  // Group by month for readability
+  const byMonth = {};
+  allDates.forEach(k => {
+    const mk = k.slice(0,7);
+    (byMonth[mk] = byMonth[mk] || []).push(k);
+  });
+
+  const SCHOOL_META = {
+    RL: { name: 'RL', color: 'var(--T)', kid: 'T' },
+    NCDS: { name: 'NCDS', color: 'var(--E)', kid: 'E' },
+    Tenacre: { name: 'Tenacre', color: 'var(--S)', kid: 'S' },
+  };
+
+  function schoolCell(events) {
+    if (!events.length) return '<span class="ov-empty">—</span>';
+    return events.map(e => {
+      const isOff = e.type === 'noschool';
+      const link = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${escapeHtml(cleanTitle(e))}</a>` : escapeHtml(cleanTitle(e));
+      return `<div class="ov-acad-item ${isOff?'off':''}">${isOff?'🚫 ':''}${link}</div>`;
+    }).join('');
   }
-  let monthsHtml = '';
-  for (let mi=0; mi<12; mi++) monthsHtml += buildMonth(startY, startM+mi);
 
-  const bySource = { T:[], E:[], S:[], F:[] };
-  SOURCES.forEach(s => bySource[s.kid].push(s));
-  const srcHtml = ['T','E','S','F'].map(k => {
-    const kName = {T:'Tommy',E:'Emily',S:'Sophie',F:'Family'}[k];
-    return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
-  }).join('');
+  function cleanTitle(e) {
+    return (e.title||'').replace(/^(RL|NCDS|Tenacre):\s*/, '').replace(/^(RL|NCDS|Tenacre)\s+/, '');
+  }
+
+  let listHtml = '';
+  Object.keys(byMonth).sort().forEach(mk => {
+    const [yy, mm] = mk.split('-').map(Number);
+    const monthName = new Date(yy, mm-1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    listHtml += `<div class="ov-month-block"><h3 class="ov-month-h">${monthName}</h3>
+      <div class="ov-list-header">
+        <div>Date</div>
+        <div style="color:var(--T)">RL (Tommy)</div>
+        <div style="color:var(--E)">NCDS (Emily)</div>
+        <div style="color:var(--S)">Tenacre (Sophie)</div>
+        <div>🏆 Tournaments / Showcases</div>
+      </div>`;
+    byMonth[mk].forEach(k => {
+      const row = byDate[k];
+      const dObj = new Date(k+'T00:00:00');
+      const isAllOff = allOffDays.includes(k);
+      const rl = row.acad.filter(e => schoolOf(e)==='RL');
+      const nc = row.acad.filter(e => schoolOf(e)==='NCDS');
+      const te = row.acad.filter(e => schoolOf(e)==='Tenacre');
+      const tour = row.tour;
+      const dow = dObj.toLocaleString('en-US',{weekday:'short'});
+      const dayStr = `${dow} ${dObj.toLocaleString('en-US',{month:'short',day:'numeric'})}`;
+      listHtml += `<div class="ov-list-row ${isAllOff?'all-off-row':''}">
+        <div class="ov-date">${dayStr}${isAllOff?' 🎉':''}</div>
+        <div class="ov-school">${schoolCell(rl)}</div>
+        <div class="ov-school">${schoolCell(nc)}</div>
+        <div class="ov-school">${schoolCell(te)}</div>
+        <div class="ov-tour">${tour.length ? tour.map(t => `<div class="ov-tour-item"><span class="init ${t.kid}">${t.kid}</span> ${t.url?`<a href="${t.url}" target="_blank" rel="noopener">${escapeHtml(t.title)}</a>`:escapeHtml(t.title)}</div>`).join('') : '<span class="ov-empty">—</span>'}</div>
+      </div>`;
+    });
+    listHtml += `</div>`;
+  });
 
   // Scorecard
   const stats = {
     allOff: allOffDays.length,
-    tournaments: tournaments.length,
+    tournaments: Object.values(byDate).reduce((n,r) => n + r.tour.length, 0),
     practices: evts.filter(e => e.type==='practice').length,
-    academicEvents: Object.keys(academicByDate).length,
+    academicDates: allDates.length,
   };
+
+  const bySource = { T:[], E:[], S:[], F:[] };
+  SOURCES.forEach(s => { if (bySource[s.kid]) bySource[s.kid].push(s); });
+  const srcHtml = ['T','E','S','F'].map(k => {
+    const kName = {T:'Tommy',E:'Emily',S:'Sophie',F:'Family'}[k];
+    return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
+  }).join('');
 
   document.getElementById('view-overview').innerHTML = `
     <div class="scorecard">
       <div class="stat"><div class="num" style="color:#eab308">${stats.allOff}</div><div class="lbl">All-kids-off days</div></div>
       <div class="stat"><div class="num" style="color:var(--tournament)">${stats.tournaments}</div><div class="lbl">Tournaments / Showcases</div></div>
       <div class="stat"><div class="num">${stats.practices}</div><div class="lbl">Practices</div></div>
-      <div class="stat"><div class="num">${stats.academicEvents}</div><div class="lbl">Academic dates tracked</div></div>
+      <div class="stat"><div class="num">${stats.academicDates}</div><div class="lbl">Academic dates</div></div>
     </div>
-    <div class="ov-legend">
-      <span class="lg-swatch all-off"></span> All three kids off
-      <span class="lg-swatch some-off"></span> Some kids off
-      <span class="dot T"></span> T <span class="dot E"></span> E <span class="dot S"></span> S
-    </div>
-    <div class="ov-months">${monthsHtml}</div>
+    <div class="ov-list">${listHtml || '<p class="muted-sm">No academic or tournament dates in this window.</p>'}</div>
     <div class="sources"><h3>📡 Data Sources</h3><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">${srcHtml}</div></div>
   `;
+  return;
+
 }
 
 function renderTracking() {
@@ -1028,10 +1094,19 @@ document.body.addEventListener('click', (e) => {
     render();
     return;
   }
-  // Annual mini-month jump
-  const jump = e.target.closest('[data-jump]');
-  if (jump) {
-    const [y,m] = jump.dataset.jump.split('-').map(Number);
+  // Annual: click a day → jump to Daily view
+  const jumpDay = e.target.closest('[data-jump-day]');
+  if (jumpDay) {
+    const k = jumpDay.dataset.jumpDay;
+    currentDate = new Date(k+'T00:00:00');
+    currentView = 'daily';
+    render();
+    return;
+  }
+  // Annual: click month name → jump to Monthly
+  const jumpMonth = e.target.closest('[data-jump-month]');
+  if (jumpMonth) {
+    const [y,m] = jumpMonth.dataset.jumpMonth.split('-').map(Number);
     currentDate = new Date(y, m-1, 1);
     currentView = 'monthly';
     render();
