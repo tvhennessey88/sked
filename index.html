@@ -787,7 +787,7 @@ function normalizeMEScraped(raw) {
 }
 function allEvents() {
   // Skip legacy static "ME: Practice" entries when scraped data is present (avoid dupes)
-  const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /^ME: Practice/.test(e.title)));
+  const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /ME: Practice/.test(e.title)));
   return [...staticEvts, ...familyEvents, ...scrapedMEEvents];
 }
 
