@@ -720,17 +720,49 @@ function classifyStatic(e) {
   if (/no school|no classes|break|vacation|thanksgiving|holiday|patriots day|mlk|presidents|labor day|off day|pt conferences —|—\s*(pt conferences|report writing|professional)/i.test(t)) return 'noschool';
   return 'academic';
 }
+// Practice time lookups (recurring practices with known times, added by title pattern)
+const PRACTICE_TIMES = [
+  // Laxachusetts (Tommy)
+  { match: /Skills \(Winchester\)/,          start:'19:30', end:'20:30' },
+  { match: /Skills \(Sudbury\)/,             start:'19:30', end:'21:00' },
+  { match: /Shooting\/Speed \(Union Pt\)/,   start:'20:00', end:'21:00' },
+  { match: /Attack\/Defense \(Union Pt\)/,   start:'19:00', end:'20:00' },
+  { match: /Skills \(Norwood\)/,             start:'19:30', end:'21:00' },
+  { match: /Skills\+Full-Field \(Union Pt\)/,start:'19:40', end:'21:00' },
+  { match: /Shooting \(Sudbury\)/,           start:'20:00', end:'21:00' },
+  // Mass Elite (Emily & Sophie) — youth club window
+  { match: /ME: Practice \(Union Pt\)/,           start:'18:00', end:'19:30' },
+  { match: /ME: Practice \(Forekicks Marlboro\)/, start:'18:00', end:'19:30' },
+  // Achievelax indoor
+  { match: /Achievelax Indoor/,              start:'17:00', end:'18:00' },
+  { match: /Achievelax Summer/,              start:'17:00', end:'18:30' },
+  // WPC practice (already in family_cal generally, but for static fallback)
+  { match: /WPC: Practice/,                  start:'17:30', end:'19:00' },
+];
+function lookupPracticeTime(title) {
+  for (const p of PRACTICE_TIMES) if (p.match.test(title)) return p;
+  return null;
+}
 function normalizeStatic() {
   return STATIC_EVENTS.map((e,i) => {
+    const pt = e.time ? {start:e.time, end:e.endTime||e.time} : lookupPracticeTime(e.title);
+    const dateOnly = String(e.start).slice(0,10);
+    let start, end, allDay;
+    if (pt && !e.end) {
+      start = `${dateOnly}T${pt.start}:00`;
+      end   = `${dateOnly}T${pt.end}:00`;
+      allDay = false;
+    } else {
+      start = e.start;
+      end = e.end ? (new Date(new Date(e.end).getTime() + 86400000)).toISOString().slice(0,10) : e.start;
+      allDay = true;
+    }
     return {
       id: 'st_' + i,
       kid: KID_MAP[e.kid] || 'F',
       type: classifyStatic(e),
       title: e.title,
-      start: e.start,
-      // static end is inclusive → bump by 1 day so eventDates exclusive-end logic includes final day
-      end: e.end ? (new Date(new Date(e.end).getTime() + 86400000)).toISOString().slice(0,10) : e.start,
-      allDay: true,
+      start, end, allDay,
       location: '',
       link: e.url || '',
       source: e.title.split(':')[0].trim(),
