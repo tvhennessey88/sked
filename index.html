@@ -865,9 +865,9 @@ function renderTracking() {
   const cards = TRACKING_ITEMS.map(t => `
     <div class="track-card">
       <span class="who ${t.kid}">${t.kid}</span>
-      <h4 style="display:inline;">${t.title}</h4>
-      <p><strong>${t.status || 'Watch'}</strong> · ${t.window || ''}</p>
-      <p>${t.notes || ''}</p>
+      <h4 style="display:inline;">${t.name || t.title}</h4>
+      <p><strong>${t.status || 'Watch'}</strong> · ${t.dates || t.window || ''}</p>
+      <p>${t.note || t.notes || ''}</p>
       ${t.url ? `<p><a href="${t.url}" target="_blank" rel="noopener">Open registration →</a></p>` : ''}
     </div>
   `).join('');
