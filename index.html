@@ -824,7 +824,8 @@ function classifyStatic(e) {
   if (e.level === 'practice') return 'practice';
   if (e.level === 'operational') {
     if (/game|jamboree/.test(tl)) return 'game';
-    return 'tournament';
+    if (/tournament|showcase|invitational|challenge|classic|championship|states|regionals|nationals|cup/.test(tl)) return 'tournament';
+    return 'practice';
   }
   // Academic (no level set) — RL/NCDS/Tenacre
   if (/no school|no classes|break|vacation|thanksgiving|holiday|patriots day|mlk|presidents|labor day|off day|pt conferences —|—\s*(pt conferences|report writing|professional)/i.test(t)) return 'noschool';
@@ -1008,8 +1009,10 @@ function renderMonthly() {
 }
 
 function isMacro(e) {
-  // Macro = holidays / kids days off / tournaments / showcases
-  return e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase';
+  // Macro = holidays / kids days off / tournaments / showcases / camps / trips / multi-day all-day events
+  if (e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase' || e.type === 'camp' || e.type === 'trip') return true;
+  if (e.allDay && e.start && e.end && e.start !== e.end) return true;
+  return false;
 }
 function renderAnnual() {
   // Macro-only annual: holidays / days-off + tournaments/showcases.
@@ -1023,7 +1026,8 @@ function renderAnnual() {
     const dates = eventDates(e);
     return { e, first: new Date(dates[0]), last: new Date(dates[dates.length-1]) };
   });
-  let html = `<div class="nav-bar"><h2>Next 12 Months — Holidays & Tournaments</h2><span style="color:var(--muted);font-size:12px;">Multi-day events span as bars</span></div>`;
+  const annRestoreBtn = hiddenIds.size > 0 ? `<button id="ann-restore" style="margin-left:8px;">Restore ${hiddenIds.size} deleted</button>` : '';
+  let html = `<div class="nav-bar"><h2>Next 12 Months — Holidays & Tournaments</h2><div><button id="ann-edit-toggle">${annualEditMode ? '✕ Done' : '✎ Edit'}</button>${annRestoreBtn}<span style="color:var(--muted);font-size:12px;margin-left:8px;">Multi-day events span as bars</span></div></div>`;
   for (let mi = 0; mi < 12; mi++) {
     const d0 = new Date(startY, startM+mi, 1);
     const y = d0.getFullYear(), m = d0.getMonth();
