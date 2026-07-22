@@ -786,6 +786,7 @@ function inferKid(title) {
 }
 function inferType(title) {
   const t = title.toLowerCase();
+  if (/camp\s|camp$|wa-klo|waklo|sleepaway/.test(t)) return 'camp';
   if (/tournament|showcase/.test(t)) return 'tournament';
   if (/game|jamboree/.test(t)) return 'game';
   if (/practice|training|s&c/.test(t)) return 'practice';
@@ -1076,7 +1077,7 @@ function renderAnnual() {
           const label = s.e.title;
           const href = s.e.link ? ` href="${s.e.link}" target="_blank" rel="noopener"` : '';
           const tag = s.e.link ? 'a' : 'div';
-          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${label.replace(/"/g,'&quot;')}">${label}</${tag}>`;
+          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${dispTitle.replace(/"/g,'&quot;')}">${dispTitle}</${tag}>`;
         });
         html += `</div>`;
       }
