@@ -240,7 +240,7 @@
 .ann-dot.T { background:var(--T);} .ann-dot.E { background:var(--E);} .ann-dot.S { background:var(--S);} .ann-dot.F { background:var(--F);}
 /* Annual full-detail (Google Cal style) */
 .annwk-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.annwk-head { text-align:center; font-size:11px; color:#6b7280; font-weight:600; padding:4px 0; }
+.annwk-head { text-align:center; font-size:11px; color:#6b7280; font-weight:500; padding:8px 0 4px; letter-spacing:0.5px; text-transform:uppercase; border-bottom:1px solid #e5e7eb; }
 .annwk-days { }
 .annwk-day { background:#fff; border:1px solid #e5e7eb; min-height:34px; padding:3px 6px; font-size:12px; cursor:pointer; }
 .annwk-day.other { background:#fafafa; color:#d1d5db; }
@@ -252,6 +252,8 @@
 .annwk-bar { font-size:11px; padding:3px 8px; border-radius:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#111; font-weight:600; text-decoration:none; display:flex; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.08); }
 .annwk-bar.noschool { background:#fecaca; color:#991b1b; }
 .annwk-bar.tournament, .annwk-bar.showcase { background:#fde68a; color:#78350f; }
+.annwk-bar.camp { background:#c8b8a8; color:#3f2f1f; }
+.annwk-bar.trip { background:#a8b8c8; color:#1f2f3f; }
 .annfull-month { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; }
 .annfull-month h3 { margin:0 0 10px; font-size:18px; cursor:pointer; color:#1f2937; }
 .annfull-month h3:hover { color:var(--T); text-decoration:underline; }
@@ -1077,7 +1079,7 @@ function renderAnnual() {
           const label = s.e.title;
           const href = s.e.link ? ` href="${s.e.link}" target="_blank" rel="noopener"` : '';
           const tag = s.e.link ? 'a' : 'div';
-          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${dispTitle.replace(/"/g,'&quot;')}">${dispTitle}</${tag}>`;
+          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${label.replace(/"/g,'&quot;')}">${label}</${tag}>`;
         });
         html += `</div>`;
       }
