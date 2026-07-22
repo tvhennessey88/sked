@@ -26,7 +26,7 @@
   nav.tabs button { background:none; border:none; padding:12px 14px; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
   nav.tabs button.active { color:var(--T); border-bottom-color:var(--T); }
   nav.tabs button:hover { color:var(--text); }
-  #filters { background:#fff; padding:10px 14px; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  #filters { background:#fff; padding:10px 14px; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:6px; align-items:center; position:sticky; top:45px; z-index:9; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
   .chip { padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; cursor:pointer; font-weight:500; user-select:none; }
   .chip.active { background:var(--T); color:#fff; border-color:var(--T); }
   .chip.T.active { background:var(--T); border-color:var(--T); }
