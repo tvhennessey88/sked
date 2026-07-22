@@ -238,6 +238,39 @@
 .ann-dots { display:flex; gap:2px; flex-wrap:wrap; }
 .ann-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
 .ann-dot.T { background:var(--T);} .ann-dot.E { background:var(--E);} .ann-dot.S { background:var(--S);} .ann-dot.F { background:var(--F);}
+/* Annual full-detail (Google Cal style) */
+.annfull-month { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; }
+.annfull-month h3 { margin:0 0 10px; font-size:18px; cursor:pointer; color:#1f2937; }
+.annfull-month h3:hover { color:var(--T); text-decoration:underline; }
+.annfull-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#e5e7eb; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; }
+.annfull-head { background:#f9fafb; text-align:center; font-size:11px; color:#6b7280; font-weight:600; padding:6px 0; text-transform:uppercase; letter-spacing:0.5px; }
+.annfull-cell { background:#fff; min-height:110px; padding:5px; font-size:11px; cursor:pointer; overflow:hidden; }
+.annfull-cell:hover { background:#f8fafc; }
+.annfull-cell.other { background:#fafafa; color:#d1d5db; }
+.annfull-cell.other .annfull-num { color:#d1d5db; }
+.annfull-cell.today { background:#fef3c7; }
+.annfull-num { font-weight:600; font-size:12px; color:#374151; margin-bottom:3px; }
+.annfull-cell .evt { font-size:10px; padding:1px 4px; margin-bottom:2px; line-height:1.3; }
+.annfull-cell .evt .del { display:none; }
+.annfull-more { font-size:10px; color:#6b7280; padding:1px 4px; cursor:pointer; }
+.annfull-more:hover { color:var(--T); text-decoration:underline; }
+
+/* Add Event modal */
+#add-btn { background:var(--T); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:14px; font-weight:600; cursor:pointer; }
+#add-btn:hover { background:#1d4ed8; }
+.modal-back { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:100; }
+.modal-back.open { display:flex; }
+.modal { background:#fff; border-radius:10px; padding:20px; width:400px; max-width:92vw; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+.modal h2 { margin:0 0 14px; font-size:18px; }
+.modal label { display:block; margin-bottom:10px; font-size:13px; color:#374151; font-weight:500; }
+.modal input, .modal select, .modal textarea { width:100%; box-sizing:border-box; padding:7px 9px; border:1px solid var(--border); border-radius:5px; font-size:14px; font-family:inherit; margin-top:3px; }
+.modal .row { display:flex; gap:8px; }
+.modal .row label { flex:1; }
+.modal .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+.modal button { padding:8px 14px; border-radius:5px; font-size:14px; cursor:pointer; border:1px solid var(--border); background:#fff; }
+.modal button.primary { background:var(--T); color:#fff; border-color:var(--T); font-weight:600; }
+.modal .allday-row { display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:10px; }
+.modal .allday-row input { width:auto; margin:0; }
 @media(max-width:900px){ .annual-grid-big { grid-template-columns:repeat(2,1fr);} }
 @media(max-width:600px){ .annual-grid-big { grid-template-columns:1fr;} }
 
@@ -271,10 +304,67 @@
 </head>
 <body>
 
-<header>
-  <h1>🏠 Hennessey Family Scheduler</h1>
-  <p>Tommy · Emily · Sophie — annual, monthly, weekly, daily views</p>
+<header style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+  <div>
+    <h1 style="margin:0">🏠 Hennessey Family Scheduler</h1>
+    <p style="margin:4px 0 0">Tommy · Emily · Sophie — annual, monthly, weekly, daily views</p>
+  </div>
+  <button id="add-btn">＋ Add Event</button>
 </header>
+
+<div class="modal-back" id="add-modal">
+  <div class="modal">
+    <h2>Add Event</h2>
+    <label>Title
+      <input type="text" id="ae-title" placeholder="e.g. Dentist appointment" />
+    </label>
+    <div class="row">
+      <label>Who
+        <select id="ae-kid">
+          <option value="T">Tommy</option>
+          <option value="E">Emily</option>
+          <option value="S">Sophie</option>
+          <option value="F" selected>Family</option>
+        </select>
+      </label>
+      <label>Type
+        <select id="ae-type">
+          <option value="family">Family / Personal</option>
+          <option value="practice">Practice</option>
+          <option value="game">Game</option>
+          <option value="tournament">Tournament</option>
+          <option value="academic">Academic</option>
+          <option value="noschool">No School / Holiday</option>
+        </select>
+      </label>
+    </div>
+    <label>Date
+      <input type="date" id="ae-date" />
+    </label>
+    <div class="allday-row">
+      <input type="checkbox" id="ae-allday" />
+      <label for="ae-allday" style="margin:0;font-weight:normal">All-day</label>
+    </div>
+    <div class="row" id="ae-times">
+      <label>Start
+        <input type="time" id="ae-start" value="09:00" />
+      </label>
+      <label>End
+        <input type="time" id="ae-end" value="10:00" />
+      </label>
+    </div>
+    <label>Location (optional)
+      <input type="text" id="ae-loc" />
+    </label>
+    <label>Link (optional)
+      <input type="url" id="ae-link" placeholder="https://..." />
+    </label>
+    <div class="actions">
+      <button id="ae-cancel">Cancel</button>
+      <button class="primary" id="ae-save">Save</button>
+    </div>
+  </div>
+</div>
 
 <nav class="tabs">
   <button data-view="monthly" class="active">🗓️ Monthly</button>
@@ -659,6 +749,9 @@ const SOURCES = [
 // ============ STATE ============
 const HIDDEN_KEY = 'sked_hidden_ids_v3';
 let hiddenIds = new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'));
+const USER_KEY = 'sked_user_events_v1';
+let userEvents = JSON.parse(localStorage.getItem(USER_KEY) || '[]');
+function saveUserEvents() { localStorage.setItem(USER_KEY, JSON.stringify(userEvents)); }
 const FILTER_KEY = 'sked_filters_v3';
 const savedFilters = JSON.parse(localStorage.getItem(FILTER_KEY) || 'null');
 let filters = savedFilters || { kids: {T:true,E:true,S:true,F:true}, games:true, practices:true, academics:true };
@@ -788,7 +881,7 @@ function normalizeMEScraped(raw) {
 function allEvents() {
   // Skip legacy static "ME: Practice" entries when scraped data is present (avoid dupes)
   const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /ME: Practice/.test(e.title)));
-  return [...staticEvts, ...familyEvents, ...scrapedMEEvents];
+  return [...staticEvts, ...familyEvents, ...scrapedMEEvents, ...userEvents];
 }
 
 // ============ HELPERS ============
@@ -902,43 +995,39 @@ function isMacro(e) {
   return e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase';
 }
 function renderAnnual() {
-  // Always start at CURRENT calendar month
+  // 12 stacked full-detail monthly grids starting at CURRENT month.
   const today = new Date();
   const startY = today.getFullYear(), startM = today.getMonth();
   const todayKey = dateKey(today);
-  const macros = allEvents().filter(e => passesFilter(e) && isMacro(e));
-  // Build per-date map of macro events
-  const dayMap = {};
-  macros.forEach(e => {
-    eventDates(e).forEach(k => {
-      (dayMap[k] = dayMap[k] || []).push(e);
-    });
-  });
-  let html = `<div class="nav-bar"><h2>Next 12 Months — Macro View</h2><span style="color:var(--muted);font-size:12px;">Holidays · Days off · Tournaments · Showcases</span></div><div class="annual-grid-big">`;
+  const idx = buildIndex(allEvents().filter(passesFilter));
+  let html = `<div class="nav-bar"><h2>Next 12 Months</h2><span style="color:var(--muted);font-size:12px;">Full detail — scroll through the year</span></div>`;
   for (let mi = 0; mi < 12; mi++) {
     const d0 = new Date(startY, startM+mi, 1);
     const y = d0.getFullYear(), m = d0.getMonth();
     const startDay = d0.getDay();
     const gridStart = new Date(y,m,1-startDay);
     const monthName = d0.toLocaleString('en-US',{month:'long',year:'numeric'});
-    html += `<div class="ann-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="ann-grid-big">`;
-    ['S','M','T','W','T','F','S'].forEach(x => html += `<div class="ann-mh">${x}</div>`);
-    for (let i = 0; i < 42; i++) {
+    // Determine number of weeks needed (5 or 6)
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const weeks = Math.ceil((startDay + daysInMonth) / 7);
+    html += `<div class="annfull-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="annfull-grid">`;
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(x => html += `<div class="annfull-head">${x}</div>`);
+    for (let i = 0; i < weeks*7; i++) {
       const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
       const k = dateKey(d);
       const inMonth = d.getMonth() === m;
       const isToday = k === todayKey;
-      const evts = (dayMap[k]||[]).slice(0,3);
-      const labels = evts.map(e => {
-        const cls = e.type === 'noschool' ? 'ann-off' : 'ann-tour';
-        const shortTitle = (e.title||'').replace(/^(RL|NCDS|Tenacre):\s*/,'').slice(0,22);
-        return `<div class="ann-lbl ${cls}" title="${escapeHtml(e.title||'')}">${escapeHtml(shortTitle)}</div>`;
-      }).join('');
-      html += `<div class="ann-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}"><div class="ann-num">${d.getDate()}</div>${labels}</div>`;
+      const evts = sortDayEvents(idx[k] || []);
+      const shown = evts.slice(0,4);
+      const more = evts.length > 4 ? `<div class="annfull-more" data-jump-day="${k}">${evts.length-4} more</div>` : '';
+      html += `<div class="annfull-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}">
+        <div class="annfull-num">${d.getDate()}</div>
+        ${shown.map(e => pillHTML(e,{compact:true})).join('')}
+        ${more}
+      </div>`;
     }
     html += `</div></div>`;
   }
-  html += `</div>`;
   document.getElementById('view-annual').innerHTML = html;
 }
 
@@ -1264,6 +1353,60 @@ document.body.addEventListener('click', (e) => {
     render();
     return;
   }
+});
+
+// ============ ADD EVENT MODAL ============
+function openAddModal(prefillDate) {
+  const modal = document.getElementById('add-modal');
+  document.getElementById('ae-title').value = '';
+  document.getElementById('ae-kid').value = 'F';
+  document.getElementById('ae-type').value = 'family';
+  document.getElementById('ae-date').value = prefillDate || dateKey(new Date());
+  document.getElementById('ae-allday').checked = false;
+  document.getElementById('ae-start').value = '09:00';
+  document.getElementById('ae-end').value = '10:00';
+  document.getElementById('ae-loc').value = '';
+  document.getElementById('ae-link').value = '';
+  document.getElementById('ae-times').style.display = 'flex';
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('ae-title').focus(), 50);
+}
+function closeAddModal() { document.getElementById('add-modal').classList.remove('open'); }
+document.getElementById('add-btn').addEventListener('click', () => openAddModal());
+document.getElementById('ae-cancel').addEventListener('click', closeAddModal);
+document.getElementById('add-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'add-modal') closeAddModal();
+});
+document.getElementById('ae-allday').addEventListener('change', (e) => {
+  document.getElementById('ae-times').style.display = e.target.checked ? 'none' : 'flex';
+});
+document.getElementById('ae-save').addEventListener('click', () => {
+  const title = document.getElementById('ae-title').value.trim();
+  if (!title) { alert('Title is required'); return; }
+  const date = document.getElementById('ae-date').value;
+  if (!date) { alert('Date is required'); return; }
+  const kid = document.getElementById('ae-kid').value;
+  const type = document.getElementById('ae-type').value;
+  const allday = document.getElementById('ae-allday').checked;
+  const st = document.getElementById('ae-start').value;
+  const en = document.getElementById('ae-end').value;
+  const loc = document.getElementById('ae-loc').value.trim();
+  const link = document.getElementById('ae-link').value.trim();
+  const evt = {
+    id: 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    kid, type, title,
+    start: allday ? date : `${date}T${st}:00`,
+    end:   allday ? date : `${date}T${en}:00`,
+    allDay: allday,
+    location: loc,
+    link: link || undefined,
+    source: 'User',
+    level: 'operational',
+  };
+  userEvents.push(evt);
+  saveUserEvents();
+  closeAddModal();
+  render();
 });
 
 // ============ INIT: load family_cal.json then render ============
