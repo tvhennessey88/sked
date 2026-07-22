@@ -239,6 +239,19 @@
 .ann-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
 .ann-dot.T { background:var(--T);} .ann-dot.E { background:var(--E);} .ann-dot.S { background:var(--S);} .ann-dot.F { background:var(--F);}
 /* Annual full-detail (Google Cal style) */
+.annwk-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.annwk-head { text-align:center; font-size:11px; color:#6b7280; font-weight:600; padding:4px 0; }
+.annwk-days { }
+.annwk-day { background:#fff; border:1px solid #e5e7eb; min-height:34px; padding:3px 6px; font-size:12px; cursor:pointer; }
+.annwk-day.other { background:#fafafa; color:#d1d5db; }
+.annwk-day.today { background:#fef3c7; }
+.annwk-day:hover { background:#f8fafc; }
+.annwk-num { font-weight:600; color:#374151; }
+.annwk-day.other .annwk-num { color:#d1d5db; }
+.annwk-bars { display:grid; grid-template-columns:repeat(7,1fr); gap:3px 2px; padding:2px 0 6px; grid-auto-rows:22px; }
+.annwk-bar { font-size:11px; padding:3px 8px; border-radius:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#111; font-weight:600; text-decoration:none; display:flex; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+.annwk-bar.noschool { background:#fecaca; color:#991b1b; }
+.annwk-bar.tournament, .annwk-bar.showcase { background:#fde68a; color:#78350f; }
 .annfull-month { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; }
 .annfull-month h3 { margin:0 0 10px; font-size:18px; cursor:pointer; color:#1f2937; }
 .annfull-month h3:hover { color:var(--T); text-decoration:underline; }
@@ -995,38 +1008,80 @@ function isMacro(e) {
   return e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase';
 }
 function renderAnnual() {
-  // 12 stacked full-detail monthly grids starting at CURRENT month.
+  // Macro-only annual: holidays / days-off + tournaments/showcases.
+  // Multi-day events shown as spanning bubbles across the days they cover.
   const today = new Date();
   const startY = today.getFullYear(), startM = today.getMonth();
   const todayKey = dateKey(today);
-  const idx = buildIndex(allEvents().filter(passesFilter));
-  let html = `<div class="nav-bar"><h2>Next 12 Months</h2><span style="color:var(--muted);font-size:12px;">Full detail — scroll through the year</span></div>`;
+  const macros = allEvents().filter(e => !hiddenIds.has(e.id) && isMacro(e) && (filters.kids[e.kid] !== false));
+  // Precompute event date ranges as Date objects
+  const evRanges = macros.map(e => {
+    const dates = eventDates(e);
+    return { e, first: new Date(dates[0]), last: new Date(dates[dates.length-1]) };
+  });
+  let html = `<div class="nav-bar"><h2>Next 12 Months — Holidays & Tournaments</h2><span style="color:var(--muted);font-size:12px;">Multi-day events span as bars</span></div>`;
   for (let mi = 0; mi < 12; mi++) {
     const d0 = new Date(startY, startM+mi, 1);
     const y = d0.getFullYear(), m = d0.getMonth();
     const startDay = d0.getDay();
     const gridStart = new Date(y,m,1-startDay);
     const monthName = d0.toLocaleString('en-US',{month:'long',year:'numeric'});
-    // Determine number of weeks needed (5 or 6)
     const daysInMonth = new Date(y,m+1,0).getDate();
     const weeks = Math.ceil((startDay + daysInMonth) / 7);
-    html += `<div class="annfull-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3><div class="annfull-grid">`;
-    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(x => html += `<div class="annfull-head">${x}</div>`);
-    for (let i = 0; i < weeks*7; i++) {
-      const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
-      const k = dateKey(d);
-      const inMonth = d.getMonth() === m;
-      const isToday = k === todayKey;
-      const evts = sortDayEvents(idx[k] || []);
-      const shown = evts.slice(0,4);
-      const more = evts.length > 4 ? `<div class="annfull-more" data-jump-day="${k}">${evts.length-4} more</div>` : '';
-      html += `<div class="annfull-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}">
-        <div class="annfull-num">${d.getDate()}</div>
-        ${shown.map(e => pillHTML(e,{compact:true})).join('')}
-        ${more}
-      </div>`;
+    html += `<div class="annfull-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3>`;
+    html += `<div class="annwk-grid"><div class="annwk-head">Sun</div><div class="annwk-head">Mon</div><div class="annwk-head">Tue</div><div class="annwk-head">Wed</div><div class="annwk-head">Thu</div><div class="annwk-head">Fri</div><div class="annwk-head">Sat</div></div>`;
+    for (let w = 0; w < weeks; w++) {
+      const weekStart = new Date(gridStart); weekStart.setDate(gridStart.getDate()+w*7);
+      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+      // Day number row
+      html += `<div class="annwk-grid annwk-days">`;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
+        const k = dateKey(d);
+        const inMonth = d.getMonth() === m;
+        const isToday = k === todayKey;
+        html += `<div class="annwk-day ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}"><span class="annwk-num">${d.getDate()}</span></div>`;
+      }
+      html += `</div>`;
+      // Segments in this week
+      const segs = [];
+      evRanges.forEach(({e, first, last}) => {
+        if (last < weekStart || first > weekEnd) return;
+        const segStart = first < weekStart ? weekStart : first;
+        const segEnd = last > weekEnd ? weekEnd : last;
+        const startCol = Math.round((segStart - weekStart)/86400000) + 1; // 1..7
+        const endCol   = Math.round((segEnd   - weekStart)/86400000) + 1;
+        const span = endCol - startCol + 1;
+        segs.push({e, startCol, span, dur: (last - first)/86400000});
+      });
+      // Sort: longest first, then earlier start
+      segs.sort((a,b) => b.dur - a.dur || a.startCol - b.startCol);
+      // Row-pack: greedy assign each seg a row index that doesn't collide
+      const rowOccupancy = []; // rowOccupancy[r] = array of {startCol,endCol}
+      segs.forEach(s => {
+        const endCol = s.startCol + s.span - 1;
+        let r = 0;
+        while (true) {
+          rowOccupancy[r] = rowOccupancy[r] || [];
+          const clash = rowOccupancy[r].some(o => !(endCol < o.startCol || s.startCol > o.endCol));
+          if (!clash) { rowOccupancy[r].push({startCol:s.startCol, endCol}); s.row = r; break; }
+          r++;
+        }
+      });
+      const maxRow = Math.max(-1, ...segs.map(s=>s.row));
+      if (maxRow >= 0) {
+        html += `<div class="annwk-bars">`;
+        segs.forEach(s => {
+          const cls = s.e.type === 'noschool' ? 'noschool' : (s.e.type === 'showcase' ? 'showcase' : 'tournament');
+          const label = s.e.title;
+          const href = s.e.link ? ` href="${s.e.link}" target="_blank" rel="noopener"` : '';
+          const tag = s.e.link ? 'a' : 'div';
+          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${label.replace(/"/g,'&quot;')}">${label}</${tag}>`;
+        });
+        html += `</div>`;
+      }
     }
-    html += `</div></div>`;
+    html += `</div>`;
   }
   document.getElementById('view-annual').innerHTML = html;
 }
