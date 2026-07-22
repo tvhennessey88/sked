@@ -918,16 +918,15 @@ function dateKey(d) {
   return d.toISOString().slice(0,10);
 }
 function eventDates(e) {
-  // returns array of YYYY-MM-DD strings this event occupies
+  // returns array of YYYY-MM-DD strings this event occupies (end is inclusive)
   const start = new Date(e.start.slice(0,10));
   const end = e.end ? new Date(e.end.slice(0,10)) : start;
   const dates = [];
   const d = new Date(start);
-  while (d < end || d.getTime() === end.getTime()) {
+  while (d.getTime() <= end.getTime()) {
     dates.push(dateKey(d));
     d.setDate(d.getDate()+1);
     if (dates.length > 60) break; // safety
-    if (e.allDay && d.getTime() === end.getTime()) break; // exclude exclusive end for allday
   }
   return dates.length ? dates : [dateKey(start)];
 }
