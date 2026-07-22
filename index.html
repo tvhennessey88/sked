@@ -1492,8 +1492,8 @@ document.getElementById('ae-save').addEventListener('click', () => {
 
 // ============ INIT: load family_cal.json then render ============
 Promise.all([
-  fetch('family_cal.json').then(r => r.ok ? r.json() : []).catch(()=>[]),
-  fetch('masselite_practices.json').then(r => r.ok ? r.json() : []).catch(()=>[]),
+  fetch('family_cal.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(()=>[]),
+  fetch('masselite_practices.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(()=>[]),
 ]).then(([fam, me]) => {
   familyEvents = normalizeFamilyCal(fam);
   scrapedMEEvents = normalizeMEScraped(me);
