@@ -1075,11 +1075,16 @@ function renderAnnual() {
       if (maxRow >= 0) {
         html += `<div class="annwk-bars">`;
         segs.forEach(s => {
-          const cls = s.e.type === 'noschool' ? 'noschool' : (s.e.type === 'showcase' ? 'showcase' : 'tournament');
-          const label = s.e.title;
+          const cls = s.e.type === 'noschool' ? 'noschool'
+                    : (s.e.type === 'tournament' || s.e.type === 'showcase') ? 'tournament'
+                    : (s.e.type === 'camp') ? 'camp' : 'trip';
+          let label = s.e.title;
+          const kidName = s.e.kid === 'T' ? 'Tommy' : s.e.kid === 'E' ? 'Emily' : s.e.kid === 'S' ? 'Sophie' : '';
+          if (kidName && !label.toLowerCase().includes(kidName.toLowerCase())) label = `${kidName} — ${label}`;
           const href = s.e.link ? ` href="${s.e.link}" target="_blank" rel="noopener"` : '';
           const tag = s.e.link ? 'a' : 'div';
-          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${label.replace(/"/g,'&quot;')}">${label}</${tag}>`;
+          const delBtn = annualEditMode ? `<span class="ann-del" data-del="${s.e.id}">×</span>` : '';
+          html += `<${tag} class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};"${href} title="${label.replace(/"/g,'&quot;')}">${label}${delBtn}</${tag}>`;
         });
         html += `</div>`;
       }
@@ -1391,6 +1396,19 @@ document.body.addEventListener('click', (e) => {
   if (e.target.closest('#ov-edit-toggle')) {
     overviewEditMode = !overviewEditMode;
     render();
+    return;
+  }
+  if (e.target.closest('#ann-edit-toggle')) {
+    annualEditMode = !annualEditMode;
+    render();
+    return;
+  }
+  if (e.target.closest('#ann-restore')) {
+    if (confirm(`Restore ${hiddenIds.size} deleted events?`)) {
+      hiddenIds.clear();
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify([]));
+      render();
+    }
     return;
   }
   // Overview: restore all deleted

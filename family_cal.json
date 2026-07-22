@@ -2349,15 +2349,6 @@
     "link": "https://www.google.com/calendar/event?eid=NHM4N242aTBidTNhY2gxYmRjMDdqZTE1bnNfMjAyNzAxMjhUMjIwMDAwWiBmYW1pbHkxNzY3MzM0NjE2MTgwNDgxNjc4NkBn"
   },
   {
-    "id": "41133cj7f1uks87q0bj3ec9sp8",
-    "title": "Sophie - Gymnastics Meet",
-    "start": "2027-01-29",
-    "end": "2027-02-01",
-    "location": "Shriners Auditorium, 99 Fordham Rd, Wilmington, MA 01887, USA",
-    "allDay": true,
-    "link": "https://www.google.com/calendar/event?eid=NDExMzNjajdmMXVrczg3cTBiajNlYzlzcDggZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZw"
-  },
-  {
     "id": "_68ok2e9o8514ab9i60qk2b9k84ojcba28kq3aba164ojah9j88pj0ghh8g_20270201T201500Z",
     "title": "Emily NCDS Soccer Practice ",
     "start": "2027-02-01T20:15:00Z",
@@ -2518,15 +2509,6 @@
     "location": "Gymnastics Express, 46 Middlesex Ave, Natick, MA 01760, USA",
     "allDay": false,
     "link": "https://www.google.com/calendar/event?eid=NHM4N242aTBidTNhY2gxYmRjMDdqZTE1bnNfMjAyNzAyMTFUMjIwMDAwWiBmYW1pbHkxNzY3MzM0NjE2MTgwNDgxNjc4NkBn"
-  },
-  {
-    "id": "0ok3csfgunjff5ikjcmd78l2ga",
-    "title": "Sophie - Gymnastics Meet",
-    "start": "2027-02-12",
-    "end": "2027-02-15",
-    "location": "Mohegan Sun, Uncasville, CT",
-    "allDay": true,
-    "link": "https://www.google.com/calendar/event?eid=MG9rM2NzZmd1bmpmZjVpa2pjbWQ3OGwyZ2EgZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZw"
   },
   {
     "id": "_68ok2e9o8514ab9i60qk2b9k84ojcba28kq3aba164ojah9j88pj0ghh8g_20270215T201500Z",
@@ -2860,15 +2842,6 @@
     "location": "Gymnastics Express, 46 Middlesex Ave, Natick, MA 01760, USA",
     "allDay": false,
     "link": "https://www.google.com/calendar/event?eid=NHM4N242aTBidTNhY2gxYmRjMDdqZTE1bnNfMjAyNzAzMTFUMjIwMDAwWiBmYW1pbHkxNzY3MzM0NjE2MTgwNDgxNjc4NkBn"
-  },
-  {
-    "id": "7gvbsf64djq4p757b9g5787081",
-    "title": "Sophie - Gymnastics Meet",
-    "start": "2027-03-12",
-    "end": "2027-03-15",
-    "location": "Babson College, 231 Forest St, Babson Park, MA 02457, USA",
-    "allDay": true,
-    "link": "https://www.google.com/calendar/event?eid=N2d2YnNmNjRkanE0cDc1N2I5ZzU3ODcwODEgZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZw"
   },
   {
     "id": "_610kccpm64pjgba48gpj2b9k74qj6b9p65346ba26d2k2ga58d148h9o84",
@@ -3292,15 +3265,6 @@
     "location": "Gymnastics Express, 46 Middlesex Ave, Natick, MA 01760, USA",
     "allDay": false,
     "link": "https://www.google.com/calendar/event?eid=NHM4N242aTBidTNhY2gxYmRjMDdqZTE1bnNfMjAyNzA0MTVUMjEwMDAwWiBmYW1pbHkxNzY3MzM0NjE2MTgwNDgxNjc4NkBn"
-  },
-  {
-    "id": "7eaqeb4jhgukie17bs2iok3sqb",
-    "title": "Sophie - Gymnastics Meet",
-    "start": "2027-04-17",
-    "end": "2027-04-19",
-    "location": "Metro South Gymnastics Academy, 255 Revere St, Canton, MA 02021, USA",
-    "allDay": true,
-    "link": "https://www.google.com/calendar/event?eid=N2VhcWViNGpoZ3VraWUxN2JzMmlvazNzcWIgZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZw"
   },
   {
     "id": "_68ok2e9o8514ab9i60qk2b9k84ojcba28kq3aba164ojah9j88pj0ghh8g_20270419T191500Z",
@@ -4444,5 +4408,65 @@
     "location": "Elm Bank, 900 Washington St, Wellesley, MA 02482, USA",
     "allDay": false,
     "link": "https://www.google.com/calendar/event?eid=NmxkM2V1cDVpMmVyOXFwYjNoNnIxa2NwOXVfMjAyNzA3MjFUMjAwMDAwWiBmYW1pbHkxNzY3MzM0NjE2MTgwNDgxNjc4NkBn"
+  },
+  {
+    "id": "gym-meet-0",
+    "title": "S \u2014 Gym Meet: Susan Strong Invitational",
+    "start": "2027-01-29",
+    "end": "2027-01-31",
+    "allDay": true,
+    "kid": "S",
+    "type": "tournament",
+    "level": "operational",
+    "location": "Shriners Auditorium, Wilmington",
+    "color": "#10b981"
+  },
+  {
+    "id": "gym-meet-1",
+    "title": "S \u2014 Gym Meet: All-American Challenge (MAYBE)",
+    "start": "2027-02-12",
+    "end": "2027-02-14",
+    "allDay": true,
+    "kid": "S",
+    "type": "tournament",
+    "level": "operational",
+    "location": "Mohegan Sun, Uncasville CT",
+    "color": "#10b981"
+  },
+  {
+    "id": "gym-meet-2",
+    "title": "S \u2014 Gym Meet: Starlight Invitational (MAYBE)",
+    "start": "2027-03-12",
+    "end": "2027-03-14",
+    "allDay": true,
+    "kid": "S",
+    "type": "tournament",
+    "level": "operational",
+    "location": "Babson College, Wellesley",
+    "color": "#10b981"
+  },
+  {
+    "id": "gym-meet-3",
+    "title": "S \u2014 Gym Meet: Spring Tune-Up",
+    "start": "2027-04-17",
+    "end": "2027-04-18",
+    "allDay": true,
+    "kid": "S",
+    "type": "tournament",
+    "level": "operational",
+    "location": "MSGA, Canton",
+    "color": "#10b981"
+  },
+  {
+    "id": "gym-meet-4",
+    "title": "S \u2014 Gym Meet: Xcel Silver & Gold States",
+    "start": "2027-05-08",
+    "end": "2027-05-09",
+    "allDay": true,
+    "kid": "S",
+    "type": "tournament",
+    "level": "operational",
+    "location": "Shriners Auditorium, Wilmington",
+    "color": "#10b981"
   }
 ]
