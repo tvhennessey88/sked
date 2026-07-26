@@ -154,13 +154,24 @@
   .overview-col { display:flex; flex-direction:column; gap:3px; }
 
   /* Tracking */
-  .track-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
-  .track-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
-  .track-card h4 { margin:0 0 4px; font-size:14px; }
-  .track-card .who { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px; }
-  .track-card .who.T { background:var(--T-bg); color:var(--T); }
-  .track-card .who.E { background:var(--E-bg); color:var(--E); }
-  .track-card p { margin:4px 0; font-size:12px; color:var(--muted); }
+  .track-month { margin-bottom:18px; }
+  .track-month h3 { margin:0 0 6px; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:4px; }
+  .track-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .track-col-head { font-weight:700; font-size:12px; padding:6px 4px; text-align:center; border-radius:6px; margin-bottom:6px; }
+  .track-col-head.T { background:var(--T-bg); color:var(--T); }
+  .track-col-head.E { background:var(--E-bg); color:var(--E); }
+  .track-col-head.S { background:var(--S-bg); color:var(--S); }
+  .track-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px; }
+  .track-card h4 { margin:0 0 4px; font-size:13px; line-height:1.25; }
+  .track-card .track-meta { font-size:11px; color:var(--muted); margin:2px 0; }
+  .track-card .track-reg { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-top:4px; }
+  .track-reg.open { background:#dcfce7; color:#166534; }
+  .track-reg.notyet { background:#fef3c7; color:#92400e; }
+  .track-reg.closed { background:#fee2e2; color:#991b1b; }
+  .track-reg.tbd { background:#e5e7eb; color:#374151; }
+  .track-card a { font-size:11px; color:#2563eb; text-decoration:none; }
+  .track-card a:hover { text-decoration:underline; }
+  @media (max-width: 720px) { .track-cols { grid-template-columns:1fr; } }
 
   @media (max-width: 720px) {
     main { padding:8px; }
@@ -722,30 +733,27 @@ const ALL_KIDS_OUT = [
   { start: '2027-04-19', end: '2027-04-19', label: "Patriots' Day" },
   { start: '2027-05-31', end: '2027-05-31', label: 'Memorial Day' },
 ];
+// kid: T/E/S · monthKey: YYYY-MM for grouping, or 'TBD'
 const TRACKING_ITEMS = [
-  // Tommy — Class of 2030
-  { kid: 'tommy', name: 'Future Phenoms Newport (ML8)', dates: 'Jul 20–21, 2026',
-    url: 'https://www.ml8events.com/events/future-phenoms-newport',
-    note: 'Newport, RI · 2029/2030 showcase · This week', status: 'active' },
-  { kid: 'tommy', name: 'The Spotlight (ML8)', dates: 'Oct 17–18, 2026',
-    url: 'https://www.ml8events.com/events/the-spotlight',
-    note: '2029/2030 · Register at ml8events.com', status: 'upcoming' },
-  { kid: 'tommy', name: 'Best in Class Fall Showcase', dates: 'Oct 25, 2026',
-    url: 'https://www.1stclasslax.com/best-in-class-fall',
-    note: 'Chase Fieldhouse, Wilmington DE · 2029/2030 · Open registration', status: 'upcoming' },
-  { kid: 'tommy', name: 'One Percent Winter Showcase', dates: 'Dec 19, 2026',
-    url: 'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/',
-    note: 'Patch Reef Park, Boca Raton FL · 2029/2030 · $525', status: 'upcoming' },
-  { kid: 'tommy', name: 'Future Phenoms Florida (ML8)', dates: 'Jan 9–10, 2027',
-    url: 'https://www.ml8events.com/events/future-phenoms',
-    note: '2029/2030 · Registration open', status: 'upcoming' },
-  { kid: 'tommy', name: 'NLF Futures at IMG Academy', dates: 'Jan 17–19, 2027 (est.)',
-    url: 'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/',
-    note: 'IMG Academy, Bradenton FL · 2027 dates TBD — check back', status: 'watch' },
-  // Emily — Class of 2032
-  { kid: 'emily', name: 'American Select Tryouts', dates: 'Spring 2027 (dates TBD)',
-    url: 'https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event',
-    note: 'Class of 2032 · Check site for 2027 regional dates', status: 'watch' },
+  // ── Tommy (Class of 2030/2031) ──
+  { kid:'T', name:'Future Phenoms Newport (ML8)', monthKey:'2026-07', dates:'Jul 20–21, 2026', location:'Newport, RI', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms-newport' },
+  { kid:'T', name:'Jumbo July Prospect Day (Tufts)', monthKey:'2026-07', dates:'Jul 27, 2026', location:'Medford, MA', ages:'2026–2029', registration:'Open', url:'https://jumbolacrosseclinics.com/july-prospect-day/' },
+  { kid:'T', name:'Future Blue Prospect Camp (Johns Hopkins)', monthKey:'2026-07', dates:'Jul 13, 2026', location:'Baltimore, MD', ages:'2027–2029', registration:'Open', url:'https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp' },
+  { kid:'T', name:'Duke Prospect Day Camp', monthKey:'2026-07', dates:'Jul 27–28, 2026', location:'Durham, NC', ages:'2027–2029', registration:'Open', url:'https://dukelacrossecampforboys.com/info1.html' },
+  { kid:'T', name:'Blue & Grey July Prospect Day (Georgetown)', monthKey:'2026-07', dates:'Jul 19, 2026', location:'Washington, DC', ages:'2027–2029', registration:'Open', url:'https://www.blueandgreylacrosse.com/content/2026-july-prospect-day' },
+  { kid:'T', name:'Navy Overnight Prospect Camp', monthKey:'2026-07', dates:'Jul 28–29, 2026', location:'Annapolis, MD', ages:'2028–2029', registration:'Not yet open', url:'https://navylacrossecamp.com/prospect-camp' },
+  { kid:'T', name:'Williams Prospect Day', monthKey:'2026-07', dates:'Jul 2, 2026', location:'Williamstown, MA', ages:'2027–2028', registration:'Closed', url:'https://register.ryzer.com/camp.cfm?sport=27&id=324131' },
+  { kid:'T', name:'The Spotlight (ML8)', monthKey:'2026-10', dates:'Oct 17–18, 2026', location:'TBD', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/the-spotlight' },
+  { kid:'T', name:'Best in Class Fall Showcase', monthKey:'2026-10', dates:'Oct 25, 2026', location:'Wilmington, DE', ages:'2029/2030', registration:'Open', url:'https://www.1stclasslax.com/best-in-class-fall' },
+  { kid:'T', name:'One Percent Winter Showcase', monthKey:'2026-12', dates:'Dec 19, 2026', location:'Boca Raton, FL', ages:'2029/2030', registration:'Open', url:'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/' },
+  { kid:'T', name:'Future Phenoms Florida (ML8)', monthKey:'2027-01', dates:'Jan 9–10, 2027', location:'Florida', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms' },
+  { kid:'T', name:'NLF Futures at IMG Academy', monthKey:'2027-01', dates:'Jan 17–19, 2027 (est.)', location:'Bradenton, FL', ages:'2029/2030', registration:'Not yet open', url:'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/' },
+  { kid:'T', name:'Jumbo February Prospect Day (Tufts)', monthKey:'2027-02', dates:'Feb 2027 (2026 date past — 2027 TBD)', location:'Medford, MA', ages:'2026–2029', registration:'Not yet open', url:'https://jumbolacrosseclinics.com/february-prospect-day/' },
+  { kid:'T', name:'Paramount Lacrosse Camp (Bowdoin)', monthKey:'TBD', dates:'TBD', location:'Brunswick, ME', ages:'2027–2029', registration:'Not yet open', url:'https://www.paramountlacrossecamps.com/' },
+
+  // ── Emily (Class of 2032) ──
+  { kid:'E', name:'Dartmouth Summer Prospect Clinic', monthKey:'2027-07', dates:'Jul 2027 (2025 date past — 2027 TBD)', location:'Hanover, NH', ages:'Gr 8–College Frosh', registration:'Not yet open', url:'https://register.ryzer.com/camp.cfm?id=303287' },
+  { kid:'E', name:'American Select Tryouts', monthKey:'TBD', dates:'Spring 2027 (TBD)', location:'TBD', ages:'2032', registration:'Not yet open', url:'https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event' },
 ];
 
 // ============ DATA SOURCES ============
@@ -1303,16 +1311,53 @@ function renderOverview() {
 }
 
 function renderTracking() {
-  const cards = TRACKING_ITEMS.map(t => `
+  // Group by monthKey
+  const groups = {};
+  TRACKING_ITEMS.forEach(t => {
+    const k = t.monthKey || 'TBD';
+    if (!groups[k]) groups[k] = { T:[], E:[], S:[] };
+    if (groups[k][t.kid]) groups[k][t.kid].push(t);
+  });
+  const monthKeys = Object.keys(groups).sort((a,b) => {
+    if (a === 'TBD') return 1;
+    if (b === 'TBD') return -1;
+    return a.localeCompare(b);
+  });
+  const monthLabel = (k) => {
+    if (k === 'TBD') return 'TBD / Dates not yet posted';
+    const [y,m] = k.split('-');
+    const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${names[+m-1]} ${y}`;
+  };
+  const regClass = (r) => {
+    const rl = (r||'').toLowerCase();
+    if (rl === 'open') return 'open';
+    if (rl === 'closed') return 'closed';
+    if (rl.includes('not yet') || rl.includes('coming')) return 'notyet';
+    return 'tbd';
+  };
+  const cardHtml = (t) => `
     <div class="track-card">
-      <span class="who ${t.kid}">${t.kid}</span>
-      <h4 style="display:inline;">${t.name || t.title}</h4>
-      <p><strong>${t.status || 'Watch'}</strong> · ${t.dates || t.window || ''}</p>
-      <p>${t.note || t.notes || ''}</p>
-      ${t.url ? `<p><a href="${t.url}" target="_blank" rel="noopener">Open registration →</a></p>` : ''}
+      <h4>${t.name}</h4>
+      <div class="track-meta">📅 ${t.dates}</div>
+      <div class="track-meta">📍 ${t.location || 'TBD'}</div>
+      <div class="track-meta">🎓 ${t.ages || 'All ages'}</div>
+      <span class="track-reg ${regClass(t.registration)}">${t.registration || 'Watch'}</span>
+      ${t.url ? `<div style="margin-top:6px;"><a href="${t.url}" target="_blank" rel="noopener">Open link →</a></div>` : ''}
     </div>
-  `).join('');
-  document.getElementById('view-tracking').innerHTML = `<h2 style="margin:0 0 12px;">📌 Registration Watch</h2><div class="track-grid">${cards}</div>`;
+  `;
+  const monthHtml = monthKeys.map(mk => {
+    const g = groups[mk];
+    return `<div class="track-month">
+      <h3>${monthLabel(mk)}</h3>
+      <div class="track-cols">
+        <div><div class="track-col-head T">Tommy</div>${g.T.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
+        <div><div class="track-col-head E">Emily</div>${g.E.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
+        <div><div class="track-col-head S">Sophie</div>${g.S.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('view-tracking').innerHTML = `<h2 style="margin:0 0 12px;">📌 Registration Watch</h2>${monthHtml}`;
 }
 
 // ============ RENDER DISPATCH ============
