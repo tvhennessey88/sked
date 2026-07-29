@@ -4470,6 +4470,146 @@
     "color": "#10b981"
   },
   {
+    "id": "ncds-msa-20260911",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Park School",
+    "start": "2026-09-11T15:30",
+    "end": "2026-09-11T17:00",
+    "location": "Park School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20260916",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Meadowbrook School",
+    "start": "2026-09-16T15:30",
+    "end": "2026-09-16T17:00",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20260918",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Winsor School",
+    "start": "2026-09-18T16:45",
+    "end": "2026-09-18T18:15",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20260923",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Boston Trinity Academy",
+    "start": "2026-09-23T16:45",
+    "end": "2026-09-23T18:15",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20260925",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Rivers School",
+    "start": "2026-09-25T16:30",
+    "end": "2026-09-25T18:00",
+    "location": "Rivers School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20260930",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Dexter Southfield School",
+    "start": "2026-09-30T16:30",
+    "end": "2026-09-30T18:00",
+    "location": "Dexter Southfield",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261003",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Dana Hall School",
+    "start": "2026-10-03T12:15",
+    "end": "2026-10-03T13:45",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261007",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Fay School",
+    "start": "2026-10-07T15:45",
+    "end": "2026-10-07T17:15",
+    "location": "Fay School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261014",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Winsor School",
+    "start": "2026-10-14T16:45",
+    "end": "2026-10-14T18:15",
+    "location": "Winsor School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261016",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Beaver Country Day School",
+    "start": "2026-10-16T15:15",
+    "end": "2026-10-16T16:45",
+    "location": "Beaver Country Day School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261021",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Dexter Southfield School",
+    "start": "2026-10-21T15:30",
+    "end": "2026-10-21T17:00",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261023",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer vs Montrose School",
+    "start": "2026-10-23T16:00",
+    "end": "2026-10-23T17:30",
+    "location": "NCDS",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261031",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Dana Hall School",
+    "start": "2026-10-31T11:00",
+    "end": "2026-10-31T12:30",
+    "location": "Dana Hall School",
+    "source": "ncds"
+  },
+  {
+    "id": "ncds-msa-20261106",
+    "kid": "emily",
+    "type": "game",
+    "title": "E \u2014 NCDS MSA Soccer @ Milton Academy",
+    "start": "2026-11-06T16:45",
+    "end": "2026-11-06T18:15",
+    "location": "Milton Academy",
+    "source": "ncds"
+  },
+  {
     "id": "wpc-e-a7481491",
     "title": "Emily - WPC U13 Practice",
     "start": "2026-08-24T16:00:00",
@@ -4920,55 +5060,10 @@
     "link": ""
   },
   {
-    "id": "wpc-s-7f8e358d",
-    "title": "Sophie - WPC NEFC Fall Kickoff",
+    "id": "wpc-e-7f8e358d",
+    "title": "Emily - WPC NEFC Fall Kickoff",
     "start": "2026-08-28",
     "end": "2026-08-30",
-    "location": "TBD",
-    "allDay": true,
-    "link": ""
-  },
-  {
-    "id": "wpc-s-95e3b158",
-    "title": "Sophie - WPC NE Force Trident Cup",
-    "start": "2026-10-09",
-    "end": "2026-10-12",
-    "location": "TBD",
-    "allDay": true,
-    "link": ""
-  },
-  {
-    "id": "wpc-e-1ea6754c",
-    "title": "Emily - WPC FC Stars Pre-Season",
-    "start": "2026-08-28",
-    "end": "2026-08-29",
-    "location": "TBD",
-    "allDay": true,
-    "link": ""
-  },
-  {
-    "id": "wpc-e-95e3b158",
-    "title": "Emily - WPC NE Force Trident Cup",
-    "start": "2026-10-09",
-    "end": "2026-10-12",
-    "location": "TBD",
-    "allDay": true,
-    "link": ""
-  },
-  {
-    "id": "wpc-e-bf98cb37",
-    "title": "Emily - WPC NEFC Spring Showcase",
-    "start": "2027-03-20",
-    "end": "2027-03-21",
-    "location": "TBD",
-    "allDay": true,
-    "link": ""
-  },
-  {
-    "id": "wpc-e-cc4b5ba8",
-    "title": "Emily - WPC Needham MDT",
-    "start": "2027-05-22",
-    "end": "2027-05-24",
     "location": "TBD",
     "allDay": true,
     "link": ""
@@ -5026,145 +5121,5 @@
     "location": "Elm Bank, Wellesley",
     "allDay": false,
     "link": ""
-  },
-  {
-    "id": "ncds-msa-20260911",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Park School",
-    "start": "2026-09-11T15:30",
-    "end": "2026-09-11T17:00",
-    "location": "Park School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20260916",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Meadowbrook School",
-    "start": "2026-09-16T15:30",
-    "end": "2026-09-16T17:00",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20260918",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Winsor School",
-    "start": "2026-09-18T16:45",
-    "end": "2026-09-18T18:15",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20260923",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Boston Trinity Academy",
-    "start": "2026-09-23T16:45",
-    "end": "2026-09-23T18:15",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20260925",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Rivers School",
-    "start": "2026-09-25T16:30",
-    "end": "2026-09-25T18:00",
-    "location": "Rivers School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20260930",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Dexter Southfield School",
-    "start": "2026-09-30T16:30",
-    "end": "2026-09-30T18:00",
-    "location": "Dexter Southfield",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261003",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Dana Hall School",
-    "start": "2026-10-03T12:15",
-    "end": "2026-10-03T13:45",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261007",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Fay School",
-    "start": "2026-10-07T15:45",
-    "end": "2026-10-07T17:15",
-    "location": "Fay School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261014",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Winsor School",
-    "start": "2026-10-14T16:45",
-    "end": "2026-10-14T18:15",
-    "location": "Winsor School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261016",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Beaver Country Day School",
-    "start": "2026-10-16T15:15",
-    "end": "2026-10-16T16:45",
-    "location": "Beaver Country Day School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261021",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Dexter Southfield School",
-    "start": "2026-10-21T15:30",
-    "end": "2026-10-21T17:00",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261023",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer vs Montrose School",
-    "start": "2026-10-23T16:00",
-    "end": "2026-10-23T17:30",
-    "location": "NCDS",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261031",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Dana Hall School",
-    "start": "2026-10-31T11:00",
-    "end": "2026-10-31T12:30",
-    "location": "Dana Hall School",
-    "source": "ncds"
-  },
-  {
-    "id": "ncds-msa-20261106",
-    "kid": "emily",
-    "type": "game",
-    "title": "E \u2014 NCDS MSA Soccer @ Milton Academy",
-    "start": "2026-11-06T16:45",
-    "end": "2026-11-06T18:15",
-    "location": "Milton Academy",
-    "source": "ncds"
   }
 ]
