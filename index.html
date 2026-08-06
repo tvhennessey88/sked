@@ -280,6 +280,9 @@
 .annwk-bar.tournament, .annwk-bar.showcase { background:#fde68a; color:#78350f; }
 .annwk-bar.camp { background:#c8b8a8; color:#3f2f1f; }
 .annwk-bar.trip { background:#a8b8c8; color:#1f2f3f; }
+.annwk-bar.practice { background:#e5e7eb; color:#374151; font-size:9px; opacity:.85; }
+.annwk-bar.game { background:#bfdbfe; color:#1e3a8a; font-size:9px; }
+.annwk-bar.other { background:#f3f4f6; color:#4b5563; font-size:9px; }
 .annfull-month { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; }
 .annfull-month h3 { margin:0 0 10px; font-size:18px; cursor:pointer; color:#1f2937; }
 .annfull-month h3:hover { color:var(--T); text-decoration:underline; }
@@ -654,12 +657,18 @@ const ALL_KIDS_OUT = [
 // kid: T/E/S · monthKey: YYYY-MM for grouping, or 'TBD'
 const TRACKING_ITEMS = [
   // ── Tommy (Class of 2030/2031) ──
+  { kid:'T', name:'Future Phenoms Newport (ML8)', monthKey:'2026-07', dates:'Jul 20–21, 2026', location:'Newport, RI', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms-newport' },
   { kid:'T', name:'Jumbo July Prospect Day (Tufts)', monthKey:'2026-07', dates:'Jul 27, 2026', location:'Medford, MA', ages:'2026–2029', registration:'Open', url:'https://jumbolacrosseclinics.com/july-prospect-day/' },
   { kid:'T', name:'Future Blue Prospect Camp (Johns Hopkins)', monthKey:'2026-07', dates:'Jul 13, 2026', location:'Baltimore, MD', ages:'2027–2029', registration:'Open', url:'https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp' },
   { kid:'T', name:'Duke Prospect Day Camp', monthKey:'2026-07', dates:'Jul 27–28, 2026', location:'Durham, NC', ages:'2027–2029', registration:'Open', url:'https://dukelacrossecampforboys.com/info1.html' },
   { kid:'T', name:'Blue & Grey July Prospect Day (Georgetown)', monthKey:'2026-07', dates:'Jul 19, 2026', location:'Washington, DC', ages:'2027–2029', registration:'Open', url:'https://www.blueandgreylacrosse.com/content/2026-july-prospect-day' },
   { kid:'T', name:'Navy Overnight Prospect Camp', monthKey:'2026-07', dates:'Jul 28–29, 2026', location:'Annapolis, MD', ages:'2028–2029', registration:'Not yet open', url:'https://navylacrossecamp.com/prospect-camp' },
   { kid:'T', name:'Best in Class Fall Showcase', monthKey:'2026-10', dates:'Oct 25, 2026', location:'Wilmington, DE', ages:'2029/2030', registration:'Open', url:'https://www.1stclasslax.com/best-in-class-fall' },
+  { kid:'T', name:'The Spotlight (ML8)', monthKey:'2026-10', dates:'Oct 17–18, 2026', location:'TBD', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/the-spotlight' },
+  { kid:'T', name:'One Percent Winter Showcase', monthKey:'2026-12', dates:'Dec 19, 2026', location:'Boca Raton, FL', ages:'2029/2030', registration:'Open', url:'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/' },
+  { kid:'T', name:'Future Phenoms Florida (ML8)', monthKey:'2027-01', dates:'Jan 9–10, 2027', location:'Florida', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms' },
+  { kid:'T', name:'NLF Futures at IMG Academy', monthKey:'2027-01', dates:'Jan 17–19, 2027', location:'Bradenton, FL', ages:'2029/2030', registration:'Not yet open', url:'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/' },
+  { kid:'T', name:'Williams Prospect Day', monthKey:'2026-07', dates:'Jul 2, 2026', location:'Williamstown, MA', ages:'2027–2028', registration:'Closed', url:'https://register.ryzer.com/camp.cfm?sport=27&id=324131' },
   { kid:'T', name:'Jumbo February Prospect Day (Tufts)', monthKey:'2027-02', dates:'Feb 2027 (2026 date past — 2027 TBD)', location:'Medford, MA', ages:'2026–2029', registration:'Not yet open', url:'https://jumbolacrosseclinics.com/february-prospect-day/' },
   { kid:'T', name:'Paramount Lacrosse Camp (Bowdoin)', monthKey:'TBD', dates:'TBD', location:'Brunswick, ME', ages:'2027–2029', registration:'Not yet open', url:'https://www.paramountlacrossecamps.com/' },
 
