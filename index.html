@@ -794,7 +794,7 @@ function normalizeStatic() {
       allDay = false;
     } else {
       start = e.start;
-      end = e.end ? (new Date(new Date(e.end).getTime() + 86400000)).toISOString().slice(0,10) : e.start;
+      end = e.end || e.start; // end is INCLUSIVE (matches eventDates semantics)
       allDay = true;
     }
     return {
