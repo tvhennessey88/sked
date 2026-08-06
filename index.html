@@ -68,6 +68,21 @@
   .evt:hover .del { opacity:1; }
 
   /* Monthly grid */
+  .mon-container { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff; }
+  .mon-daynames { display:grid; grid-template-columns:repeat(7,1fr); background:#f3f4f6; }
+  .mon-daynames > div { padding:8px; text-align:center; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); border-right:1px solid var(--border); }
+  .mon-daynames > div:last-child { border-right:none; }
+  .mon-week { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); border-top:1px solid var(--border); min-height:110px; row-gap:2px; }
+  .mon-bg { border-right:1px solid var(--border); background:#fff; }
+  .mon-bg:last-child { border-right:none; }
+  .mon-bg.other { background:#fafafa; opacity:.6; }
+  .mon-bg.today { background:#fffbeb; }
+  .mon-daynum { padding:3px 6px; font-size:11px; font-weight:600; color:var(--muted); z-index:1; }
+  .mon-daynum.today { color:var(--tournament); }
+  .mon-seg { padding:1px 6px; font-size:11px; border-radius:4px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 3px; z-index:2; align-self:start; line-height:18px; }
+  .mon-seg:hover { filter:brightness(.92); }
+  .mon-seg-time { opacity:.8; font-variant-numeric:tabular-nums; }
+  @media(max-width:640px){ .mon-week { min-height:70px; } .mon-seg { font-size:10px; padding:0 3px; } }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
   .cal-head { background:#f3f4f6; padding:8px; text-align:center; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
   .cal-cell { background:#fff; min-height:110px; padding:4px; overflow:hidden; }
@@ -534,23 +549,9 @@ const STATIC_EVENTS = [
   { title: 'Tenacre: Last Day of School 🎉',       start: '2027-06-11', color: S, kid: 'sophie' },
 
   // ── TOMMY — LAXACHUSETTS OPERATIONAL (tournaments & evals) ─
-  { title: 'T — Lax: Legacy Fall Northeast + ML8 Spotlight',  start: '2026-10-17', end: '2026-10-19', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: Best in Class Fall Showcase (Wilmington DE)', start: '2026-10-25', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: PrimeTime Fall Classic Northeast',        start: '2026-11-07', end: '2026-11-09', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: NLF Fall Invitational (Farmingdale NY)',  start: '2026-11-21', end: '2026-11-23', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: One Percent Winter Showcase',             start: '2026-12-19', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: FireWolves Indoor Box (Albany NY)',       start: '2027-01-02', end: '2027-01-04', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-03', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: Future Phenoms Florida',                  start: '2027-01-09', end: '2027-01-11', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-10', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: NXT/CT Box Championships (Glastonbury CT)', start: '2027-01-16', end: '2027-01-18', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: NLF Futures — IMG Academy (Bradenton FL)', start: '2027-01-17', end: '2027-01-20', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-24', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: Galactic Games PrimeTime (Hampton NH)',   start: '2027-01-23', end: '2027-01-25', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-02-21', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  { title: 'T — Lax: Future Phenoms Newport (ML8)',            start: '2026-07-20', end: '2026-07-22', color: '#f59e0b', kid: 'tommy', level: 'operational' },
-  // missing eval
-  { title: 'T — Lax: ★ 9th Grade Full-Field Eval — Union Pt', start: '2027-01-31', color: '#f59e0b', kid: 'tommy', level: 'operational' },
+
+  // ── TOMMY — Confirmed Tournaments ─────────────────────
+  { title: 'T — BIC Winter Showcase (IMG Academy, Bradenton FL)', start: '2027-01-09', end: '2027-01-10', color: '#f59e0b', kid: 'tommy', level: 'operational', type: 'showcase', location: 'IMG Academy, Bradenton FL', notes: "Men's 2030 · Position: Midfield · Registered & paid ($826.97) · Conf #3087179", link: 'https://1stclasslax.sprocketsports.com/players/687276/player-registrations/3087179' },
 
   // ── EMILY — Mass Elite Tournaments ─────────────────────
   { title: 'E — ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: E, kid: 'emily', level: 'operational' },
@@ -904,8 +905,9 @@ function renderMonthly() {
   const startDay = first.getDay();
   const daysInMonth = new Date(y,m+1,0).getDate();
   const gridStart = new Date(y,m,1-startDay);
+  const weeks = Math.ceil((startDay + daysInMonth) / 7);
   const todayKey = dateKey(new Date());
-  const idx = buildIndex(allEvents().filter(passesFilter));
+  const events = allEvents().filter(e => passesFilter(e) && !hiddenIds.has(e.id));
   const monthName = first.toLocaleString('en-US',{month:'long',year:'numeric'});
   let html = `<div class="nav-bar">
     <button data-nav="prev">‹</button>
@@ -913,18 +915,67 @@ function renderMonthly() {
     <button data-nav="next">›</button>
     <h2>${monthName}</h2>
   </div>
-  <div class="cal-grid">`;
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => html += `<div class="cal-head">${d}</div>`);
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
-    const k = dateKey(d);
-    const inMonth = d.getMonth() === m;
-    const isToday = k === todayKey;
-    const evts = sortDayEvents(idx[k] || []);
-    html += `<div class="cal-cell ${inMonth?'':'other'} ${isToday?'today':''}" data-date="${k}">
-      <div class="daynum">${d.getDate()}</div>
-      ${evts.map(e => pillHTML(e)).join('')}
-    </div>`;
+  <div class="mon-container">
+    <div class="mon-daynames">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>`;
+  for (let w = 0; w < weeks; w++) {
+    const weekStart = new Date(gridStart); weekStart.setDate(gridStart.getDate()+w*7);
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+    // Compute segments for events overlapping this week
+    const segs = [];
+    events.forEach(e => {
+      const ds = eventDates(e);
+      if (!ds.length) return;
+      const ef = new Date(ds[0]+'T00:00:00'), el = new Date(ds[ds.length-1]+'T00:00:00');
+      if (el < weekStart || ef > weekEnd) return;
+      const s = ef < weekStart ? weekStart : ef;
+      const en = el > weekEnd ? weekEnd : el;
+      const startCol = Math.round((s-weekStart)/86400000)+1;
+      const endCol = Math.round((en-weekStart)/86400000)+1;
+      segs.push({e, startCol, span: endCol-startCol+1, dur: (el-ef)/86400000});
+    });
+    // Multi-day first (longer bars pack higher), then singles by time
+    segs.sort((a,b) => (b.dur - a.dur) || (a.startCol - b.startCol) || ((a.e.start||'').localeCompare(b.e.start||'')));
+    const rowOcc = [];
+    segs.forEach(s => {
+      const endCol = s.startCol + s.span - 1;
+      let r = 0;
+      while (true) {
+        rowOcc[r] = rowOcc[r] || [];
+        if (!rowOcc[r].some(o => !(endCol < o.startCol || s.startCol > o.endCol))) {
+          rowOcc[r].push({startCol: s.startCol, endCol});
+          s.row = r;
+          break;
+        }
+        r++;
+      }
+    });
+    const rows = Math.max(rowOcc.length, 1);
+    html += `<div class="mon-week" style="grid-template-rows: 22px repeat(${rows}, 20px) 1fr;">`;
+    // Background cells span all rows
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
+      const k = dateKey(d);
+      const inMonth = d.getMonth() === m;
+      const isToday = k === todayKey;
+      html += `<div class="mon-bg ${inMonth?'':'other'} ${isToday?'today':''}" style="grid-column:${i+1};grid-row:1/-1;" data-date="${k}"></div>`;
+    }
+    // Day number labels (row 1)
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
+      const isToday = dateKey(d) === todayKey;
+      html += `<div class="mon-daynum ${isToday?'today':''}" style="grid-column:${i+1};grid-row:1;">${d.getDate()}</div>`;
+    }
+    // Event segments
+    segs.forEach(s => {
+      const c = s.e.color || '#888';
+      const isMulti = s.span > 1;
+      const time = (!s.e.allDay && s.e.start && s.e.start.includes('T')) ? `<span class="mon-seg-time">${fmtTime(s.e.start)}</span> ` : '';
+      const label = `${time}${escapeHtml(s.e.title||'')}`;
+      const bg = isMulti ? `background:${c};color:#fff;` : `background:transparent;color:#111;`;
+      const border = isMulti ? '' : `border-left:3px solid ${c};padding-left:5px;`;
+      html += `<div class="mon-seg" data-detail="${s.e.id}" style="grid-column:${s.startCol} / span ${s.span}; grid-row:${s.row+2}; ${bg} ${border}" title="${escapeHtml(s.e.title||'')}">${label}</div>`;
+    });
+    html += `</div>`;
   }
   html += `</div>`;
   document.getElementById('view-monthly').innerHTML = html;
