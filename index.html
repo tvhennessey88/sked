@@ -654,18 +654,12 @@ const ALL_KIDS_OUT = [
 // kid: T/E/S · monthKey: YYYY-MM for grouping, or 'TBD'
 const TRACKING_ITEMS = [
   // ── Tommy (Class of 2030/2031) ──
-  { kid:'T', name:'Future Phenoms Newport (ML8)', monthKey:'2026-07', dates:'Jul 20–21, 2026', location:'Newport, RI', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms-newport' },
   { kid:'T', name:'Jumbo July Prospect Day (Tufts)', monthKey:'2026-07', dates:'Jul 27, 2026', location:'Medford, MA', ages:'2026–2029', registration:'Open', url:'https://jumbolacrosseclinics.com/july-prospect-day/' },
   { kid:'T', name:'Future Blue Prospect Camp (Johns Hopkins)', monthKey:'2026-07', dates:'Jul 13, 2026', location:'Baltimore, MD', ages:'2027–2029', registration:'Open', url:'https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp' },
   { kid:'T', name:'Duke Prospect Day Camp', monthKey:'2026-07', dates:'Jul 27–28, 2026', location:'Durham, NC', ages:'2027–2029', registration:'Open', url:'https://dukelacrossecampforboys.com/info1.html' },
   { kid:'T', name:'Blue & Grey July Prospect Day (Georgetown)', monthKey:'2026-07', dates:'Jul 19, 2026', location:'Washington, DC', ages:'2027–2029', registration:'Open', url:'https://www.blueandgreylacrosse.com/content/2026-july-prospect-day' },
   { kid:'T', name:'Navy Overnight Prospect Camp', monthKey:'2026-07', dates:'Jul 28–29, 2026', location:'Annapolis, MD', ages:'2028–2029', registration:'Not yet open', url:'https://navylacrossecamp.com/prospect-camp' },
-  { kid:'T', name:'Williams Prospect Day', monthKey:'2026-07', dates:'Jul 2, 2026', location:'Williamstown, MA', ages:'2027–2028', registration:'Closed', url:'https://register.ryzer.com/camp.cfm?sport=27&id=324131' },
-  { kid:'T', name:'The Spotlight (ML8)', monthKey:'2026-10', dates:'Oct 17–18, 2026', location:'TBD', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/the-spotlight' },
   { kid:'T', name:'Best in Class Fall Showcase', monthKey:'2026-10', dates:'Oct 25, 2026', location:'Wilmington, DE', ages:'2029/2030', registration:'Open', url:'https://www.1stclasslax.com/best-in-class-fall' },
-  { kid:'T', name:'One Percent Winter Showcase', monthKey:'2026-12', dates:'Dec 19, 2026', location:'Boca Raton, FL', ages:'2029/2030', registration:'Open', url:'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/' },
-  { kid:'T', name:'Future Phenoms Florida (ML8)', monthKey:'2027-01', dates:'Jan 9–10, 2027', location:'Florida', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms' },
-  { kid:'T', name:'NLF Futures at IMG Academy', monthKey:'2027-01', dates:'Jan 17–19, 2027 (est.)', location:'Bradenton, FL', ages:'2029/2030', registration:'Not yet open', url:'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/' },
   { kid:'T', name:'Jumbo February Prospect Day (Tufts)', monthKey:'2027-02', dates:'Feb 2027 (2026 date past — 2027 TBD)', location:'Medford, MA', ages:'2026–2029', registration:'Not yet open', url:'https://jumbolacrosseclinics.com/february-prospect-day/' },
   { kid:'T', name:'Paramount Lacrosse Camp (Bowdoin)', monthKey:'TBD', dates:'TBD', location:'Brunswick, ME', ages:'2027–2029', registration:'Not yet open', url:'https://www.paramountlacrossecamps.com/' },
 
@@ -797,14 +791,52 @@ function normalizeStatic() {
     return {
       id: 'st_' + i,
       kid: KID_MAP[e.kid] || 'F',
-      type: classifyStatic(e),
+      type: e.type || classifyStatic(e),
       title: e.title,
       start, end, allDay,
-      location: '',
-      link: e.url || '',
+      location: e.location || '',
+      link: e.link || e.url || '',
+      notes: e.notes || '',
       source: e.title.split(':')[0].trim(),
     };
   });
+}
+// Inject Tracking items with parseable dates as "Potential" calendar events
+function trackingCalendarEvents() {
+  const out = [];
+  TRACKING_ITEMS.forEach((t, i) => {
+    if (!t.dates || /TBD/i.test(t.dates)) return;
+    const parsed = parseTrackingDates(t.dates, t.monthKey);
+    if (!parsed) return;
+    const kidCode = t.kid; // already T/E/S
+    out.push({
+      id: 'trk_' + i,
+      kid: kidCode,
+      type: 'tournament',
+      title: `Potential: ${t.name}`,
+      start: parsed.start,
+      end: parsed.end,
+      allDay: true,
+      color: '#d97706',
+      location: t.location || '',
+      link: t.url || '',
+      notes: `Ages: ${t.ages||''} · Registration: ${t.registration||''}`,
+      source: 'Tracking',
+    });
+  });
+  return out;
+}
+// Parse "Jul 20–21, 2026" / "Oct 25, 2026" / "Jan 9–10, 2027" / "Jul 27–28, 2026"
+function parseTrackingDates(str, monthKey) {
+  const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const m = str.match(/([A-Za-z]{3})\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?,?\s*(\d{4})/);
+  if (!m) return null;
+  const mo = MONTHS[m[1].toLowerCase().slice(0,3)];
+  if (mo === undefined) return null;
+  const d1 = parseInt(m[2],10), d2 = m[3] ? parseInt(m[3],10) : d1;
+  const yr = parseInt(m[4],10);
+  const pad = n => String(n).padStart(2,'0');
+  return { start: `${yr}-${pad(mo+1)}-${pad(d1)}`, end: `${yr}-${pad(mo+1)}-${pad(d2)}` };
 }
 
 let scrapedMEEvents = [];
@@ -825,7 +857,7 @@ function normalizeMEScraped(raw) {
 function allEvents() {
   // Skip legacy static "ME: Practice" entries when scraped data is present (avoid dupes)
   const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /ME: Practice/.test(e.title)));
-  return [...staticEvts, ...familyEvents, ...scrapedMEEvents, ...userEvents];
+  return [...staticEvts, ...familyEvents, ...scrapedMEEvents, ...userEvents, ...trackingCalendarEvents()];
 }
 
 // ============ HELPERS ============
@@ -982,10 +1014,8 @@ function renderMonthly() {
 }
 
 function isMacro(e) {
-  // Macro = holidays / kids days off / tournaments / showcases / camps / trips / multi-day all-day events
-  if (e.type === 'noschool' || e.type === 'tournament' || e.type === 'showcase' || e.type === 'camp' || e.type === 'trip') return true;
-  if (e.allDay && e.start && e.end && e.start !== e.end) return true;
-  return false;
+  // Annual now shows all events per Tom's request.
+  return true;
 }
 function renderAnnual() {
   // Macro-only annual: holidays / days-off + tournaments/showcases.
@@ -1055,7 +1085,11 @@ function renderAnnual() {
         segs.forEach(s => {
           const cls = s.e.type === 'noschool' ? 'noschool'
                     : (s.e.type === 'tournament' || s.e.type === 'showcase') ? 'tournament'
-                    : (s.e.type === 'camp') ? 'camp' : 'trip';
+                    : (s.e.type === 'camp') ? 'camp'
+                    : (s.e.type === 'trip') ? 'trip'
+                    : (s.e.type === 'practice') ? 'practice'
+                    : (s.e.type === 'game') ? 'game'
+                    : 'other';
           let label = s.e.title;
           const kidName = s.e.kid === 'T' ? 'Tommy' : s.e.kid === 'E' ? 'Emily' : s.e.kid === 'S' ? 'Sophie' : '';
           if (kidName && !label.toLowerCase().includes(kidName.toLowerCase())) label = `${kidName} — ${label}`;
