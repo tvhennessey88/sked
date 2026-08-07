@@ -6,8 +6,8 @@
 <title>Hennessey Family Scheduler</title>
 <style>
 :root{
-  --T:#1a73e8; --E:#d81b60; --S:#188038; --L:#e37400; --F:#7c3aed;
-  --T-l:#e8f0fe; --E-l:#fce4ec; --S-l:#e6f4ea; --L-l:#fef3e0; --F-l:#f3e8fd;
+  --T:#1a73e8; --E:#d81b60; --S:#188038; --L:#e37400; --F:#7c3aed; --D:#00838f;
+  --T-l:#e8f0fe; --E-l:#fce4ec; --S-l:#e6f4ea; --L-l:#fef3e0; --F-l:#f3e8fd; --D-l:#e0f2f1;
   --bg:#fff; --surface:#f8f9fa; --border:#dadce0; --text:#3c4043; --muted:#70757a;
   --today:#1a73e8; --shadow:0 1px 3px rgba(60,64,67,.15), 0 4px 8px rgba(60,64,67,.1);
   --radius:8px;
@@ -189,6 +189,11 @@ button{font-family:inherit; cursor:pointer;}
 .tag.open{background:#e6f4ea;color:#188038;}
 .tag.closed{background:#fce8e6;color:#c5221f;}
 .tag.notyet{background:#fef7e0;color:#b06000;}
+.tag.past{background:#eceff1;color:#78909c;}
+.track-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start;}
+@media(max-width:1000px){.track-grid{grid-template-columns:1fr;}}
+.track-col>h3{font-size:14px;font-weight:700;padding-bottom:7px;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.track-sub{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:12px 0 2px;font-weight:700;}
 .tag.reg{background:#fce8e6;color:#c5221f;}
 .tag.potential{background:#f3e8fd;color:#7c3aed;}
 
@@ -367,6 +372,7 @@ const PEOPLE = {
   E:{name:'Emily', color:'var(--E)', hex:'#d81b60', light:'var(--E-l)'},
   S:{name:'Sophie', color:'var(--S)', hex:'#188038', light:'var(--S-l)'},
   L:{name:'Laura', color:'var(--L)', hex:'#e37400', light:'var(--L-l)'},
+  D:{name:'Tom', color:'var(--D)', hex:'#00838f', light:'var(--D-l)'},
   F:{name:'Family', color:'var(--F)', hex:'#7c3aed', light:'var(--F-l)'},
 };
 const TYPES = {
@@ -386,15 +392,94 @@ let events=[];            // normalized events
 let userEvents=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
 let hiddenIds=new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]'));
 let userNotes=JSON.parse(localStorage.getItem(NOTES_KEY)||'{}');
-function saveNote(id,text){
-  text=(text||'').trim();
-  if(text) userNotes[id]=text; else delete userNotes[id];
+for(const k of Object.keys(userNotes)){ if(typeof userNotes[k]==='string') userNotes[k]={t:userNotes[k],ts:0}; }
+function noteText(id){ const n=userNotes[String(id)]; return n&&n.t?n.t:''; }
+
+/* ---------- family sync: shared notes / deletions / added events / Tom's work cal ---------- */
+const SYNC_URL='https://textdb.dev/api/data/hsked-1578268b-3ae8-4007-b940-9b27e5be8917';
+const DELETED_KEY='sked_deleted_user_v1', TOMWORK_KEY='sked_tomwork_cache_v1', TOMWORK_TS_KEY='sked_tomwork_updated';
+let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
+let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
+let lastSharedJson='';
+function localDoc(){
+  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], user_events:userEvents,
+    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||''};
+}
+function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
+  if(!a) return b; if(!b) return a;
+  const notes={...(a.notes||{})};
+  for(const [k,v] of Object.entries(b.notes||{})){
+    const vv=(typeof v==='string')?{t:v,ts:0}:v;
+    const cur=notes[k]; const cc=(typeof cur==='string')?{t:cur,ts:0}:cur;
+    if(!cc || (vv.ts||0)>=(cc.ts||0)) notes[k]=vv; else notes[k]=cc;
+  }
+  const hidden=[...new Set([...(a.hidden||[]),...(b.hidden||[])])];
+  const deleted=[...new Set([...(a.deleted_user||[]),...(b.deleted_user||[])])].map(String);
+  const evMap={};
+  for(const e of [...(a.user_events||[]),...(b.user_events||[])]){
+    if(!e||!e.id) continue;
+    if(!evMap[e.id] || (e.ts||0)>=(evMap[e.id].ts||0)) evMap[e.id]=e;
+  }
+  const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
+  const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
+  const useB=tuB>=tuA;
+  return {v:Date.now(), notes, hidden, user_events, deleted_user:deleted,
+    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA};
+}
+function adoptDoc(doc){
+  userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]);
+  userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
+  tomWork=doc.tom_work||[];
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
+  localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
+  localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
+  localStorage.setItem(TOMWORK_KEY,JSON.stringify(tomWork));
+  localStorage.setItem(TOMWORK_TS_KEY,doc.tom_work_updated||'');
+}
+async function fetchShared(){
+  try{
+    const r=await fetch(SYNC_URL+'?t='+Date.now(),{cache:'no-store'});
+    const txt=await r.text();
+    if(!txt) return null;
+    let j=JSON.parse(txt);
+    if(typeof j==='string') j=JSON.parse(j);
+    return (j&&typeof j==='object'&&!Array.isArray(j))?j:null;
+  }catch(e){ return null; }
+}
+let pushTimer=null;
+function pushSharedSoon(){ clearTimeout(pushTimer); pushTimer=setTimeout(pushSharedNow,400); }
+async function pushSharedNow(){
+  const doc=mergeDocs(await fetchShared(),localDoc()); // local wins ties (fresh edit)
+  adoptDoc(doc);
+  try{
+    await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)});
+    lastSharedJson=JSON.stringify(doc);
+  }catch(e){ toast('Family sync failed — change saved on this device'); }
+  rebuild();
+}
+async function refreshShared(){
+  const remote=await fetchShared();
+  if(!remote) return;
+  const j=JSON.stringify(remote);
+  if(j===lastSharedJson) return;
+  lastSharedJson=j;
+  adoptDoc(mergeDocs(localDoc(),remote)); // remote wins ties (others' edits)
+  rebuild();
+}
+setInterval(refreshShared,60000);
+
+function saveNote(id,text){
+  userNotes[String(id)]={t:(text||'').trim(),ts:Date.now()};
+  localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
+  pushSharedSoon();
 }
 let filters=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')||{
   people:{T:true,E:true,S:true,L:true,F:true},
   types:{game:true,practice:true,tournament:true,academic:true,noschool:true,family:true,potential:true,regcheck:true},
 };
+for(const k of Object.keys(PEOPLE)) if(filters.people[k]===undefined) filters.people[k]=true;
+for(const k of Object.keys(TYPES)) if(filters.types[k]===undefined) filters.types[k]=true;
 let view=localStorage.getItem(VIEW_KEY)||'month';
 let cursor=new Date(); cursor.setHours(0,0,0,0);
 let miniCursor=new Date(cursor);
@@ -463,6 +548,12 @@ function detectType(e){
   if(/school|conferences|assembly|concert|musical|graduation|back to school|curriculum|picture day|field trip|grandfriends|fair\b/.test(t)) return 'academic';
   return 'family';
 }
+function trackStatus(t){
+  const d=parseTrackingDates(t);
+  if(d && d[1]<TODAY) return {label:'Past', cls:'past', past:true};
+  const reg=String(t.registration||'TBD'); const rl=reg.toLowerCase();
+  return {label:reg, cls: rl==='open'?'open':rl==='closed'?'closed':'notyet', past:false};
+}
 function lookupPracticeTime(title){
   for(const p of siteData.practice_times){ if(new RegExp(p.match).test(title)) return p; }
   return null;
@@ -511,6 +602,14 @@ function normAll(famCal,masselite,site){
       push(mk({...e,id:e.id||'static-'+i}, parseYMD(e.start), e.end?parseYMD(e.end):parseYMD(e.start), true));
     }
   }
+  // 3b) Tom's work calendar — all-day / multi-day only (travel), synced daily
+  for(let i=0;i<tomWork.length;i++){
+    const e=tomWork[i];
+    if(!e||!e.start) continue;
+    push({id:'tw-'+e.start+'-'+i, title:e.title||'(work)', person:'D', type:'family',
+      start:parseYMD(e.start), end:parseYMD(e.end||e.start), allDay:true,
+      location:'', link:'', notes:'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work'});
+  }
   // 4) tracking items → potential events when dates parseable
   for(let i=0;i<site.tracking_items.length;i++){
     const t=site.tracking_items[i];
@@ -555,7 +654,7 @@ function visible(){
     if(!filters.types[e.type]) return false;
     if(searchQ){
       const q=searchQ.toLowerCase();
-      if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q)||(userNotes[e.id]||'').toLowerCase().includes(q))) return false;
+      if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q)||noteText(e.id).toLowerCase().includes(q))) return false;
     }
     return true;
   });
@@ -605,7 +704,7 @@ function render(){
   if(searchQ){renderAgenda();return;}
   if(view==='month') renderMonth();
   else if(view==='week') renderTimeGrid(7);
-  else if(view==='day') renderTimeGrid(1);
+  else if(view==='day') renderDayCols();
   else if(view==='year') renderYear();
   else if(view==='track') renderTracking();
   else renderPlan();
@@ -860,8 +959,9 @@ function renderPlan(){
       let tag='';
       if(e.type==='regcheck') tag=`<span class="tag reg">Reg check</span>`;
       else if(e.type==='potential'){
+        const past=e.end<TODAY;
         const r=(e.reg||'').toLowerCase();
-        tag=`<span class="tag ${r==='open'?'open':r==='closed'?'closed':'notyet'}">${esc(e.reg||'Potential')}</span>`;
+        tag=`<span class="tag ${past?'past':r==='open'?'open':r==='closed'?'closed':'notyet'}">${past?'Past':esc(e.reg||'Potential')}</span>`;
       }
       else if(e.type==='noschool') tag=`<span class="tag" style="background:#f1f3f4;color:#5f6368;">No school</span>`;
       html+=`<div class="prow" data-ev="${esc(String(e.id))}">
@@ -890,39 +990,106 @@ function renderPlan(){
   content.innerHTML=html;
 }
 
-// ----- TRACKING -----
+// ----- TRACKING (one column per kid) -----
 function renderTracking(){
   $('rangeLabel').textContent='Tracking';
-  let html=`<div class="plan"><h2>Events being tracked</h2>
-    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched for the kids. Notes are saved in this browser only.</p>`;
-  const items=siteData.tracking_items.map((t,i)=>({t,i,d:parseTrackingDates(t)}));
-  const dated=items.filter(x=>x.d).sort((a,b)=>a.d[0]-b.d[0]);
-  const tbd=items.filter(x=>!x.d);
+  const KIDS=['T','E','S'];
+  const byKid={T:[],E:[],S:[]};
+  siteData.tracking_items.forEach((t,i)=>{
+    const k=KIDS.includes(t.kid)?t.kid:'T';
+    byKid[k].push({t,i,d:parseTrackingDates(t)});
+  });
   const row=x=>{
     const {t,i}=x; const id='track-'+i;
-    const kidKey=t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F';
-    const reg=String(t.registration||'TBD');
-    const rl=reg.toLowerCase();
-    const cls=rl==='open'?'open':rl==='closed'?'closed':'notyet';
-    const note=userNotes[id]||'';
-    return `<div class="prow" style="cursor:default;flex-wrap:wrap;">
-      <div class="date">${esc(t.dates||'TBD')}</div>
-      <div class="pill" style="background:${PEOPLE[kidKey].hex}"></div>
-      <div class="body" style="flex:1;">
+    const st=trackStatus(t);
+    const note=noteText(id);
+    return `<div class="prow" style="cursor:default;flex-wrap:wrap;${st.past?'opacity:.55;':''}">
+      <div class="body" style="flex:1;min-width:0;">
         <div class="t">${esc(t.name)}</div>
-        <div class="sub">${esc([PEOPLE[kidKey].name,t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">event page ↗</a>`:''}</div>
+        <div class="sub">${esc([t.dates||'TBD',t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">page ↗</a>`:''}</div>
       </div>
-      <span class="tag ${cls}">${esc(reg)}</span>
-      <div style="flex-basis:100%;display:flex;gap:8px;margin-top:7px;padding-left:114px;">
-        <textarea data-note="${id}" rows="1" placeholder="📝 Add a note…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;">${esc(note)}</textarea>
+      <span class="tag ${st.cls}">${esc(st.label)}</span>
+      <div style="flex-basis:100%;display:flex;gap:6px;margin-top:6px;">
+        <textarea data-note="${id}" rows="1" placeholder="📝 Add a family note…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;">${esc(note)}</textarea>
         <button class="btn" data-notesave="${id}" style="padding:5px 12px;font-size:12px;align-self:flex-start;">Save</button>
       </div></div>`;
   };
-  if(dated.length) html+=`<div class="pmonth"><h3>Upcoming — dated</h3>${dated.map(row).join('')}</div>`;
-  if(tbd.length) html+=`<div class="pmonth"><h3>Watching — dates TBD</h3>${tbd.map(row).join('')}</div>`;
-  if(!items.length) html+=`<p style="color:var(--muted)">Nothing being tracked right now.</p>`;
-  html+=`</div>`;
+  let html=`<div class="plan" style="max-width:none;"><h2>Events being tracked</h2>
+    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched. Notes sync to the whole family.</p>
+    <div class="track-grid">`;
+  for(const k of KIDS){
+    const items=byKid[k];
+    const dated=items.filter(x=>x.d&&x.d[1]>=TODAY).sort((a,b)=>a.d[0]-b.d[0]);
+    const tbd=items.filter(x=>!x.d);
+    const past=items.filter(x=>x.d&&x.d[1]<TODAY).sort((a,b)=>b.d[0]-a.d[0]);
+    html+=`<div class="track-col">
+      <h3 style="border-bottom:3px solid ${PEOPLE[k].hex};"><span class="chip-person" style="background:${PEOPLE[k].hex}">${PEOPLE[k].name}</span><span style="color:var(--muted);font-size:12px;font-weight:400;">${items.length} tracked</span></h3>`;
+    if(!items.length) html+=`<p style="color:var(--muted);font-size:13px;padding:8px 2px;">Nothing tracked yet.</p>`;
+    if(dated.length) html+=`<h4 class="track-sub">Upcoming</h4>`+dated.map(row).join('');
+    if(tbd.length) html+=`<h4 class="track-sub">Watching — dates TBD</h4>`+tbd.map(row).join('');
+    if(past.length) html+=`<h4 class="track-sub">Past</h4>`+past.map(row).join('');
+    html+=`</div>`;
+  }
+  html+=`</div></div>`;
   content.innerHTML=html;
+}
+
+// ----- DAY VIEW (one column per person) -----
+function renderDayCols(){
+  const day=startOfDay(cursor);
+  $('rangeLabel').textContent=`${MONTHS[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
+  const list=eventsOnDay(visible(),day);
+  const ORDER=['T','E','S','L','D','F'];
+  const cols=ORDER.filter(p=>['T','E','S'].includes(p)?filters.people[p]:list.some(e=>e.person===p));
+  const HOUR=48;
+  const byP={}; cols.forEach(p=>byP[p]={allday:[],timed:[]});
+  for(const e of list){ if(byP[e.person]) (e.allDay?byP[e.person].allday:byP[e.person].timed).push(e); }
+  const n=cols.length||1;
+  let html=`<div class="tgrid">
+    <div class="tg-head"><div class="tg-gutter"></div>${cols.map(p=>`
+      <div class="col"><div class="dow" style="color:${PEOPLE[p].hex};font-size:12px;">${PEOPLE[p].name}</div>
+      <div style="height:5px;border-radius:3px;background:${PEOPLE[p].hex};margin:5px 16px 7px;"></div></div>`).join('')}
+    </div>`;
+  const maxA=Math.max(0,...cols.map(p=>byP[p].allday.length));
+  if(maxA>0){
+    const h=Math.min(maxA,5)*24+6;
+    html+=`<div class="tg-allday"><div class="lbl">all-day</div><div class="lanes" style="height:${h}px;--cols:${n}">
+      <div class="grid">${cols.map(()=>'<i></i>').join('')}</div>`;
+    const colW=100/n;
+    cols.forEach((p,ci)=>{
+      byP[p].allday.forEach((e,li)=>{
+        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:calc(${ci*colW}% + 3px);width:calc(${colW}% - 7px);top:${3+li*24}px;${chipStyle(e)}">${esc(e.title)}</div>`;
+      });
+    });
+    html+=`</div></div>`;
+  }
+  const gridH=24*HOUR;
+  html+=`<div class="tg-scroll" id="tgScroll"><div class="tg-canvas" style="height:${gridH}px;">
+    <div class="tg-times">`;
+  for(let h=1;h<24;h++){ const lbl=h%12||12, ap=h<12?'am':'pm'; html+=`<div style="top:${h*HOUR}px;">${lbl} ${ap}</div>`; }
+  html+=`</div><div class="tg-cols" style="--cols:${n};">`;
+  let lines=''; for(let h=1;h<24;h++) lines+=`<div class="tg-hline" style="top:${h*HOUR}px;"></div>`;
+  const isToday=sameDay(day,TODAY);
+  let now=''; if(isToday){ const mins=new Date().getHours()*60+new Date().getMinutes(); now=`<div class="nowline" style="top:${mins/60*HOUR}px;"></div>`; }
+  for(const p of cols){
+    const evs=byP[p].timed
+      .map(e=>({e, s:Math.max(0,(Math.max(e.start,day)-day)/3600000), en:Math.min(24,(Math.min(e.end,addDays(day,1))-day)/3600000)}))
+      .sort((a,b)=>a.s-b.s||b.en-a.en);
+    const lanes=[];
+    for(const ev of evs){ let c=0; while(lanes[c]&&lanes[c].some(o=>!(ev.en<=o.s||ev.s>=o.en))) c++; if(!lanes[c])lanes[c]=[]; lanes[c].push(ev); ev.col=c; }
+    for(const ev of evs){ const overl=evs.filter(o=>!(ev.en<=o.s||ev.s>=o.en)); ev.ncol=Math.max(...overl.map(o=>o.col))+1; }
+    let colHtml='';
+    for(const ev of evs){
+      const e=ev.e, top=ev.s*HOUR, hh=Math.max(22,(ev.en-ev.s)*HOUR-2), w=100/ev.ncol, l=ev.col*w;
+      colHtml+=`<div class="tg-ev" data-ev="${esc(String(e.id))}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${chipStyle(e)};z-index:${5+ev.col};">
+        <div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}</div></div>`;
+    }
+    html+=`<div class="tg-col">${lines}${colHtml}${now}</div>`;
+  }
+  html+=`</div></div></div></div>`;
+  content.innerHTML=html;
+  const sc=$('tgScroll');
+  if(sc) sc.scrollTop=(isToday?Math.max(0,new Date().getHours()-2):7)*HOUR;
 }
 
 // ----- AGENDA (search) -----
@@ -1017,11 +1184,11 @@ function showEvent(id){
   if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
   html+=`<div style="margin-top:14px;">
     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
-    <textarea id="noteBox" rows="2" placeholder="Add a note (saved in this browser only)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(userNotes[e.id]||'')}</textarea>
+    <textarea id="noteBox" rows="2" placeholder="Add a note — the whole family will see it" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(noteText(e.id))}</textarea>
     <div style="text-align:right;margin-top:6px;"><button class="btn" id="noteSave" style="padding:6px 14px;font-size:13px;">Save note</button></div>
   </div>`;
   $('evBody').innerHTML=html;
-  $('noteSave').onclick=()=>{ saveNote(String(e.id),$('noteBox').value); toast('Note saved (this browser only)'); };
+  $('noteSave').onclick=()=>{ saveNote(String(e.id),$('noteBox').value); toast('Note saved — syncing to the family'); };
   $('evEdit').style.display = e.source==='user' ? '' : 'none';
   openOverlay($('evModal'));
 }
@@ -1051,6 +1218,7 @@ function saveForm(){
   if(!title){toast('Give the event a title');return;}
   const obj={
     id: editingId || 'u-'+Date.now(),
+    ts: Date.now(),
     title, person:$('fPerson').value, type:$('fType').value,
     start:$('fStart').value, end:$('fEnd').value||$('fStart').value,
     allDay:$('fAllDay').checked,
@@ -1062,7 +1230,8 @@ function saveForm(){
     if(i>=0) userEvents[i]=obj;
   } else userEvents.push(obj);
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
-  rebuild(); closeModals(); toast('Saved — note: stored in this browser only');
+  pushSharedSoon();
+  rebuild(); closeModals(); toast('Saved — syncing to the family');
 }
 function toast(msg){
   const t=$('toast'); t.textContent=msg; t.style.display='block';
@@ -1083,7 +1252,7 @@ function nav(dir){
 document.addEventListener('click',ev=>{
   const t=ev.target;
   const ns=t.closest('[data-notesave]');
-  if(ns){ const id=ns.dataset.notesave; const ta=document.querySelector(`textarea[data-note="${id}"]`); if(ta){ saveNote(id,ta.value); toast('Note saved (this browser only)'); } return; }
+  if(ns){ const id=ns.dataset.notesave; const ta=document.querySelector(`textarea[data-note="${id}"]`); if(ta){ saveNote(id,ta.value); toast('Note saved — syncing to the family'); } return; }
   if(t.closest('textarea')) return;
   const evEl=t.closest('[data-ev]');
   if(evEl){ showEvent(evEl.dataset.ev); return; }
@@ -1135,12 +1304,15 @@ $('evHide').onclick=()=>{
   if(!currentEv) return;
   if(currentEv.source==='user'){
     userEvents=userEvents.filter(x=>String(x.id)!==String(currentEv.id));
+    deletedUser.add(String(currentEv.id));
     localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+    localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
   } else {
     hiddenIds.add(currentEv.id);
     localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   }
-  rebuild(); closeModals(); toast('Removed (hidden in this browser)');
+  pushSharedSoon();
+  rebuild(); closeModals(); toast('Removed for the whole family');
 };
 $('fSave').onclick=saveForm;
 $('fDelete').onclick=()=>{ $('evHide').onclick(); };
@@ -1167,9 +1339,11 @@ Promise.all([
   fetch('family_cal.json?v='+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[]),
   fetch('masselite_practices.json?v='+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[]),
   fetch('site_data.json?v='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
-]).then(([fam,mass,site])=>{
+  fetchShared(),
+]).then(([fam,mass,site,shared])=>{
   window._fam=fam; window._mass=mass;
   if(site) siteData=site;
+  if(shared){ lastSharedJson=JSON.stringify(shared); adoptDoc(mergeDocs(localDoc(),shared)); }
   rebuild();
 });
 </script>
