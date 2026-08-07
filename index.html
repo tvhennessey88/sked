@@ -280,6 +280,7 @@ button{font-family:inherit; cursor:pointer;}
     <button data-v="month" class="active">Month</button>
     <button data-v="year">Year</button>
     <button data-v="plan">Planning</button>
+    <button data-v="track">Tracking</button>
   </div>
 </div>
 
@@ -378,12 +379,18 @@ const TYPES = {
   potential:{label:'Potential (tracking)', icon:'👀'},
   regcheck:{label:'Registration reminders', icon:'⏰'},
 };
-const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1';
+const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1', NOTES_KEY='sked_notes_v1';
 
 // ---------- state ----------
 let events=[];            // normalized events
 let userEvents=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
 let hiddenIds=new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]'));
+let userNotes=JSON.parse(localStorage.getItem(NOTES_KEY)||'{}');
+function saveNote(id,text){
+  text=(text||'').trim();
+  if(text) userNotes[id]=text; else delete userNotes[id];
+  localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
+}
 let filters=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')||{
   people:{T:true,E:true,S:true,L:true,F:true},
   types:{game:true,practice:true,tournament:true,academic:true,noschool:true,family:true,potential:true,regcheck:true},
@@ -548,7 +555,7 @@ function visible(){
     if(!filters.types[e.type]) return false;
     if(searchQ){
       const q=searchQ.toLowerCase();
-      if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q))) return false;
+      if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q)||(userNotes[e.id]||'').toLowerCase().includes(q))) return false;
     }
     return true;
   });
@@ -600,6 +607,7 @@ function render(){
   else if(view==='week') renderTimeGrid(7);
   else if(view==='day') renderTimeGrid(1);
   else if(view==='year') renderYear();
+  else if(view==='track') renderTracking();
   else renderPlan();
   renderMini();
 }
@@ -882,6 +890,41 @@ function renderPlan(){
   content.innerHTML=html;
 }
 
+// ----- TRACKING -----
+function renderTracking(){
+  $('rangeLabel').textContent='Tracking';
+  let html=`<div class="plan"><h2>Events being tracked</h2>
+    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched for the kids. Notes are saved in this browser only.</p>`;
+  const items=siteData.tracking_items.map((t,i)=>({t,i,d:parseTrackingDates(t)}));
+  const dated=items.filter(x=>x.d).sort((a,b)=>a.d[0]-b.d[0]);
+  const tbd=items.filter(x=>!x.d);
+  const row=x=>{
+    const {t,i}=x; const id='track-'+i;
+    const kidKey=t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F';
+    const reg=String(t.registration||'TBD');
+    const rl=reg.toLowerCase();
+    const cls=rl==='open'?'open':rl==='closed'?'closed':'notyet';
+    const note=userNotes[id]||'';
+    return `<div class="prow" style="cursor:default;flex-wrap:wrap;">
+      <div class="date">${esc(t.dates||'TBD')}</div>
+      <div class="pill" style="background:${PEOPLE[kidKey].hex}"></div>
+      <div class="body" style="flex:1;">
+        <div class="t">${esc(t.name)}</div>
+        <div class="sub">${esc([PEOPLE[kidKey].name,t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">event page ↗</a>`:''}</div>
+      </div>
+      <span class="tag ${cls}">${esc(reg)}</span>
+      <div style="flex-basis:100%;display:flex;gap:8px;margin-top:7px;padding-left:114px;">
+        <textarea data-note="${id}" rows="1" placeholder="📝 Add a note…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;">${esc(note)}</textarea>
+        <button class="btn" data-notesave="${id}" style="padding:5px 12px;font-size:12px;align-self:flex-start;">Save</button>
+      </div></div>`;
+  };
+  if(dated.length) html+=`<div class="pmonth"><h3>Upcoming — dated</h3>${dated.map(row).join('')}</div>`;
+  if(tbd.length) html+=`<div class="pmonth"><h3>Watching — dates TBD</h3>${tbd.map(row).join('')}</div>`;
+  if(!items.length) html+=`<p style="color:var(--muted)">Nothing being tracked right now.</p>`;
+  html+=`</div>`;
+  content.innerHTML=html;
+}
+
 // ----- AGENDA (search) -----
 function renderAgenda(){
   $('rangeLabel').textContent=`Search: “${searchQ}”`;
@@ -972,7 +1015,13 @@ function showEvent(id){
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.source&&e.source!=='user') html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(e.source)}</span></div>`;
   if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
+  html+=`<div style="margin-top:14px;">
+    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
+    <textarea id="noteBox" rows="2" placeholder="Add a note (saved in this browser only)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(userNotes[e.id]||'')}</textarea>
+    <div style="text-align:right;margin-top:6px;"><button class="btn" id="noteSave" style="padding:6px 14px;font-size:13px;">Save note</button></div>
+  </div>`;
   $('evBody').innerHTML=html;
+  $('noteSave').onclick=()=>{ saveNote(String(e.id),$('noteBox').value); toast('Note saved (this browser only)'); };
   $('evEdit').style.display = e.source==='user' ? '' : 'none';
   openOverlay($('evModal'));
 }
@@ -1033,6 +1082,9 @@ function nav(dir){
 // ---------- events wiring ----------
 document.addEventListener('click',ev=>{
   const t=ev.target;
+  const ns=t.closest('[data-notesave]');
+  if(ns){ const id=ns.dataset.notesave; const ta=document.querySelector(`textarea[data-note="${id}"]`); if(ta){ saveNote(id,ta.value); toast('Note saved (this browser only)'); } return; }
+  if(t.closest('textarea')) return;
   const evEl=t.closest('[data-ev]');
   if(evEl){ showEvent(evEl.dataset.ev); return; }
   const more=t.closest('.ev-more');
