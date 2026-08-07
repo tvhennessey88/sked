@@ -1,0 +1,1437 @@
+{
+ "static_events": [
+  {
+   "title": "RL: Class I → Beaver Brook",
+   "start": "2026-08-21",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: New Student Orientation",
+   "start": "2026-08-25",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Fall Term Begins",
+   "start": "2026-08-26",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Fri Sep 4",
+   "start": "2026-09-04",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Labor Day",
+   "start": "2026-09-07",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Class VI Beaver Brook",
+   "start": "2026-09-18",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Columbus Day",
+   "start": "2026-10-12",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: End Marking Period 1",
+   "start": "2026-10-16",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School (Class I college visits)",
+   "start": "2026-10-19",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Start Marking Period 2",
+   "start": "2026-10-20",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Faculty Day",
+   "start": "2026-10-26",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Thanksgiving Break",
+   "start": "2026-11-25",
+   "end": "2026-11-28",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: End Marking Period 2",
+   "start": "2026-12-09",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Midyear Exams Begin",
+   "start": "2026-12-14",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Midyear Exams End",
+   "start": "2026-12-18",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Glee Club Holiday Concert 🎶",
+   "start": "2026-12-18",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Winter Break",
+   "start": "2026-12-18",
+   "end": "2027-01-05",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Winter Term Begins",
+   "start": "2027-01-05",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — MLK Day",
+   "start": "2027-01-18",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — PD Day",
+   "start": "2027-02-01",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Presidents Day",
+   "start": "2027-02-15",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School",
+   "start": "2027-02-16",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: End Marking Period 3",
+   "start": "2027-03-05",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Start Marking Period 4",
+   "start": "2027-03-08",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Spring Break",
+   "start": "2027-03-12",
+   "end": "2027-03-30",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Spring Term Begins",
+   "start": "2027-03-30",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Patriots Day",
+   "start": "2027-04-19",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: End Marking Period 4",
+   "start": "2027-05-24",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Final Exams Begin",
+   "start": "2027-05-27",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: No School — Memorial Day",
+   "start": "2027-05-31",
+   "color": "#64748b",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Final Exams End",
+   "start": "2027-06-02",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "RL: Prize Day 🏆",
+   "start": "2027-06-04",
+   "color": "#2563eb",
+   "kid": "tommy"
+  },
+  {
+   "title": "NCDS: Opening Day",
+   "start": "2026-08-26",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes",
+   "start": "2026-09-04",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — Labor Day",
+   "start": "2026-09-07",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Grandparents' & Grandfriends' Day — Early Dismissal 12pm",
+   "start": "2026-10-09",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — Indigenous Peoples' Day",
+   "start": "2026-10-12",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Family Conferences — No Classes",
+   "start": "2026-11-05",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Family Conferences — No Classes",
+   "start": "2026-11-12",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Thanksgiving Break",
+   "start": "2026-11-23",
+   "end": "2026-11-28",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Early Dismissal 12pm",
+   "start": "2026-12-18",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Christmas Break",
+   "start": "2026-12-21",
+   "end": "2027-01-02",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: PD Day — No Classes",
+   "start": "2027-01-04",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — MLK Day",
+   "start": "2027-01-18",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Faculty Work Day — No Classes",
+   "start": "2027-01-19",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: PD Day — No Classes",
+   "start": "2027-02-08",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — Presidents' Day",
+   "start": "2027-02-15",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Head's Holiday — No Classes",
+   "start": "2027-02-16",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Spring Break",
+   "start": "2027-03-15",
+   "end": "2027-03-27",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Family Conferences — No Classes",
+   "start": "2027-04-09",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — Patriots' Day",
+   "start": "2027-04-19",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: No Classes — Memorial Day",
+   "start": "2027-05-31",
+   "color": "#64748b",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Commencement 🎓",
+   "start": "2027-06-04",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "NCDS: Last Day (Gr. 5–11)",
+   "start": "2027-06-08",
+   "color": "#db2777",
+   "kid": "emily"
+  },
+  {
+   "title": "Tenacre: First Day (Half-Day)",
+   "start": "2026-09-08",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Regular Day Begins",
+   "start": "2026-09-09",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Half Day",
+   "start": "2026-09-11",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Yom Kippur",
+   "start": "2026-09-21",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Back to School Night PK–2",
+   "start": "2026-09-24",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Back to School Night Gr.3–6",
+   "start": "2026-10-01",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Indigenous Peoples Day",
+   "start": "2026-10-12",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Apple Pie Run 🍎",
+   "start": "2026-10-17",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: PT Conferences (Eve)",
+   "start": "2026-10-28",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: 12:15 Dismissal + PT Conf",
+   "start": "2026-10-29",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — PT Conferences",
+   "start": "2026-10-30",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Open House",
+   "start": "2026-11-07",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Veterans Day",
+   "start": "2026-11-11",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Thanksgiving Break",
+   "start": "2026-11-25",
+   "end": "2026-11-28",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: December Lights (PK–2) 🎄",
+   "start": "2026-12-11",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: December Celebration (3–6) 🎄",
+   "start": "2026-12-17",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Winter Break",
+   "start": "2026-12-21",
+   "end": "2027-01-02",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Classes Resume",
+   "start": "2027-01-04",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — MLK Day",
+   "start": "2027-01-18",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Report Writing",
+   "start": "2027-01-19",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Presidents Day",
+   "start": "2027-02-15",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: PT Conferences (Eve)",
+   "start": "2027-02-24",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: 12:15 Dismissal + PT Conf",
+   "start": "2027-02-25",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — PT Conferences",
+   "start": "2027-02-26",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Spring Break",
+   "start": "2027-03-15",
+   "end": "2027-03-27",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Classes Resume",
+   "start": "2027-03-29",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: GrandFriends Day 🌸",
+   "start": "2027-04-09",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Patriots Day",
+   "start": "2027-04-19",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Tenacre Fair 🎪",
+   "start": "2027-05-08",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Apple Blossom 🌸",
+   "start": "2027-05-20",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Spring Musical (Parent) 🎭",
+   "start": "2027-05-26",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Spring Musical (Student + Parent) 🎭",
+   "start": "2027-05-27",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Report Writing",
+   "start": "2027-05-28",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: No School — Memorial Day",
+   "start": "2027-05-31",
+   "color": "#64748b",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: 6th Grade Good-Bye Evening",
+   "start": "2027-06-10",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "Tenacre: Last Day of School 🎉",
+   "start": "2027-06-11",
+   "color": "#059669",
+   "kid": "sophie"
+  },
+  {
+   "title": "T — BIC Winter Showcase (IMG Academy, Bradenton FL)",
+   "start": "2027-01-09",
+   "end": "2027-01-10",
+   "color": "#f59e0b",
+   "kid": "tommy",
+   "level": "operational",
+   "type": "showcase",
+   "location": "IMG Academy, Bradenton FL",
+   "notes": "Men's 2030 · Position: Midfield · Registered & paid ($826.97) · Conf #3087179",
+   "link": "https://1stclasslax.sprocketsports.com/players/687276/player-registrations/3087179"
+  },
+  {
+   "title": "E — ME: Xtreme Sixes (Weymouth)",
+   "start": "2026-06-13",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Heart & Hustle (Fitchburg)",
+   "start": "2026-06-20",
+   "end": "2026-06-22",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Summer Ascender (Waltham)",
+   "start": "2026-06-27",
+   "end": "2026-06-29",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-06-23",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-06-30",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-07-07",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-07-14",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-07-21",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Summer League (Milton)",
+   "start": "2026-07-28",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: The Northern Rise (Devens)",
+   "start": "2026-07-18",
+   "end": "2026-07-20",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Intrasquad 5v5 (Weston)",
+   "start": "2026-09-20",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: September Sixes (Taunton)",
+   "start": "2026-09-27",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Love 2 Lax (Ft Devens)",
+   "start": "2026-10-03",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Fall Fear (Ft Devens)",
+   "start": "2026-10-12",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Ghost Games (Farmington CT)",
+   "start": "2026-10-24",
+   "end": "2026-10-26",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Turkey Challenge (Marlboro)",
+   "start": "2026-11-27",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-07",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-14",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-21",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-28",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-05",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-12",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-19",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "operational"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-09-12",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-09-18",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Forekicks Marlboro)",
+   "start": "2026-09-19",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-09-26",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-10-01",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-10-10",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Union Pt)",
+   "start": "2026-10-15",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Forekicks Marlboro)",
+   "start": "2026-10-17",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "E — ME: Practice (Forekicks Marlboro)",
+   "start": "2026-10-24",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-08-24",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-08-26",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-08-31",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-02",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-07",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-09",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-14",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-16",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-21",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-23",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-28",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-09-30",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-05",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-07",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-12",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-14",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-19",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-21",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-26",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-10-28",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-11-02",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "WPC: Practice (Elm Bank, Wellesley)",
+   "start": "2026-11-04",
+   "color": "#db2777",
+   "kid": "emily",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Xtreme Sixes (Weymouth)",
+   "start": "2026-06-13",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Heart & Hustle (Fitchburg)",
+   "start": "2026-06-20",
+   "end": "2026-06-22",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Summer Ascender (Waltham)",
+   "start": "2026-06-27",
+   "end": "2026-06-29",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: The Northern Rise (Devens)",
+   "start": "2026-07-18",
+   "end": "2026-07-20",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Intrasquad 5v5 (Weston)",
+   "start": "2026-09-20",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: September Sixes (Taunton)",
+   "start": "2026-09-27",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Love 2 Lax (Ft Devens)",
+   "start": "2026-10-03",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Fall Fear (Ft Devens)",
+   "start": "2026-10-12",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Ghost Games (Farmington CT)",
+   "start": "2026-10-24",
+   "end": "2026-10-26",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Turkey Challenge (Marlboro)",
+   "start": "2026-11-27",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-07",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-14",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-21",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-11-28",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-05",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-12",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
+   "start": "2026-12-19",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "operational"
+  },
+  {
+   "title": "S — ME: Practice (Union Pt)",
+   "start": "2026-09-12",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Union Pt)",
+   "start": "2026-09-17",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Forekicks Marlboro)",
+   "start": "2026-09-19",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Union Pt)",
+   "start": "2026-09-26",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Union Pt)",
+   "start": "2026-10-08",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Union Pt)",
+   "start": "2026-10-10",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  },
+  {
+   "title": "S — ME: Practice (Forekicks Marlboro)",
+   "start": "2026-10-17",
+   "color": "#059669",
+   "kid": "sophie",
+   "level": "practice"
+  }
+ ],
+ "all_kids_out": [
+  {
+   "start": "2026-09-04",
+   "end": "2026-09-07",
+   "label": "All Out — Fri Sep 4 + Labor Day Weekend (Tenacre not yet started)"
+  },
+  {
+   "start": "2026-10-12",
+   "end": "2026-10-12",
+   "label": "Columbus / Indigenous Peoples Day"
+  },
+  {
+   "start": "2026-11-25",
+   "end": "2026-11-27",
+   "label": "Thanksgiving Break"
+  },
+  {
+   "start": "2026-12-21",
+   "end": "2027-01-01",
+   "label": "Winter Break"
+  },
+  {
+   "start": "2027-01-18",
+   "end": "2027-01-18",
+   "label": "MLK Day"
+  },
+  {
+   "start": "2027-02-15",
+   "end": "2027-02-15",
+   "label": "Presidents' Day"
+  },
+  {
+   "start": "2027-03-15",
+   "end": "2027-03-26",
+   "label": "Spring Break — All 3 Schools"
+  },
+  {
+   "start": "2027-04-19",
+   "end": "2027-04-19",
+   "label": "Patriots' Day"
+  },
+  {
+   "start": "2027-05-31",
+   "end": "2027-05-31",
+   "label": "Memorial Day"
+  }
+ ],
+ "tracking_items": [
+  {
+   "kid": "T",
+   "name": "Future Phenoms Newport (ML8)",
+   "monthKey": "2026-07",
+   "dates": "Jul 20–21, 2026",
+   "location": "Newport, RI",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://www.ml8events.com/events/future-phenoms-newport"
+  },
+  {
+   "kid": "T",
+   "name": "Jumbo July Prospect Day (Tufts)",
+   "monthKey": "2026-07",
+   "dates": "Jul 27, 2026",
+   "location": "Medford, MA",
+   "ages": "2026–2029",
+   "registration": "Open",
+   "url": "https://jumbolacrosseclinics.com/july-prospect-day/"
+  },
+  {
+   "kid": "T",
+   "name": "Future Blue Prospect Camp (Johns Hopkins)",
+   "monthKey": "2026-07",
+   "dates": "Jul 13, 2026",
+   "location": "Baltimore, MD",
+   "ages": "2027–2029",
+   "registration": "Open",
+   "url": "https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp"
+  },
+  {
+   "kid": "T",
+   "name": "Duke Prospect Day Camp",
+   "monthKey": "2026-07",
+   "dates": "Jul 27–28, 2026",
+   "location": "Durham, NC",
+   "ages": "2027–2029",
+   "registration": "Open",
+   "url": "https://dukelacrossecampforboys.com/info1.html"
+  },
+  {
+   "kid": "T",
+   "name": "Blue & Grey July Prospect Day (Georgetown)",
+   "monthKey": "2026-07",
+   "dates": "Jul 19, 2026",
+   "location": "Washington, DC",
+   "ages": "2027–2029",
+   "registration": "Open",
+   "url": "https://www.blueandgreylacrosse.com/content/2026-july-prospect-day"
+  },
+  {
+   "kid": "T",
+   "name": "Navy Overnight Prospect Camp",
+   "monthKey": "2026-07",
+   "dates": "Jul 28–29, 2026",
+   "location": "Annapolis, MD",
+   "ages": "2028–2029",
+   "registration": "Not yet open",
+   "url": "https://navylacrossecamp.com/prospect-camp"
+  },
+  {
+   "kid": "T",
+   "name": "Best in Class Fall Showcase",
+   "monthKey": "2026-10",
+   "dates": "Oct 25, 2026",
+   "location": "Wilmington, DE",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://www.1stclasslax.com/best-in-class-fall"
+  },
+  {
+   "kid": "T",
+   "name": "The Spotlight (ML8)",
+   "monthKey": "2026-10",
+   "dates": "Oct 17–18, 2026",
+   "location": "TBD",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://www.ml8events.com/events/the-spotlight"
+  },
+  {
+   "kid": "T",
+   "name": "One Percent Winter Showcase",
+   "monthKey": "2026-12",
+   "dates": "Dec 19, 2026",
+   "location": "Boca Raton, FL",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/"
+  },
+  {
+   "kid": "T",
+   "name": "Future Phenoms Florida (ML8)",
+   "monthKey": "2027-01",
+   "dates": "Jan 9–10, 2027",
+   "location": "Florida",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://www.ml8events.com/events/future-phenoms"
+  },
+  {
+   "kid": "T",
+   "name": "NLF Futures at IMG Academy",
+   "monthKey": "2027-01",
+   "dates": "Jan 17–19, 2027",
+   "location": "Bradenton, FL",
+   "ages": "2029/2030",
+   "registration": "Not yet open",
+   "url": "https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/"
+  },
+  {
+   "kid": "T",
+   "name": "Williams Prospect Day",
+   "monthKey": "2026-07",
+   "dates": "Jul 2, 2026",
+   "location": "Williamstown, MA",
+   "ages": "2027–2028",
+   "registration": "Closed",
+   "url": "https://register.ryzer.com/camp.cfm?sport=27&id=324131"
+  },
+  {
+   "kid": "T",
+   "name": "Jumbo February Prospect Day (Tufts)",
+   "monthKey": "2027-02",
+   "dates": "Feb 2027 (2026 date past — 2027 TBD)",
+   "location": "Medford, MA",
+   "ages": "2026–2029",
+   "registration": "Not yet open",
+   "url": "https://jumbolacrosseclinics.com/february-prospect-day/"
+  },
+  {
+   "kid": "T",
+   "name": "Paramount Lacrosse Camp (Bowdoin)",
+   "monthKey": "TBD",
+   "dates": "TBD",
+   "location": "Brunswick, ME",
+   "ages": "2027–2029",
+   "registration": "Not yet open",
+   "url": "https://www.paramountlacrossecamps.com/"
+  },
+  {
+   "kid": "E",
+   "name": "Dartmouth Summer Prospect Clinic",
+   "monthKey": "2027-07",
+   "dates": "Jul 2027 (2025 date past — 2027 TBD)",
+   "location": "Hanover, NH",
+   "ages": "Gr 8–College Frosh",
+   "registration": "Not yet open",
+   "url": "https://register.ryzer.com/camp.cfm?id=303287"
+  },
+  {
+   "kid": "E",
+   "name": "American Select Tryouts",
+   "monthKey": "TBD",
+   "dates": "Spring 2027 (TBD)",
+   "location": "TBD",
+   "ages": "2032",
+   "registration": "Not yet open",
+   "url": "https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event"
+  }
+ ],
+ "sources": [
+  {
+   "kid": "T",
+   "label": "Roxbury Latin (Tommy)",
+   "url": "https://www.roxburylatin.org/calendar"
+  },
+  {
+   "kid": "T",
+   "label": "Laxachusetts Winter Skills",
+   "url": "https://www.jrminutemenlax.net/page/show/4976531"
+  },
+  {
+   "kid": "T",
+   "label": "Laxachusetts Monthly Cal",
+   "url": "https://docs.google.com/spreadsheets/d/13IL_m-m-ZDe3kdnLxSUr1YXB8U2Yz73ck7sj7cDmATE/edit"
+  },
+  {
+   "kid": "E",
+   "label": "NCDS (Emily)",
+   "url": "https://www.ncds.org/calendar"
+  },
+  {
+   "kid": "E",
+   "label": "Mass Elite Practice",
+   "url": "https://www.masselite.com/team/schedules/practice-schedule/"
+  },
+  {
+   "kid": "E",
+   "label": "WPC Soccer (TeamSnap)",
+   "url": "https://go.teamsnap.com/"
+  },
+  {
+   "kid": "S",
+   "label": "Tenacre (Sophie)",
+   "url": "https://www.tenacrecds.org/calendar"
+  },
+  {
+   "kid": "S",
+   "label": "Mass Elite Practice",
+   "url": "https://www.masselite.com/team/schedules/practice-schedule/"
+  },
+  {
+   "kid": "F",
+   "label": "Hennessey Family Google Calendar",
+   "url": "https://calendar.google.com/calendar/u/0?cid=ZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ"
+  }
+ ],
+ "practice_times": [
+  {
+   "match": "Skills \\(Winchester\\)",
+   "start": "19:30",
+   "end": "20:30"
+  },
+  {
+   "match": "Skills \\(Sudbury\\)",
+   "start": "19:30",
+   "end": "21:00"
+  },
+  {
+   "match": "Shooting\\/Speed \\(Union Pt\\)",
+   "start": "20:00",
+   "end": "21:00"
+  },
+  {
+   "match": "Attack\\/Defense \\(Union Pt\\)",
+   "start": "19:00",
+   "end": "20:00"
+  },
+  {
+   "match": "Skills \\(Norwood\\)",
+   "start": "19:30",
+   "end": "21:00"
+  },
+  {
+   "match": "Skills\\+Full-Field \\(Union Pt\\)",
+   "start": "19:40",
+   "end": "21:00"
+  },
+  {
+   "match": "Shooting \\(Sudbury\\)",
+   "start": "20:00",
+   "end": "21:00"
+  },
+  {
+   "match": "ME: Practice \\(Union Pt\\)",
+   "start": "18:00",
+   "end": "19:30"
+  },
+  {
+   "match": "ME: Practice \\(Forekicks Marlboro\\)",
+   "start": "18:00",
+   "end": "19:30"
+  },
+  {
+   "match": "Achievelax Indoor",
+   "start": "17:00",
+   "end": "18:00"
+  },
+  {
+   "match": "Achievelax Summer",
+   "start": "17:00",
+   "end": "18:30"
+  },
+  {
+   "match": "WPC: Practice",
+   "start": "17:30",
+   "end": "19:00"
+  }
+ ]
+}

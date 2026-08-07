@@ -5,1586 +5,1121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <title>Hennessey Family Scheduler</title>
 <style>
-  :root {
-    --T:#2563eb; --E:#db2777; --S:#16a34a; --F:#7c3aed;
-    --T-bg:#dbeafe; --E-bg:#fce7f3; --S-bg:#dcfce7; --F-bg:#ede9fe;
-    --tournament:#fbbf24; --tournament-bg:#fef3c7;
-    --game:#10b981; --game-bg:#d1fae5;
-    --practice-bg:#f3f4f6; --practice-txt:#6b7280;
-    --showcase:#a855f7; --showcase-bg:#f3e8ff;
-    --noschool:#94a3b8; --noschool-bg:#f1f5f9;
-    --academic:#0ea5e9; --academic-bg:#e0f2fe;
-    --family:#8b5cf6; --family-bg:#f5f3ff;
-    --bg:#f9fafb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
-  header { background:linear-gradient(135deg,#1e40af,#7c3aed); color:#fff; padding:16px 20px; }
-  header h1 { margin:0; font-size:20px; }
-  header p { margin:4px 0 0; opacity:.9; font-size:13px; }
-  nav.tabs { background:#fff; border-bottom:1px solid var(--border); display:flex; overflow-x:auto; padding:0 12px; position:sticky; top:0; z-index:10; }
-  nav.tabs button { background:none; border:none; padding:12px 14px; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
-  nav.tabs button.active { color:var(--T); border-bottom-color:var(--T); }
-  nav.tabs button:hover { color:var(--text); }
-  #filters { background:#fff; padding:10px 14px; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:6px; align-items:center; position:sticky; top:45px; z-index:9; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
-  .chip { padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; cursor:pointer; font-weight:500; user-select:none; }
-  .chip.active { background:var(--T); color:#fff; border-color:var(--T); }
-  .chip.T.active { background:var(--T); border-color:var(--T); }
-  .chip.E.active { background:var(--E); border-color:var(--E); }
-  .chip.S.active { background:var(--S); border-color:var(--S); }
-  .chip.F.active { background:var(--F); border-color:var(--F); }
-  .chip.games.active { background:var(--tournament); border-color:var(--tournament); color:#78350f; }
-  .chip.practices.active { background:var(--practice-txt); border-color:var(--practice-txt); }
-  .divider { width:1px; height:20px; background:var(--border); margin:0 4px; }
-  main { padding:14px; max-width:1400px; margin:0 auto; }
-  .view { display:none; }
-  .view.active { display:block; }
-  .nav-bar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
-  .nav-bar button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px; }
-  .nav-bar h2 { margin:0; font-size:18px; flex:1; min-width:150px; }
+:root{
+  --T:#1a73e8; --E:#d81b60; --S:#188038; --L:#e37400; --F:#7c3aed;
+  --T-l:#e8f0fe; --E-l:#fce4ec; --S-l:#e6f4ea; --L-l:#fef3e0; --F-l:#f3e8fd;
+  --bg:#fff; --surface:#f8f9fa; --border:#dadce0; --text:#3c4043; --muted:#70757a;
+  --today:#1a73e8; --shadow:0 1px 3px rgba(60,64,67,.15), 0 4px 8px rgba(60,64,67,.1);
+  --radius:8px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Google Sans',Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  color:var(--text); background:var(--bg); font-size:14px; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+button{font-family:inherit; cursor:pointer;}
 
-  /* Event pill - shared */
-  .evt {
-    display:block; padding:4px 6px; border-radius:5px; font-size:11px; line-height:1.3;
-    cursor:pointer; margin-bottom:2px; border-left:3px solid transparent;
-    text-decoration:none; color:inherit; position:relative;
-    word-wrap:break-word; overflow-wrap:break-word; white-space:normal;
-  }
-  .evt:hover { filter:brightness(0.95); }
-  .evt .init { font-weight:700; margin-right:3px; }
-  .evt .init.T { color:var(--T); }
-  .evt .init.E { color:var(--E); }
-  .evt .init.S { color:var(--S); }
-  .evt .init.F { color:var(--F); }
-  .evt .time { font-size:10px; opacity:.7; margin-right:3px; font-variant-numeric:tabular-nums; }
-  .evt.academic { background:var(--academic-bg); border-left-color:var(--academic); }
-  .evt.noschool { background:var(--noschool-bg); border-left-color:var(--noschool); font-weight:600; }
-  .evt.tournament { background:var(--tournament-bg); border-left-color:var(--tournament); font-weight:600; }
-  .evt.showcase { background:var(--showcase-bg); border-left-color:var(--showcase); font-weight:600; }
-  .evt.game { background:var(--game-bg); border-left-color:var(--game); }
-  .evt.practice { background:var(--practice-bg); border-left-color:#d1d5db; color:var(--practice-txt); font-style:italic; }
-  .evt.family { background:var(--family-bg); border-left-color:var(--family); }
-  .evt .del { position:absolute; top:1px; right:2px; font-size:10px; padding:0 3px; color:#dc2626; opacity:0; background:rgba(255,255,255,.8); border-radius:3px; }
-  .evt:hover .del { opacity:1; }
+/* ============ TOP BAR ============ */
+.topbar{
+  display:flex; align-items:center; gap:8px; padding:8px 16px;
+  border-bottom:1px solid var(--border); background:var(--bg); flex-shrink:0; flex-wrap:nowrap;
+}
+.burger{background:none;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;color:var(--muted);flex-shrink:0;}
+.burger:hover{background:var(--surface);}
+.logo{display:flex;align-items:center;gap:8px;margin-right:8px;white-space:nowrap;}
+.logo .mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--T),var(--F));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;}
+.logo .name{font-size:18px;color:var(--muted);font-weight:400;}
+.logo .name b{color:var(--text);font-weight:500;}
+.btn{
+  border:1px solid var(--border); background:#fff; border-radius:6px; padding:8px 14px;
+  font-size:14px; color:var(--text); white-space:nowrap;
+}
+.btn:hover{background:var(--surface);}
+.btn.primary{background:var(--T);border-color:var(--T);color:#fff;font-weight:500;}
+.btn.primary:hover{filter:brightness(1.08);}
+.navarrows{display:flex;align-items:center;}
+.navarrows button{background:none;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;color:var(--muted);}
+.navarrows button:hover{background:var(--surface);}
+.rangelabel{font-size:19px;font-weight:400;color:var(--text);margin:0 8px;white-space:nowrap;min-width:150px;}
+.spacer{flex:1;}
+.search{
+  display:flex;align-items:center;gap:6px;background:var(--surface);border-radius:8px;padding:0 12px;height:38px;min-width:0;
+}
+.search input{border:none;background:none;outline:none;font-size:14px;width:170px;color:var(--text);}
+.viewswitch{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;}
+.viewswitch button{border:none;background:#fff;padding:8px 13px;font-size:13px;color:var(--text);border-right:1px solid var(--border);}
+.viewswitch button:last-child{border-right:none;}
+.viewswitch button.active{background:var(--T-l);color:var(--T);font-weight:600;}
+.viewswitch button:hover:not(.active){background:var(--surface);}
 
-  /* Monthly grid */
-  .mon-container { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff; }
-  .mon-daynames { display:grid; grid-template-columns:repeat(7,1fr); background:#f3f4f6; }
-  .mon-daynames > div { padding:8px; text-align:center; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); border-right:1px solid var(--border); }
-  .mon-daynames > div:last-child { border-right:none; }
-  .mon-week { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); border-top:1px solid var(--border); min-height:110px; row-gap:2px; }
-  .mon-bg { border-right:1px solid var(--border); background:#fff; }
-  .mon-bg:last-child { border-right:none; }
-  .mon-bg.other { background:#fafafa; opacity:.6; }
-  .mon-bg.today { background:#fffbeb; }
-  .mon-daynum { padding:3px 6px; font-size:11px; font-weight:600; color:var(--muted); z-index:1; }
-  .mon-daynum.today { color:var(--tournament); }
-  .mon-seg { padding:1px 6px; font-size:11px; border-radius:4px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0 3px; z-index:2; align-self:start; line-height:18px; }
-  .mon-seg:hover { filter:brightness(.92); }
-  .mon-seg-time { opacity:.8; font-variant-numeric:tabular-nums; }
-  @media(max-width:640px){ .mon-week { min-height:70px; } .mon-seg { font-size:10px; padding:0 3px; } }
-  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-  .cal-head { background:#f3f4f6; padding:8px; text-align:center; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
-  .cal-cell { background:#fff; min-height:110px; padding:4px; overflow:hidden; }
-  .cal-cell.other { background:#fafafa; opacity:.5; }
-  .cal-cell.today { background:#fffbeb; }
-  .cal-cell .daynum { font-size:11px; font-weight:600; color:var(--muted); margin-bottom:2px; }
-  .cal-cell.today .daynum { color:var(--tournament); }
+/* ============ LAYOUT ============ */
+.main{display:flex;flex:1;min-height:0;}
+.sidebar{
+  width:256px;flex-shrink:0;border-right:1px solid var(--border);padding:14px;
+  overflow-y:auto;background:#fff;transition:margin .2s;
+}
+.sidebar.hidden{margin-left:-257px;}
+.content{flex:1;min-width:0;overflow:auto;background:#fff;display:flex;flex-direction:column;}
 
-  /* Annual grid */
-  .annual-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .mini-month { background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px; }
-  .mini-month h3 { margin:0 0 6px; font-size:13px; text-align:center; cursor:pointer; color:var(--T); }
-  .mini-month h3:hover { text-decoration:underline; }
-  .mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; font-size:10px; }
-  .mini-grid .mh { text-align:center; color:var(--muted); font-weight:600; padding:2px 0; }
-  .mini-day { text-align:center; padding:3px 0; border-radius:3px; position:relative; }
-  .mini-day.other { color:#d1d5db; }
-  .mini-day.today { background:var(--tournament-bg); font-weight:700; }
-  .mini-day .dots { display:flex; justify-content:center; gap:1px; margin-top:1px; height:4px; }
-  .mini-day .dot { width:3px; height:3px; border-radius:50%; }
-  .mini-day .dot.T { background:var(--T); }
-  .mini-day .dot.E { background:var(--E); }
-  .mini-day .dot.S { background:var(--S); }
-  .mini-day .dot.F { background:var(--F); }
-  /* Overview month grid */
-  .ov-months { display:flex; flex-direction:column; gap:24px; margin-top:16px; }
-  .ov-month { border:1px solid var(--border); border-radius:8px; padding:12px; }
-  .ov-month h3 { margin:0 0 10px; }
-  .ov-columns { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
-  .ov-left .mini-grid { font-size:12px; gap:2px; }
-  .ovcell { padding:4px 2px; text-align:center; border-radius:4px; background:#f8fafc; min-height:32px; position:relative; }
-  .ovcell.other { color:#cbd5e1; background:transparent; }
-  .ovcell.today { outline:2px solid #0ea5e9; }
-  .ovcell.all-off { background:#fef3c7; color:#78350f; font-weight:700; }
-  .ovcell.some-off { background:#fef9c3; }
-  .ovcell .dots { display:flex; justify-content:center; gap:2px; margin-top:2px; height:5px; }
-  .ovcell .dot { width:5px; height:5px; border-radius:50%; }
-  .dot.T { background:var(--T); } .dot.E { background:var(--E); } .dot.S { background:var(--S); } .dot.F { background:var(--F); }
-  .all-off-list { margin:8px 0 0; font-size:13px; color:#78350f; background:#fef3c7; padding:6px 10px; border-radius:4px; }
-  .ov-right h4 { margin:0 0 8px; font-size:14px; color:var(--muted); }
-  .tour-item { padding:6px 8px; border-left:3px solid #eab308; background:#fefce8; margin-bottom:4px; font-size:13px; border-radius:0 4px 4px 0; }
-  .tour-date { color:var(--muted); font-weight:600; margin-right:6px; }
-  .init { display:inline-block; width:16px; height:16px; border-radius:50%; text-align:center; font-size:10px; font-weight:700; color:white; margin-right:4px; line-height:16px; }
-  .init.T { background:var(--T); } .init.E { background:var(--E); } .init.S { background:var(--S); } .init.F { background:var(--F); }
-  .ov-legend { display:flex; gap:12px; align-items:center; font-size:13px; margin:10px 0; color:var(--muted); flex-wrap:wrap; }
-  .lg-swatch { display:inline-block; width:16px; height:16px; border-radius:3px; vertical-align:middle; }
-  .lg-swatch.all-off { background:#fef3c7; border:1px solid #fbbf24; }
-  .lg-swatch.some-off { background:#fef9c3; }
-  .muted-sm { color:var(--muted); font-size:13px; }
-  @media (max-width: 720px) { .ov-columns { grid-template-columns: 1fr; } }
+/* mini calendar */
+.mini{margin-bottom:18px;}
+.mini-head{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px;}
+.mini-head .m-label{font-size:13px;font-weight:600;}
+.mini-head button{background:none;border:none;color:var(--muted);font-size:14px;border-radius:50%;width:24px;height:24px;}
+.mini-head button:hover{background:var(--surface);}
+.mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.mini-grid .dn{font-size:10px;color:var(--muted);text-align:center;padding:3px 0;font-weight:600;}
+.mini-grid .d{
+  font-size:11px;text-align:center;padding:0;height:26px;line-height:26px;border-radius:50%;cursor:pointer;position:relative;
+}
+.mini-grid .d:hover{background:var(--surface);}
+.mini-grid .d.other{color:#b8bcc1;}
+.mini-grid .d.today{background:var(--T);color:#fff;font-weight:600;}
+.mini-grid .d.sel:not(.today){background:var(--T-l);color:var(--T);font-weight:600;}
+.mini-grid .d .dots{position:absolute;bottom:1px;left:0;right:0;display:flex;justify-content:center;gap:2px;}
+.mini-grid .d .dots i{width:4px;height:4px;border-radius:50%;display:block;}
 
-  /* Weekly view */
-  .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-  .week-day { background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px; min-height:400px; }
-  .week-day.today { border-color:var(--tournament); background:#fffbeb; }
-  .week-day h4 { margin:0 0 6px; font-size:12px; color:var(--muted); text-align:center; padding-bottom:6px; border-bottom:1px solid var(--border); }
-  .week-day .daynum-lg { font-size:20px; color:var(--text); }
-  .allday-bubble { background:#e0f2fe; border-radius:6px; padding:3px 6px; margin-bottom:4px; font-size:11px; font-weight:600; border-left:3px solid var(--academic); }
+/* filter groups */
+.fgroup{margin-bottom:16px;}
+.fgroup h4{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;font-weight:700;}
+.frow{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer;user-select:none;}
+.frow:hover{background:var(--surface);}
+.frow .cb{width:16px;height:16px;border-radius:4px;border:2px solid var(--muted);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;}
+.frow.on .cb{border-color:transparent;}
+.frow .lbl{font-size:13.5px;}
+.frow .cnt{margin-left:auto;font-size:11px;color:var(--muted);}
+.src-list a{display:block;font-size:12.5px;color:var(--T);text-decoration:none;padding:3px 4px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.src-list a:hover{background:var(--surface);text-decoration:underline;}
 
-  /* Daily view */
-  .day-timeline { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px; }
-  .day-timeline h3 { margin:0 0 10px; }
-  .allday-list { display:flex; flex-wrap:wrap; gap:6px; padding:8px 10px; background:#f0f9ff; border-radius:6px; margin-bottom:12px; }
-  .allday-list:empty { display:none; }
-  .timed-list .timeblock { display:flex; gap:12px; padding:6px 0; border-top:1px solid #f3f4f6; }
-  .timed-list .time-label { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:60px; padding-top:3px; }
-  .timed-list .time-events { flex:1; }
+/* ============ MONTH VIEW ============ */
+.month{display:flex;flex-direction:column;flex:1;min-height:0;}
+.mon-daynames{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mon-daynames div{padding:6px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.mon-body{flex:1;display:grid;grid-auto-rows:1fr;min-height:0;}
+.mon-week{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border);min-height:0;overflow:hidden;}
+.mon-cell{border-right:1px solid var(--border);padding:0;position:relative;overflow:hidden;cursor:pointer;}
+.mon-cell:last-child{border-right:none;}
+.mon-cell.other{background:#fafbfc;}
+.mon-cell.other .daynum{color:#b8bcc1;}
+.daynum{
+  font-size:12px;margin:4px auto 2px;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;display:block;
+}
+.mon-cell:hover .daynum{background:var(--surface);}
+.daynum.today{background:var(--T);color:#fff;font-weight:600;}
+.mon-events{position:absolute;top:30px;left:0;right:0;bottom:0;}
+.ev-chip{
+  position:absolute;height:20px;line-height:20px;font-size:11.5px;border-radius:4px;padding:0 6px;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;z-index:2;
+}
+.ev-chip:hover{filter:brightness(.94);box-shadow:var(--shadow);z-index:5;}
+.ev-chip.timed{background:none !important;color:var(--text);display:flex;align-items:center;gap:4px;padding:0 4px;}
+.ev-chip.timed:hover{background:var(--surface) !important;box-shadow:none;}
+.ev-chip.timed .bullet{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ev-chip.timed .t{color:var(--muted);font-size:10.5px;flex-shrink:0;}
+.ev-chip.timed .n{overflow:hidden;text-overflow:ellipsis;}
+.ev-more{
+  position:absolute;height:18px;line-height:18px;font-size:11px;color:var(--muted);font-weight:600;
+  padding:0 6px;cursor:pointer;border-radius:4px;z-index:2;
+}
+.ev-more:hover{background:var(--surface);color:var(--text);}
 
-  /* Overview */
-  .scorecard { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
-  .stat { background:#fff; padding:12px; border-radius:8px; border:1px solid var(--border); }
-  .stat .num { font-size:24px; font-weight:700; color:var(--T); }
-  .stat .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
-  .sources { background:#fff; padding:14px; border-radius:8px; border:1px solid var(--border); margin-bottom:20px; }
-  .sources h3 { margin:0 0 10px; font-size:15px; }
-  .sources ul { margin:0; padding-left:18px; font-size:13px; }
-  .sources li { margin:3px 0; }
-  .sources a { color:var(--T); text-decoration:none; }
-  .sources a:hover { text-decoration:underline; }
-  .overview-table { background:#fff; border-radius:8px; border:1px solid var(--border); overflow:hidden; }
-  .overview-row { display:grid; grid-template-columns:120px 1fr 1fr; gap:12px; padding:10px 14px; border-bottom:1px solid #f3f4f6; align-items:start; }
-  .overview-row:last-child { border-bottom:0; }
-  .overview-date { font-weight:600; color:var(--muted); font-size:12px; }
-  .overview-col { display:flex; flex-direction:column; gap:3px; }
+/* ============ WEEK / DAY VIEW ============ */
+.tgrid{display:flex;flex-direction:column;flex:1;min-height:0;}
+.tg-head{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;}
+.tg-gutter{width:52px;flex-shrink:0;}
+.tg-head .col{flex:1;text-align:center;padding:6px 0 4px;border-left:1px solid var(--border);min-width:0;}
+.tg-head .dow{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.6px;}
+.tg-head .dnum{font-size:22px;width:40px;height:40px;line-height:40px;border-radius:50%;margin:2px auto;cursor:pointer;}
+.tg-head .dnum:hover{background:var(--surface);}
+.tg-head .dnum.today{background:var(--T);color:#fff;}
+.tg-allday{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;max-height:120px;overflow-y:auto;}
+.tg-allday .lbl{width:52px;flex-shrink:0;font-size:10px;color:var(--muted);text-align:right;padding:4px 6px 0 0;}
+.tg-allday .lanes{flex:1;position:relative;}
+.tg-allday .lanes .grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--cols,7),1fr);}
+.tg-allday .lanes .grid i{border-left:1px solid var(--border);}
+.tg-scroll{flex:1;overflow-y:auto;position:relative;}
+.tg-canvas{display:flex;position:relative;}
+.tg-times{width:52px;flex-shrink:0;position:relative;}
+.tg-times div{position:absolute;right:8px;font-size:10px;color:var(--muted);transform:translateY(-50%);}
+.tg-cols{flex:1;display:grid;grid-template-columns:repeat(var(--cols,7),1fr);position:relative;}
+.tg-col{border-left:1px solid var(--border);position:relative;min-width:0;}
+.tg-hline{position:absolute;left:0;right:0;border-top:1px solid #eceef1;pointer-events:none;}
+.tg-ev{
+  position:absolute;border-radius:5px;padding:3px 6px;font-size:11.5px;overflow:hidden;cursor:pointer;
+  border:1px solid rgba(255,255,255,.7);line-height:1.25;
+}
+.tg-ev:hover{box-shadow:var(--shadow);z-index:20 !important;}
+.tg-ev .tt{font-weight:600;}
+.tg-ev .tm{font-size:10.5px;opacity:.85;}
+.nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
+.nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
-  /* Tracking */
-  .track-month { margin-bottom:18px; }
-  .track-month h3 { margin:0 0 6px; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:4px; }
-  .track-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-  .track-col-head { font-weight:700; font-size:12px; padding:6px 4px; text-align:center; border-radius:6px; margin-bottom:6px; }
-  .track-col-head.T { background:var(--T-bg); color:var(--T); }
-  .track-col-head.E { background:var(--E-bg); color:var(--E); }
-  .track-col-head.S { background:var(--S-bg); color:var(--S); }
-  .track-card { background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px; }
-  .track-card h4 { margin:0 0 4px; font-size:13px; line-height:1.25; }
-  .track-card .track-meta { font-size:11px; color:var(--muted); margin:2px 0; }
-  .track-card .track-reg { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-top:4px; }
-  .track-reg.open { background:#dcfce7; color:#166534; }
-  .track-reg.notyet { background:#fef3c7; color:#92400e; }
-  .track-reg.closed { background:#fee2e2; color:#991b1b; }
-  .track-reg.tbd { background:#e5e7eb; color:#374151; }
-  .track-card a { font-size:11px; color:#2563eb; text-decoration:none; }
-  .track-card a:hover { text-decoration:underline; }
-  @media (max-width: 720px) { .track-cols { grid-template-columns:1fr; } }
+/* ============ YEAR VIEW ============ */
+.year{padding:16px;overflow-y:auto;flex:1;}
+.year-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+.ym{border:1px solid var(--border);border-radius:var(--radius);padding:10px;}
+.ym h3{font-size:14px;font-weight:600;margin-bottom:6px;padding-left:4px;color:var(--text);cursor:pointer;}
+.ym h3:hover{color:var(--T);}
+.ym .mini-grid .d{height:24px;line-height:24px;cursor:pointer;}
 
-  @media (max-width: 720px) {
-    main { padding:8px; }
-    .cal-cell { min-height:70px; font-size:10px; padding:2px; }
-    .cal-cell .daynum { font-size:10px; }
-    .annual-grid { grid-template-columns:1fr 1fr; }
-    .week-grid { grid-template-columns:1fr; }
-    .week-day { min-height:auto; }
-    .overview-row { grid-template-columns:1fr; gap:6px; }
-    header h1 { font-size:16px; }
-    nav.tabs button { padding:10px 10px; font-size:13px; }
-    .chip { font-size:11px; padding:4px 8px; }
-    .evt { font-size:10px; }
-  }
-/* WEEKLY/DAILY kid columns */
-.week-grid-cols { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; }
-.week-day-cols { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; min-height:260px; flex:0 0 380px; scroll-snap-align:start; }
-.week-day-cols.today { border-color:var(--T); border-width:2px; background:#eff6ff; }
-.week-day-cols h4 { margin:0 0 10px; text-align:center; font-size:14px; color:#374151; }
-.week-day-cols h4 .daynum-lg { font-size:22px; font-weight:700; color:#111827; margin-left:6px; }
-.kid-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-.kid-col { min-width:0; }
-.kid-col-h { text-align:center; font-size:12px; font-weight:700; padding:3px 0; margin-bottom:6px; }
-.kid-col-body { display:flex; flex-direction:column; gap:4px; }
-.kid-col-empty { color:#d1d5db; text-align:center; font-size:11px; padding:8px 0; }
-.kid-col .evt { font-size:12px; padding:4px 6px; white-space:normal; word-break:break-word; line-height:1.3; }
-.kid-col .evt .time { display:block; font-size:10px; opacity:0.75; margin-bottom:1px; }
-.day-kid-cols { max-width:1100px; margin:0 auto; }
-.day-kid-cols .kid-cols { gap:12px; }
-.day-kid-cols .kid-col { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; min-height:400px; }
-.day-kid-cols .kid-col-h { font-size:16px; padding:4px 0 8px; }
-.day-kid-cols .evt { font-size:13px; padding:6px 8px; }
+/* ============ PLANNING VIEW ============ */
+.plan{padding:20px 26px;overflow-y:auto;flex:1;max-width:1100px;}
+.plan h2{font-size:20px;font-weight:500;margin:4px 0 14px;}
+.plan .pmonth{margin-bottom:22px;}
+.plan .pmonth>h3{
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+  border-bottom:2px solid var(--border);padding-bottom:5px;margin-bottom:8px;
+}
+.prow{
+  display:flex;gap:12px;align-items:flex-start;padding:8px 10px;border-radius:8px;cursor:pointer;
+}
+.prow:hover{background:var(--surface);}
+.prow .date{width:92px;flex-shrink:0;font-size:12.5px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums;}
+.prow .pill{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;
+}
+.prow .body{min-width:0;}
+.prow .body .t{font-size:14px;font-weight:500;}
+.prow .body .sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+.prow .tag{
+  margin-left:auto;flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;
+}
+.tag.open{background:#e6f4ea;color:#188038;}
+.tag.closed{background:#fce8e6;color:#c5221f;}
+.tag.notyet{background:#fef7e0;color:#b06000;}
+.tag.reg{background:#fce8e6;color:#c5221f;}
+.tag.potential{background:#f3e8fd;color:#7c3aed;}
+
+/* ============ AGENDA (search results) ============ */
+.agenda{padding:16px 24px;overflow-y:auto;flex:1;max-width:900px;}
+.agenda .day-h{font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 4px;text-transform:uppercase;letter-spacing:.8px;}
+
+/* ============ EVENT POPOVER / MODALS ============ */
+.overlay{position:fixed;inset:0;background:rgba(32,33,36,.45);z-index:90;display:none;}
+.overlay.show{display:block;}
+.modal{
+  position:fixed;z-index:100;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.28);
+  width:min(430px,94vw);max-height:86vh;overflow-y:auto;left:50%;top:50%;transform:translate(-50%,-50%);display:none;
+}
+.modal.show{display:block;}
+.modal .mhead{display:flex;justify-content:flex-end;gap:4px;padding:8px 8px 0;}
+.modal .mhead button{background:none;border:none;border-radius:50%;width:32px;height:32px;font-size:15px;color:var(--muted);}
+.modal .mhead button:hover{background:var(--surface);}
+.modal .mbody{padding:0 22px 22px;}
+.ev-title{font-size:20px;font-weight:500;margin-bottom:4px;display:flex;align-items:flex-start;gap:10px;}
+.ev-title .swatch{width:16px;height:16px;border-radius:5px;flex-shrink:0;margin-top:4px;}
+.ev-meta{font-size:13.5px;color:var(--muted);margin:2px 0 0 26px;}
+.ev-detail{display:flex;gap:10px;font-size:13.5px;margin-top:12px;align-items:flex-start;}
+.ev-detail .ic{width:18px;flex-shrink:0;color:var(--muted);text-align:center;}
+.ev-detail a{color:var(--T);text-decoration:none;word-break:break-all;}
+.ev-detail a:hover{text-decoration:underline;}
+.ev-notes{background:var(--surface);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:12px;line-height:1.45;}
+.chip-person{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;color:#fff;}
+
+/* form modal */
+.fmodal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 4px;}
+.fmodal input[type=text],.fmodal input[type=date],.fmodal input[type=time],.fmodal input[type=url],.fmodal select,.fmodal textarea{
+  width:100%;border:1px solid var(--border);border-radius:6px;padding:9px 10px;font-size:14px;font-family:inherit;background:#fff;color:var(--text);
+}
+.fmodal .row2{display:flex;gap:10px;}
+.fmodal .row2>div{flex:1;}
+.fmodal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.fmodal .del{margin-right:auto;color:#c5221f;border-color:#f3c1bf;}
+.check-inline{display:flex;align-items:center;gap:7px;font-size:13.5px;margin-top:12px;cursor:pointer;}
+
+/* day-popup (from +N more) */
+.daypop{width:min(320px,92vw);}
+.daypop h3{font-size:15px;font-weight:600;margin-bottom:8px;}
+.daypop .ev-chip{position:static;display:flex;margin-bottom:4px;height:22px;line-height:22px;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;
+  padding:11px 20px;border-radius:8px;font-size:13.5px;z-index:200;box-shadow:var(--shadow);display:none;
+}
+
+/* ============ RESPONSIVE ============ */
 @media(max-width:900px){
-  .week-grid-cols { grid-template-columns:1fr; }
-  .week-day-cols { min-height:auto; }
-}
-@media(max-width:600px){
-  .day-kid-cols .kid-cols { grid-template-columns:1fr; }
-}
-
-/* ANNUAL macro cells */
-.ann-grid-big { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.ann-cell { min-height:56px; border:1px solid #f3f4f6; border-radius:5px; padding:3px; background:#fafafa; cursor:pointer; font-size:11px; overflow:hidden; }
-.ann-cell:hover { background:#eff6ff; border-color:var(--T); }
-.ann-cell.other { color:#d1d5db; background:#fff; }
-.ann-cell.today { background:#fef3c7; border-color:#f59e0b; }
-.ann-num { font-weight:600; font-size:12px; color:#374151; margin-bottom:2px; }
-.ann-cell.other .ann-num { color:#d1d5db; }
-.ann-lbl { font-size:10px; padding:1px 3px; border-radius:3px; margin-bottom:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; }
-.ann-lbl.ann-off { background:#fee2e2; color:#991b1b; font-weight:600; }
-.ann-lbl.ann-tour { background:#fef3c7; color:#92400e; font-weight:600; border-left:2px solid #eab308; }
-
-/* Overview edit mode */
-.ov-edit-bar { display:flex; align-items:center; gap:12px; margin:0 0 14px; flex-wrap:wrap; }
-.ov-edit-btn { background:#fff; border:1px solid #d1d5db; border-radius:6px; padding:6px 12px; font-size:13px; cursor:pointer; font-weight:600; }
-.ov-edit-btn.on { background:#dc2626; color:#fff; border-color:#dc2626; }
-.ov-edit-btn:hover { background:#f3f4f6; }
-.ov-edit-btn.on:hover { background:#b91c1c; }
-.ov-edit-hint { color:#6b7280; font-size:12px; font-style:italic; }
-.ov-restore-btn { background:#eff6ff; border:1px solid var(--T); color:var(--T); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; }
-.ov-del { background:#dc2626; color:#fff; border:none; border-radius:50%; width:16px; height:16px; font-size:10px; line-height:1; cursor:pointer; margin-left:6px; padding:0; vertical-align:middle; }
-.ov-del:hover { background:#991b1b; }
-
-/* ANNUAL big view */
-.annual-grid-big { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
-.ann-month { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
-.ann-month h3 { margin:0 0 10px; font-size:16px; cursor:pointer; color:#1f2937; }
-.ann-month h3:hover { color:var(--T); text-decoration:underline; }
-.ann-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
-.ann-mh { font-size:11px; color:#6b7280; text-align:center; font-weight:600; padding:3px 0; }
-.ann-day { aspect-ratio:1; min-height:38px; border:1px solid #f3f4f6; border-radius:6px; padding:4px; font-size:12px; cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; background:#fafafa; }
-.ann-day:hover { background:#eff6ff; border-color:var(--T); }
-.ann-day.other { color:#d1d5db; background:#fff; }
-.ann-day.today { background:#fef3c7; border-color:#f59e0b; font-weight:700; }
-.ann-dots { display:flex; gap:2px; flex-wrap:wrap; }
-.ann-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
-.ann-dot.T { background:var(--T);} .ann-dot.E { background:var(--E);} .ann-dot.S { background:var(--S);} .ann-dot.F { background:var(--F);}
-/* Annual full-detail (Google Cal style) */
-.annwk-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.annwk-head { text-align:center; font-size:11px; color:#6b7280; font-weight:500; padding:8px 0 4px; letter-spacing:0.5px; text-transform:uppercase; border-bottom:1px solid #e5e7eb; }
-.annwk-days { }
-.annwk-day { background:#fff; border:1px solid #e5e7eb; min-height:34px; padding:3px 6px; font-size:12px; cursor:pointer; }
-.annwk-day.other { background:#fafafa; color:#d1d5db; }
-.annwk-day.today { background:#fef3c7; }
-.annwk-day:hover { background:#f8fafc; }
-.annwk-num { font-weight:600; color:#374151; }
-.annwk-day.other .annwk-num { color:#d1d5db; }
-.annwk-bars { display:grid; grid-template-columns:repeat(7,1fr); gap:3px 2px; padding:2px 0 6px; grid-auto-rows:22px; }
-.annwk-bar { font-size:11px; padding:3px 8px; border-radius:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#111; font-weight:600; text-decoration:none; display:flex; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.08); }
-.annwk-bar.noschool { background:#fecaca; color:#991b1b; }
-.annwk-bar.tournament, .annwk-bar.showcase { background:#fde68a; color:#78350f; }
-.annwk-bar.camp { background:#c8b8a8; color:#3f2f1f; }
-.annwk-bar.trip { background:#a8b8c8; color:#1f2f3f; }
-.annwk-bar.practice { background:#e5e7eb; color:#374151; font-size:9px; opacity:.85; }
-.annwk-bar.game { background:#bfdbfe; color:#1e3a8a; font-size:9px; }
-.annwk-bar.other { background:#f3f4f6; color:#4b5563; font-size:9px; }
-.annfull-month { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:18px; }
-.annfull-month h3 { margin:0 0 10px; font-size:18px; cursor:pointer; color:#1f2937; }
-.annfull-month h3:hover { color:var(--T); text-decoration:underline; }
-.annfull-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#e5e7eb; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; }
-.annfull-head { background:#f9fafb; text-align:center; font-size:11px; color:#6b7280; font-weight:600; padding:6px 0; text-transform:uppercase; letter-spacing:0.5px; }
-.annfull-cell { background:#fff; min-height:110px; padding:5px; font-size:11px; cursor:pointer; overflow:hidden; }
-.annfull-cell:hover { background:#f8fafc; }
-.annfull-cell.other { background:#fafafa; color:#d1d5db; }
-.annfull-cell.other .annfull-num { color:#d1d5db; }
-.annfull-cell.today { background:#fef3c7; }
-.annfull-num { font-weight:600; font-size:12px; color:#374151; margin-bottom:3px; }
-.annfull-cell .evt { font-size:10px; padding:1px 4px; margin-bottom:2px; line-height:1.3; }
-.annfull-cell .evt .del { display:none; }
-.annfull-more { font-size:10px; color:#6b7280; padding:1px 4px; cursor:pointer; }
-.annfull-more:hover { color:var(--T); text-decoration:underline; }
-
-/* Add Event modal */
-#add-btn { background:var(--T); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:14px; font-weight:600; cursor:pointer; }
-#add-btn:hover { background:#1d4ed8; }
-.modal-back { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:100; }
-.modal-back.open { display:flex; }
-.modal { background:#fff; border-radius:10px; padding:20px; width:400px; max-width:92vw; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
-.modal h2 { margin:0 0 14px; font-size:18px; }
-.modal label { display:block; margin-bottom:10px; font-size:13px; color:#374151; font-weight:500; }
-.modal input, .modal select, .modal textarea { width:100%; box-sizing:border-box; padding:7px 9px; border:1px solid var(--border); border-radius:5px; font-size:14px; font-family:inherit; margin-top:3px; }
-.modal .row { display:flex; gap:8px; }
-.modal .row label { flex:1; }
-.modal .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
-.modal button { padding:8px 14px; border-radius:5px; font-size:14px; cursor:pointer; border:1px solid var(--border); background:#fff; }
-.modal button.primary { background:var(--T); color:#fff; border-color:var(--T); font-weight:600; }
-.modal .allday-row { display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:10px; }
-.modal .allday-row input { width:auto; margin:0; }
-@media(max-width:900px){ .annual-grid-big { grid-template-columns:repeat(2,1fr);} }
-@media(max-width:600px){ .annual-grid-big { grid-template-columns:1fr;} }
-
-/* OVERVIEW list view */
-.ov-month-block { margin:24px 0; }
-.ov-month-h { margin:0 0 8px; font-size:20px; color:#111827; border-bottom:2px solid #e5e7eb; padding-bottom:6px; }
-.ov-list-header, .ov-list-row {
-  display:grid;
-  grid-template-columns: 130px 1fr 1fr 1fr 1.5fr;
-  gap:10px;
-  padding:8px 10px;
-  align-items:start;
-}
-.ov-list-header { font-weight:700; font-size:12px; text-transform:uppercase; color:#6b7280; background:#f9fafb; border-radius:6px; }
-.ov-list-row { border-bottom:1px solid #f3f4f6; font-size:13px; }
-.ov-list-row.all-off-row { background:#fef3c7; }
-.ov-date { font-weight:600; color:#374151; }
-.ov-school, .ov-tour { display:flex; flex-direction:column; gap:4px; }
-.ov-acad-item { background:#f3f4f6; padding:3px 7px; border-radius:4px; font-size:12px; }
-.ov-acad-item.off { background:#fee2e2; color:#991b1b; font-weight:600; }
-.ov-acad-item a, .ov-tour-item a { color:inherit; text-decoration:none; }
-.ov-acad-item a:hover, .ov-tour-item a:hover { text-decoration:underline; }
-.ov-tour-item { background:#fef9c3; padding:3px 7px; border-radius:4px; font-size:12px; border-left:3px solid var(--tournament, #eab308); }
-.ov-tour-item .init { font-weight:700; margin-right:4px; }
-.ov-empty { color:#d1d5db; font-size:12px; }
-@media(max-width:720px){
-  .ov-month-block { overflow-x:auto; }
-  .ov-list-header, .ov-list-row { min-width:820px; }
+  .topbar{flex-wrap:wrap;row-gap:6px;padding:8px 10px;}
+  .logo .name{display:none;}
+  .rangelabel{font-size:15px;min-width:0;flex:1;}
+  .spacer{display:none;}
+  .search{flex:1;min-width:130px;height:34px;}
+  .search input{width:100%;}
+  .viewswitch{margin-left:auto;}
+  .viewswitch button{padding:7px 9px;font-size:12px;}
+  .mon-body{grid-auto-rows:minmax(96px,1fr);overflow-y:auto;}
+  .btn{padding:7px 10px;font-size:13px;}
+  .burger{width:34px;height:34px;}
+  .sidebar{position:fixed;left:0;top:57px;bottom:0;z-index:80;box-shadow:var(--shadow);margin-left:-280px;}
+  .sidebar.open{margin-left:0;}
+  .tg-gutter,.tg-times,.tg-allday .lbl{width:40px;}
+  .ev-chip{font-size:10.5px;}
+  .prow .date{width:70px;}
 }
 </style>
 </head>
 <body>
 
-<header style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-  <div>
-    <h1 style="margin:0">🏠 Hennessey Family Scheduler</h1>
-    <p style="margin:4px 0 0">Tommy · Emily · Sophie — annual, monthly, weekly, daily views</p>
+<div class="topbar">
+  <button class="burger" id="burger" title="Menu">☰</button>
+  <div class="logo"><div class="mark">H</div><div class="name"><b>Hennessey</b> Scheduler</div></div>
+  <button class="btn" id="todayBtn">Today</button>
+  <div class="navarrows">
+    <button id="prevBtn" title="Previous">‹</button>
+    <button id="nextBtn" title="Next">›</button>
   </div>
-  <button id="add-btn">＋ Add Event</button>
-</header>
+  <div class="rangelabel" id="rangeLabel"></div>
+  <div class="spacer"></div>
+  <div class="search">🔍<input id="searchBox" placeholder="Search events" autocomplete="off"></div>
+  <div class="viewswitch" id="viewSwitch">
+    <button data-v="day">Day</button>
+    <button data-v="week">Week</button>
+    <button data-v="month" class="active">Month</button>
+    <button data-v="year">Year</button>
+    <button data-v="plan">Planning</button>
+  </div>
+</div>
 
-<!-- Event Detail Modal -->
-<div class="modal-back" id="detail-modal">
-  <div class="modal" id="detail-modal-inner">
-    <h2 id="dm-title">Event</h2>
-    <div id="dm-body" style="font-size:14px;color:#374151;line-height:1.55;"></div>
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <button class="btn primary" id="addBtn" style="width:100%;padding:11px;margin-bottom:16px;border-radius:22px;font-size:14px;">＋ &nbsp;Add event</button>
+    <div class="mini" id="miniCal"></div>
+    <div class="fgroup" id="peopleFilters"><h4>People</h4></div>
+    <div class="fgroup" id="typeFilters"><h4>Event types</h4></div>
+    <div class="fgroup"><h4>Data sources</h4><div class="src-list" id="srcList"></div></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<!-- event detail modal -->
+<div class="modal" id="evModal">
+  <div class="mhead">
+    <button id="evEdit" title="Edit">✏️</button>
+    <button id="evHide" title="Remove from calendar">🗑</button>
+    <button class="mclose" title="Close">✕</button>
+  </div>
+  <div class="mbody" id="evBody"></div>
+</div>
+
+<!-- add / edit modal -->
+<div class="modal fmodal" id="formModal">
+  <div class="mhead"><button class="mclose" title="Close">✕</button></div>
+  <div class="mbody">
+    <div class="ev-title" style="margin-bottom:2px;" id="formTitle">Add event</div>
+    <label>Title</label><input type="text" id="fTitle" placeholder="e.g. Tommy — Dentist">
+    <div class="row2">
+      <div><label>Person</label>
+        <select id="fPerson">
+          <option value="T">Tommy</option><option value="E">Emily</option><option value="S">Sophie</option>
+          <option value="L">Laura</option><option value="F" selected>Family</option>
+        </select></div>
+      <div><label>Type</label>
+        <select id="fType">
+          <option value="family" selected>Family</option><option value="personal">Personal</option>
+          <option value="practice">Practice</option><option value="game">Game</option>
+          <option value="tournament">Tournament</option><option value="academic">Academic</option>
+          <option value="noschool">No school / Holiday</option>
+        </select></div>
+    </div>
+    <div class="row2">
+      <div><label>Start date</label><input type="date" id="fStart"></div>
+      <div><label>End date</label><input type="date" id="fEnd"></div>
+    </div>
+    <label class="check-inline"><input type="checkbox" id="fAllDay" checked> All day</label>
+    <div class="row2" id="timeRow" style="display:none;">
+      <div><label>Start time</label><input type="time" id="fTimeStart" value="09:00"></div>
+      <div><label>End time</label><input type="time" id="fTimeEnd" value="10:00"></div>
+    </div>
+    <label>Location</label><input type="text" id="fLoc" placeholder="Optional">
+    <label>Link</label><input type="url" id="fLink" placeholder="Optional">
+    <label>Notes</label><textarea id="fNotes" rows="2" placeholder="Optional"></textarea>
     <div class="actions">
-      <a id="dm-source" href="#" target="_blank" rel="noopener" style="display:none;padding:8px 14px;border-radius:5px;font-size:14px;text-decoration:none;background:#f3f4f6;color:#111;border:1px solid var(--border);">Open source</a>
-      <button id="dm-close" class="primary">Close</button>
+      <button class="btn del" id="fDelete" style="display:none;">Delete</button>
+      <button class="btn mclose">Cancel</button>
+      <button class="btn primary" id="fSave">Save</button>
     </div>
   </div>
 </div>
 
-<div class="modal-back" id="add-modal">
-  <div class="modal">
-    <h2>Add Event</h2>
-    <label>Title
-      <input type="text" id="ae-title" placeholder="e.g. Dentist appointment" />
-    </label>
-    <div class="row">
-      <label>Who
-        <select id="ae-kid">
-          <option value="T">Tommy</option>
-          <option value="E">Emily</option>
-          <option value="S">Sophie</option>
-          <option value="F" selected>Family</option>
-        </select>
-      </label>
-      <label>Type
-        <select id="ae-type">
-          <option value="family">Family / Personal</option>
-          <option value="practice">Practice</option>
-          <option value="game">Game</option>
-          <option value="tournament">Tournament</option>
-          <option value="academic">Academic</option>
-          <option value="noschool">No School / Holiday</option>
-        </select>
-      </label>
-    </div>
-    <label>Date
-      <input type="date" id="ae-date" />
-    </label>
-    <div class="allday-row">
-      <input type="checkbox" id="ae-allday" />
-      <label for="ae-allday" style="margin:0;font-weight:normal">All-day</label>
-    </div>
-    <div class="row" id="ae-times">
-      <label>Start
-        <input type="time" id="ae-start" value="09:00" />
-      </label>
-      <label>End
-        <input type="time" id="ae-end" value="10:00" />
-      </label>
-    </div>
-    <label>Location (optional)
-      <input type="text" id="ae-loc" />
-    </label>
-    <label>Link (optional)
-      <input type="url" id="ae-link" placeholder="https://..." />
-    </label>
-    <div class="actions">
-      <button id="ae-cancel">Cancel</button>
-      <button class="primary" id="ae-save">Save</button>
-    </div>
-  </div>
+<!-- +N more popup -->
+<div class="modal daypop" id="dayPop">
+  <div class="mhead"><button class="mclose">✕</button></div>
+  <div class="mbody" id="dayPopBody"></div>
 </div>
 
-<nav class="tabs">
-  <button data-view="monthly" class="active">🗓️ Monthly</button>
-  <button data-view="weekly">📅 Weekly</button>
-  <button data-view="daily">📍 Daily</button>
-  <button data-view="annual">📆 Annual</button>
-  <button data-view="overview">📋 Overview</button>
-  <button data-view="tracking">📌 Tracking</button>
-</nav>
-
-<div id="filters">
-  <span class="chip kid T active" data-kid="T">T Tommy</span>
-  <span class="chip kid E active" data-kid="E">E Emily</span>
-  <span class="chip kid S active" data-kid="S">S Sophie</span>
-  <span class="chip kid F active" data-kid="F">F Family</span>
-  <span class="divider"></span>
-  <span class="chip games active" data-type="games">🏆 Games/Tournaments</span>
-  <span class="chip practices active" data-type="practices">🏃 Practices</span>
-  <span class="chip academics active" data-type="academics">🏫 Academics</span>
-</div>
-
-<main>
-  <section class="view" id="view-annual"></section>
-  <section class="view active" id="view-monthly"></section>
-  <section class="view" id="view-weekly"></section>
-  <section class="view" id="view-daily"></section>
-  <section class="view" id="view-overview"></section>
-  <section class="view" id="view-tracking"></section>
-</main>
+<div class="toast" id="toast"></div>
 
 <script>
-// ============ DATA (schools/sports events) ============
-const T = '#2563eb', E = '#db2777', S = '#059669', X = '#64748b', F = '#7c3aed';
-const STATIC_EVENTS = [
-  // ── ROXBURY LATIN (Tommy) ─────────────────────────────────
-  { title: 'RL: Class I → Beaver Brook',         start: '2026-08-21', color: T, kid: 'tommy' },
-  { title: 'RL: New Student Orientation',         start: '2026-08-25', color: T, kid: 'tommy' },
-  { title: 'RL: Fall Term Begins',                start: '2026-08-26', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Fri Sep 4',           start: '2026-09-04', color: X, kid: 'tommy' },
-  { title: 'RL: No School — Labor Day',           start: '2026-09-07', color: X, kid: 'tommy' },
-  { title: 'RL: Class VI Beaver Brook',           start: '2026-09-18', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Columbus Day',        start: '2026-10-12', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 1',            start: '2026-10-16', color: T, kid: 'tommy' },
-  { title: 'RL: No School (Class I college visits)', start: '2026-10-19', color: X, kid: 'tommy' },
-  { title: 'RL: Start Marking Period 2',          start: '2026-10-20', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Faculty Day',         start: '2026-10-26', color: X, kid: 'tommy' },
-  { title: 'RL: Thanksgiving Break',              start: '2026-11-25', end: '2026-11-28', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 2',            start: '2026-12-09', color: T, kid: 'tommy' },
-  { title: 'RL: Midyear Exams Begin',             start: '2026-12-14', color: T, kid: 'tommy' },
-  { title: 'RL: Midyear Exams End',               start: '2026-12-18', color: T, kid: 'tommy' },
-  { title: 'RL: Glee Club Holiday Concert 🎶',    start: '2026-12-18', color: T, kid: 'tommy' },
-  { title: 'RL: Winter Break',                    start: '2026-12-18', end: '2027-01-05', color: X, kid: 'tommy' },
-  { title: 'RL: Winter Term Begins',              start: '2027-01-05', color: T, kid: 'tommy' },
-  { title: 'RL: No School — MLK Day',             start: '2027-01-18', color: X, kid: 'tommy' },
-  { title: 'RL: No School — PD Day',              start: '2027-02-01', color: X, kid: 'tommy' },
-  { title: 'RL: No School — Presidents Day',      start: '2027-02-15', color: X, kid: 'tommy' },
-  { title: 'RL: No School',                       start: '2027-02-16', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 3',            start: '2027-03-05', color: T, kid: 'tommy' },
-  { title: 'RL: Start Marking Period 4',          start: '2027-03-08', color: T, kid: 'tommy' },
-  { title: 'RL: Spring Break',                    start: '2027-03-12', end: '2027-03-30', color: X, kid: 'tommy' },
-  { title: 'RL: Spring Term Begins',              start: '2027-03-30', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Patriots Day',        start: '2027-04-19', color: X, kid: 'tommy' },
-  { title: 'RL: End Marking Period 4',            start: '2027-05-24', color: T, kid: 'tommy' },
-  { title: 'RL: Final Exams Begin',               start: '2027-05-27', color: T, kid: 'tommy' },
-  { title: 'RL: No School — Memorial Day',        start: '2027-05-31', color: X, kid: 'tommy' },
-  { title: 'RL: Final Exams End',                 start: '2027-06-02', color: T, kid: 'tommy' },
-  { title: 'RL: Prize Day 🏆',                    start: '2027-06-04', color: T, kid: 'tommy' },
+/* ================================================================
+   HENNESSEY FAMILY SCHEDULER — v2 (Google-Calendar-style)
+   Data: family_cal.json + masselite_practices.json + site_data.json
+   ================================================================ */
 
-  // ── NCDS (Emily) ──────────────────────────────────────────
-  { title: 'NCDS: Opening Day',                   start: '2026-08-26', color: E, kid: 'emily' },
-  { title: 'NCDS: No Classes',                    start: '2026-09-04', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — Labor Day',        start: '2026-09-07', color: X, kid: 'emily' },
-  { title: "NCDS: Grandparents' & Grandfriends' Day — Early Dismissal 12pm", start: '2026-10-09', color: E, kid: 'emily' },
-  { title: "NCDS: No Classes — Indigenous Peoples' Day", start: '2026-10-12', color: X, kid: 'emily' },
-  { title: 'NCDS: Family Conferences — No Classes', start: '2026-11-05', color: E, kid: 'emily' },
-  { title: 'NCDS: Family Conferences — No Classes', start: '2026-11-12', color: E, kid: 'emily' },
-  { title: 'NCDS: Thanksgiving Break',            start: '2026-11-23', end: '2026-11-28', color: X, kid: 'emily' },
-  { title: 'NCDS: Early Dismissal 12pm',          start: '2026-12-18', color: E, kid: 'emily' },
-  { title: 'NCDS: Christmas Break',               start: '2026-12-21', end: '2027-01-02', color: X, kid: 'emily' },
-  { title: 'NCDS: PD Day — No Classes',           start: '2027-01-04', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — MLK Day',          start: '2027-01-18', color: X, kid: 'emily' },
-  { title: 'NCDS: Faculty Work Day — No Classes', start: '2027-01-19', color: X, kid: 'emily' },
-  { title: 'NCDS: PD Day — No Classes',           start: '2027-02-08', color: X, kid: 'emily' },
-  { title: "NCDS: No Classes — Presidents' Day",  start: '2027-02-15', color: X, kid: 'emily' },
-  { title: "NCDS: Head's Holiday — No Classes",   start: '2027-02-16', color: X, kid: 'emily' },
-  { title: 'NCDS: Spring Break',                  start: '2027-03-15', end: '2027-03-27', color: X, kid: 'emily' },
-  { title: 'NCDS: Family Conferences — No Classes', start: '2027-04-09', color: E, kid: 'emily' },
-  { title: "NCDS: No Classes — Patriots' Day",    start: '2027-04-19', color: X, kid: 'emily' },
-  { title: 'NCDS: No Classes — Memorial Day',     start: '2027-05-31', color: X, kid: 'emily' },
-  { title: 'NCDS: Commencement 🎓',               start: '2027-06-04', color: E, kid: 'emily' },
-  { title: 'NCDS: Last Day (Gr. 5–11)',           start: '2027-06-08', color: E, kid: 'emily' },
+// ---------- constants ----------
+const PEOPLE = {
+  T:{name:'Tommy', color:'var(--T)', hex:'#1a73e8', light:'var(--T-l)'},
+  E:{name:'Emily', color:'var(--E)', hex:'#d81b60', light:'var(--E-l)'},
+  S:{name:'Sophie', color:'var(--S)', hex:'#188038', light:'var(--S-l)'},
+  L:{name:'Laura', color:'var(--L)', hex:'#e37400', light:'var(--L-l)'},
+  F:{name:'Family', color:'var(--F)', hex:'#7c3aed', light:'var(--F-l)'},
+};
+const TYPES = {
+  game:{label:'Games', icon:'🏅'},
+  practice:{label:'Practices', icon:'🏃'},
+  tournament:{label:'Tournaments & showcases', icon:'🏆'},
+  academic:{label:'School events', icon:'🎓'},
+  noschool:{label:'No school / breaks', icon:'🏖'},
+  family:{label:'Family & personal', icon:'🏠'},
+  potential:{label:'Potential (tracking)', icon:'👀'},
+  regcheck:{label:'Registration reminders', icon:'⏰'},
+};
+const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1';
 
-  // ── TENACRE (Sophie) ──────────────────────────────────────
-  { title: 'Tenacre: First Day (Half-Day)',        start: '2026-09-08', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Regular Day Begins',          start: '2026-09-09', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Half Day',                    start: '2026-09-11', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Yom Kippur',      start: '2026-09-21', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Back to School Night PK–2',   start: '2026-09-24', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Back to School Night Gr.3–6', start: '2026-10-01', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Indigenous Peoples Day', start: '2026-10-12', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Apple Pie Run 🍎',            start: '2026-10-17', color: S, kid: 'sophie' },
-  { title: 'Tenacre: PT Conferences (Eve)',         start: '2026-10-28', color: S, kid: 'sophie' },
-  { title: 'Tenacre: 12:15 Dismissal + PT Conf',   start: '2026-10-29', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — PT Conferences',  start: '2026-10-30', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Open House',                  start: '2026-11-07', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Veterans Day',    start: '2026-11-11', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Thanksgiving Break',          start: '2026-11-25', end: '2026-11-28', color: X, kid: 'sophie' },
-  { title: 'Tenacre: December Lights (PK–2) 🎄',  start: '2026-12-11', color: S, kid: 'sophie' },
-  { title: 'Tenacre: December Celebration (3–6) 🎄', start: '2026-12-17', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Winter Break',                start: '2026-12-21', end: '2027-01-02', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Classes Resume',              start: '2027-01-04', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — MLK Day',         start: '2027-01-18', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Report Writing',  start: '2027-01-19', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Presidents Day',  start: '2027-02-15', color: X, kid: 'sophie' },
-  { title: 'Tenacre: PT Conferences (Eve)',         start: '2027-02-24', color: S, kid: 'sophie' },
-  { title: 'Tenacre: 12:15 Dismissal + PT Conf',   start: '2027-02-25', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — PT Conferences',  start: '2027-02-26', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Spring Break',                start: '2027-03-15', end: '2027-03-27', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Classes Resume',              start: '2027-03-29', color: S, kid: 'sophie' },
-  { title: 'Tenacre: GrandFriends Day 🌸',         start: '2027-04-09', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Patriots Day',    start: '2027-04-19', color: X, kid: 'sophie' },
-  { title: 'Tenacre: Tenacre Fair 🎪',             start: '2027-05-08', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Apple Blossom 🌸',            start: '2027-05-20', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Spring Musical (Parent) 🎭',  start: '2027-05-26', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Spring Musical (Student + Parent) 🎭', start: '2027-05-27', color: S, kid: 'sophie' },
-  { title: 'Tenacre: No School — Report Writing',  start: '2027-05-28', color: X, kid: 'sophie' },
-  { title: 'Tenacre: No School — Memorial Day',    start: '2027-05-31', color: X, kid: 'sophie' },
-  { title: 'Tenacre: 6th Grade Good-Bye Evening',  start: '2027-06-10', color: S, kid: 'sophie' },
-  { title: 'Tenacre: Last Day of School 🎉',       start: '2027-06-11', color: S, kid: 'sophie' },
+// ---------- state ----------
+let events=[];            // normalized events
+let userEvents=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
+let hiddenIds=new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]'));
+let filters=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')||{
+  people:{T:true,E:true,S:true,L:true,F:true},
+  types:{game:true,practice:true,tournament:true,academic:true,noschool:true,family:true,potential:true,regcheck:true},
+};
+let view=localStorage.getItem(VIEW_KEY)||'month';
+let cursor=new Date(); cursor.setHours(0,0,0,0);
+let miniCursor=new Date(cursor);
+let searchQ='';
+let siteData={sources:[],tracking_items:[],all_kids_out:[],practice_times:[],static_events:[]};
+let editingId=null;
 
-  // ── TOMMY — LAXACHUSETTS OPERATIONAL (tournaments & evals) ─
+// ---------- date helpers ----------
+const DAY=86400000;
+const fmtYMD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function parseYMD(s){const [y,m,d]=s.slice(0,10).split('-').map(Number);return new Date(y,m-1,d);}
+const TZ='America/New_York';
+const _tzf=new Intl.DateTimeFormat('en-US',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+function toEastern(d){ // absolute instant → Date carrying Eastern wall-clock time
+  const p={}; for(const x of _tzf.formatToParts(d)) p[x.type]=x.value;
+  return new Date(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute);
+}
+function parseWhen(s){ // ISO string → Date in Eastern wall time
+  if(!s) return null;
+  if(s.length<=10) return parseYMD(s);
+  if(/[zZ]$|[+-]\d{2}:?\d{2}$/.test(s)) return toEastern(new Date(s));
+  return new Date(s); // naive string, assume already Eastern wall time
+}
+const startOfDay=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x;};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+const startOfWeek=d=>{const x=startOfDay(d);x.setDate(x.getDate()-x.getDay());return x;}; // Sunday
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_S=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TODAY=startOfDay(new Date());
+function fmtTime(d){
+  let h=d.getHours(),m=d.getMinutes();const ap=h>=12?'pm':'am';h=h%12||12;
+  return m?`${h}:${String(m).padStart(2,'0')}${ap}`:`${h}${ap}`;
+}
 
-  // ── TOMMY — Confirmed Tournaments ─────────────────────
-  { title: 'T — BIC Winter Showcase (IMG Academy, Bradenton FL)', start: '2027-01-09', end: '2027-01-10', color: '#f59e0b', kid: 'tommy', level: 'operational', type: 'showcase', location: 'IMG Academy, Bradenton FL', notes: "Men's 2030 · Position: Midfield · Registered & paid ($826.97) · Conf #3087179", link: 'https://1stclasslax.sprocketsports.com/players/687276/player-registrations/3087179' },
-
-  // ── EMILY — Mass Elite Tournaments ─────────────────────
-  { title: 'E — ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Heart & Hustle (Fitchburg)',               start: '2026-06-20', end: '2026-06-22', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Summer Ascender (Waltham)',                start: '2026-06-27', end: '2026-06-29', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-06-23', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-06-30', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-07-07', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-07-14', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-07-21', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Summer League (Milton)',        start: '2026-07-28', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: The Northern Rise (Devens)',               start: '2026-07-18', end: '2026-07-20', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Intrasquad 5v5 (Weston)',                  start: '2026-09-20', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: September Sixes (Taunton)',                start: '2026-09-27', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Love 2 Lax (Ft Devens)',                   start: '2026-10-03', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Fall Fear (Ft Devens)',                    start: '2026-10-12', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Ghost Games (Farmington CT)',              start: '2026-10-24', end: '2026-10-26', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Turkey Challenge (Marlboro)',              start: '2026-11-27', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-07', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-14', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-21', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-28', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: E, kid: 'emily', level: 'operational' },
-  { title: 'E — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: E, kid: 'emily', level: 'operational' },
-  // ── EMILY — Mass Elite Practices (Fall 2026) ───────────────────
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-12', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-18', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-09-19', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-09-26', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-01', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-10', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Union Pt)',         start: '2026-10-15', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-10-17', color: E, kid: 'emily', level: 'practice' },
-  { title: 'E — ME: Practice (Forekicks Marlboro)', start: '2026-10-24', color: E, kid: 'emily', level: 'practice' },
-
-  // ── EMILY — WPC Soccer practices ────────────────────────────────────
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-24', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-26', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-08-31', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-02', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-07', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-09', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-14', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-16', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-21', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-23', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-28', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-09-30', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-05', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-07', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-12', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-14', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-19', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-21', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-26', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-10-28', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-02', color: E, kid: 'emily', level: 'practice' },
-  { title: 'WPC: Practice (Elm Bank, Wellesley)', start: '2026-11-04', color: E, kid: 'emily', level: 'practice' },
-
-  // ── SOPHIE — Mass Elite Tournaments ────────────────────
-  { title: 'S — ME: Xtreme Sixes (Weymouth)',                  start: '2026-06-13', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Heart & Hustle (Fitchburg)',               start: '2026-06-20', end: '2026-06-22', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Summer Ascender (Waltham)',                start: '2026-06-27', end: '2026-06-29', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: The Northern Rise (Devens)',               start: '2026-07-18', end: '2026-07-20', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Intrasquad 5v5 (Weston)',                  start: '2026-09-20', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: September Sixes (Taunton)',                start: '2026-09-27', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Love 2 Lax (Ft Devens)',                   start: '2026-10-03', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Fall Fear (Ft Devens)',                    start: '2026-10-12', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Ghost Games (Farmington CT)',              start: '2026-10-24', end: '2026-10-26', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Turkey Challenge (Marlboro)',              start: '2026-11-27', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-07', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-14', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-21', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-11-28', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-05', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-12', color: S, kid: 'sophie', level: 'operational' },
-  { title: 'S — ME: Achievelax Indoor Session 1 (Canton)',     start: '2026-12-19', color: S, kid: 'sophie', level: 'operational' },
-  // ── SOPHIE — Mass Elite Practices (Fall 2026) ───────────────────
-  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-12', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-17', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Forekicks Marlboro)', start: '2026-09-19', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Union Pt)',         start: '2026-09-26', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Union Pt)',         start: '2026-10-08', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Union Pt)',         start: '2026-10-10', color: S, kid: 'sophie', level: 'practice' },
-  { title: 'S — ME: Practice (Forekicks Marlboro)', start: '2026-10-17', color: S, kid: 'sophie', level: 'practice' },
-
-];
-const ALL_KIDS_OUT = [
-  { start: '2026-09-04', end: '2026-09-07', label: 'All Out — Fri Sep 4 + Labor Day Weekend (Tenacre not yet started)' },
-  { start: '2026-10-12', end: '2026-10-12', label: 'Columbus / Indigenous Peoples Day' },
-  { start: '2026-11-25', end: '2026-11-27', label: 'Thanksgiving Break' },
-  { start: '2026-12-21', end: '2027-01-01', label: 'Winter Break' },
-  { start: '2027-01-18', end: '2027-01-18', label: 'MLK Day' },
-  { start: '2027-02-15', end: '2027-02-15', label: "Presidents' Day" },
-  { start: '2027-03-15', end: '2027-03-26', label: 'Spring Break — All 3 Schools' },
-  { start: '2027-04-19', end: '2027-04-19', label: "Patriots' Day" },
-  { start: '2027-05-31', end: '2027-05-31', label: 'Memorial Day' },
-];
-// kid: T/E/S · monthKey: YYYY-MM for grouping, or 'TBD'
-const TRACKING_ITEMS = [
-  // ── Tommy (Class of 2030/2031) ──
-  { kid:'T', name:'Future Phenoms Newport (ML8)', monthKey:'2026-07', dates:'Jul 20–21, 2026', location:'Newport, RI', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms-newport' },
-  { kid:'T', name:'Jumbo July Prospect Day (Tufts)', monthKey:'2026-07', dates:'Jul 27, 2026', location:'Medford, MA', ages:'2026–2029', registration:'Open', url:'https://jumbolacrosseclinics.com/july-prospect-day/' },
-  { kid:'T', name:'Future Blue Prospect Camp (Johns Hopkins)', monthKey:'2026-07', dates:'Jul 13, 2026', location:'Baltimore, MD', ages:'2027–2029', registration:'Open', url:'https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp' },
-  { kid:'T', name:'Duke Prospect Day Camp', monthKey:'2026-07', dates:'Jul 27–28, 2026', location:'Durham, NC', ages:'2027–2029', registration:'Open', url:'https://dukelacrossecampforboys.com/info1.html' },
-  { kid:'T', name:'Blue & Grey July Prospect Day (Georgetown)', monthKey:'2026-07', dates:'Jul 19, 2026', location:'Washington, DC', ages:'2027–2029', registration:'Open', url:'https://www.blueandgreylacrosse.com/content/2026-july-prospect-day' },
-  { kid:'T', name:'Navy Overnight Prospect Camp', monthKey:'2026-07', dates:'Jul 28–29, 2026', location:'Annapolis, MD', ages:'2028–2029', registration:'Not yet open', url:'https://navylacrossecamp.com/prospect-camp' },
-  { kid:'T', name:'Best in Class Fall Showcase', monthKey:'2026-10', dates:'Oct 25, 2026', location:'Wilmington, DE', ages:'2029/2030', registration:'Open', url:'https://www.1stclasslax.com/best-in-class-fall' },
-  { kid:'T', name:'The Spotlight (ML8)', monthKey:'2026-10', dates:'Oct 17–18, 2026', location:'TBD', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/the-spotlight' },
-  { kid:'T', name:'One Percent Winter Showcase', monthKey:'2026-12', dates:'Dec 19, 2026', location:'Boca Raton, FL', ages:'2029/2030', registration:'Open', url:'https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/' },
-  { kid:'T', name:'Future Phenoms Florida (ML8)', monthKey:'2027-01', dates:'Jan 9–10, 2027', location:'Florida', ages:'2029/2030', registration:'Open', url:'https://www.ml8events.com/events/future-phenoms' },
-  { kid:'T', name:'NLF Futures at IMG Academy', monthKey:'2027-01', dates:'Jan 17–19, 2027', location:'Bradenton, FL', ages:'2029/2030', registration:'Not yet open', url:'https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/' },
-  { kid:'T', name:'Williams Prospect Day', monthKey:'2026-07', dates:'Jul 2, 2026', location:'Williamstown, MA', ages:'2027–2028', registration:'Closed', url:'https://register.ryzer.com/camp.cfm?sport=27&id=324131' },
-  { kid:'T', name:'Jumbo February Prospect Day (Tufts)', monthKey:'2027-02', dates:'Feb 2027 (2026 date past — 2027 TBD)', location:'Medford, MA', ages:'2026–2029', registration:'Not yet open', url:'https://jumbolacrosseclinics.com/february-prospect-day/' },
-  { kid:'T', name:'Paramount Lacrosse Camp (Bowdoin)', monthKey:'TBD', dates:'TBD', location:'Brunswick, ME', ages:'2027–2029', registration:'Not yet open', url:'https://www.paramountlacrossecamps.com/' },
-
-  // ── Emily (Class of 2032) ──
-  { kid:'E', name:'Dartmouth Summer Prospect Clinic', monthKey:'2027-07', dates:'Jul 2027 (2025 date past — 2027 TBD)', location:'Hanover, NH', ages:'Gr 8–College Frosh', registration:'Not yet open', url:'https://register.ryzer.com/camp.cfm?id=303287' },
-  { kid:'E', name:'American Select Tryouts', monthKey:'TBD', dates:'Spring 2027 (TBD)', location:'TBD', ages:'2032', registration:'Not yet open', url:'https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event' },
-];
-
-// ============ DATA SOURCES ============
-const SOURCES = [
-  { kid:'T', label:'Roxbury Latin (Tommy)', url:'https://www.roxburylatin.org/calendar' },
-  { kid:'T', label:'Laxachusetts Winter Skills', url:'https://www.jrminutemenlax.net/page/show/4976531' },
-  { kid:'T', label:'Laxachusetts Monthly Cal', url:'https://docs.google.com/spreadsheets/d/13IL_m-m-ZDe3kdnLxSUr1YXB8U2Yz73ck7sj7cDmATE/edit' },
-  { kid:'E', label:'NCDS (Emily)', url:'https://www.ncds.org/calendar' },
-  { kid:'E', label:'Mass Elite Practice', url:'https://www.masselite.com/team/schedules/practice-schedule/' },
-  { kid:'E', label:'WPC Soccer (TeamSnap)', url:'https://go.teamsnap.com/' },
-  { kid:'S', label:'Tenacre (Sophie)', url:'https://www.tenacrecds.org/calendar' },
-  { kid:'S', label:'Mass Elite Practice', url:'https://www.masselite.com/team/schedules/practice-schedule/' },
-  { kid:'F', label:'Hennessey Family Google Calendar', url:'https://calendar.google.com/calendar/u/0?cid=ZmFtaWx5MTc2NzMzNDYxNjE4MDQ4MTY3ODZAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ' },
-];
-
-// ============ STATE ============
-const HIDDEN_KEY = 'sked_hidden_ids_v3';
-let hiddenIds = new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'));
-const USER_KEY = 'sked_user_events_v1';
-let userEvents = JSON.parse(localStorage.getItem(USER_KEY) || '[]');
-function saveUserEvents() { localStorage.setItem(USER_KEY, JSON.stringify(userEvents)); }
-const FILTER_KEY = 'sked_filters_v3';
-const savedFilters = JSON.parse(localStorage.getItem(FILTER_KEY) || 'null');
-let filters = savedFilters || { kids: {T:true,E:true,S:true,F:true}, games:true, practices:true, academics:true };
-let currentView = 'monthly';
-let currentDate = new Date();
-let overviewEditMode = false;
-let annualEditMode = false;
-currentDate.setHours(0,0,0,0);
-
-// ============ FAMILY CAL LOADING + NORMALIZATION ============
-let familyEvents = [];
-
-function inferKid(title) {
-  const t = title.toLowerCase();
-  if (t.includes('tommy')) return 'T';
-  if (t.includes('emily')) return 'E';
-  if (t.includes('sophie')) return 'S';
-  if (t.includes('laura')) return 'F';
+// ---------- person + type classification ----------
+function detectPerson(e){
+  const k=(e.kid||'').toString().toLowerCase();
+  if(k==='t'||k==='tommy') return 'T';
+  if(k==='e'||k==='emily') return 'E';
+  if(k==='s'||k==='sophie') return 'S';
+  const t=e.title||'';
+  if(/^(tommy|t\s*[—-])/i.test(t)) return 'T';
+  if(/^(emily|e\s*[—-])/i.test(t)) return 'E';
+  if(/^(sophie|s\s*[—-])/i.test(t)) return 'S';
+  if(/^laura/i.test(t)) return 'L';
+  if(/tenacre/i.test(t)) return 'S';
+  if(/ncds|wpc/i.test(t)) return 'E';
+  if(/roxbury latin|laxachusetts|\brl\b/i.test(t)) return 'T';
   return 'F';
 }
-function inferType(title) {
-  const t = title.toLowerCase();
-  if (/camp\s|camp$|wa-klo|waklo|sleepaway/.test(t)) return 'camp';
-  if (/tournament|showcase/.test(t)) return 'tournament';
-  if (/game|jamboree/.test(t)) return 'game';
-  if (/practice|training|s&c/.test(t)) return 'practice';
+function detectType(e){
+  if(/reg check|registration (check|reminder)/i.test(e.title||'')) return 'regcheck';
+  if(e.type){
+    const t=e.type.toLowerCase();
+    if(t in TYPES) return t;
+    if(t==='showcase') return 'tournament';
+  }
+  const t=(e.title||'').toLowerCase();
+  if(/reg check|reg\s*—|registration (check|reminder)/i.test(t)) return 'regcheck';
+  if(/no school|no classes|break\b|vacation|holiday|closed/.test(t)) return 'noschool';
+  if(/practice|skills|training|shooting|speed|attack\/defense|gymnastics|lesson|clinic session/.test(t)) return 'practice';
+  if(/tournament|showcase|invitational|jamboree|classic|championship|states|regionals|nationals|cup\b|sixes|prospect (day|camp)|camp\b/.test(t)) return 'tournament';
+  if(/game|vs\.?|match|scrimmage/.test(t)) return 'game';
+  if(/school|conferences|assembly|concert|musical|graduation|back to school|curriculum|picture day|field trip|grandfriends|fair\b/.test(t)) return 'academic';
   return 'family';
 }
-
-function normalizeFamilyCal(raw) {
-  return raw.map(e => {
-    const kid = inferKid(e.title);
-    const type = inferType(e.title);
-    let start = e.start, end = e.end, allDay = e.allDay;
-    return {
-      id: 'fc_' + e.id,
-      kid: kid,
-      type: type,
-      title: e.title.replace(/^(Tommy|Emily|Sophie|Laura)[\s\-–—]*/i, ''),
-      start: start,
-      end: end,
-      allDay: allDay,
-      location: e.location || '',
-      link: e.link,
-      source: 'FamilyCal',
-    };
-  });
-}
-
-// Normalize static events
-const KID_MAP = { tommy:'T', emily:'E', sophie:'S' };
-function classifyStatic(e) {
-  const t = e.title;
-  const tl = t.toLowerCase();
-  if (e.level === 'practice') return 'practice';
-  if (e.level === 'operational') {
-    if (/game|jamboree/.test(tl)) return 'game';
-    if (/tournament|showcase|invitational|challenge|classic|championship|states|regionals|nationals|cup/.test(tl)) return 'tournament';
-    return 'practice';
-  }
-  // Academic (no level set) — RL/NCDS/Tenacre
-  if (/no school|no classes|break|vacation|thanksgiving|holiday|patriots day|mlk|presidents|labor day|off day|pt conferences —|—\s*(pt conferences|report writing|professional)/i.test(t)) return 'noschool';
-  return 'academic';
-}
-// Practice time lookups (recurring practices with known times, added by title pattern)
-const PRACTICE_TIMES = [
-  // Laxachusetts (Tommy)
-  { match: /Skills \(Winchester\)/,          start:'19:30', end:'20:30' },
-  { match: /Skills \(Sudbury\)/,             start:'19:30', end:'21:00' },
-  { match: /Shooting\/Speed \(Union Pt\)/,   start:'20:00', end:'21:00' },
-  { match: /Attack\/Defense \(Union Pt\)/,   start:'19:00', end:'20:00' },
-  { match: /Skills \(Norwood\)/,             start:'19:30', end:'21:00' },
-  { match: /Skills\+Full-Field \(Union Pt\)/,start:'19:40', end:'21:00' },
-  { match: /Shooting \(Sudbury\)/,           start:'20:00', end:'21:00' },
-  // Mass Elite (Emily & Sophie) — youth club window
-  { match: /ME: Practice \(Union Pt\)/,           start:'18:00', end:'19:30' },
-  { match: /ME: Practice \(Forekicks Marlboro\)/, start:'18:00', end:'19:30' },
-  // Achievelax indoor
-  { match: /Achievelax Indoor/,              start:'17:00', end:'18:00' },
-  { match: /Achievelax Summer/,              start:'17:00', end:'18:30' },
-  // WPC practice (already in family_cal generally, but for static fallback)
-  { match: /WPC: Practice/,                  start:'17:30', end:'19:00' },
-];
-function lookupPracticeTime(title) {
-  for (const p of PRACTICE_TIMES) if (p.match.test(title)) return p;
+function lookupPracticeTime(title){
+  for(const p of siteData.practice_times){ if(new RegExp(p.match).test(title)) return p; }
   return null;
 }
-function normalizeStatic() {
-  return STATIC_EVENTS.map((e,i) => {
-    const pt = e.time ? {start:e.time, end:e.endTime||e.time} : lookupPracticeTime(e.title);
-    const dateOnly = String(e.start).slice(0,10);
-    let start, end, allDay;
-    if (pt && !e.end) {
-      start = `${dateOnly}T${pt.start}:00`;
-      end   = `${dateOnly}T${pt.end}:00`;
-      allDay = false;
+
+// ---------- normalization ----------
+function normAll(famCal,masselite,site){
+  const out=[];
+  const push=o=>{ if(o.start && !isNaN(o.start)) out.push(o); };
+
+  // 1) family_cal.json — Google-Calendar-shaped. All-day `end` is EXCLUSIVE.
+  for(const e of famCal){
+    const allDay=!!e.allDay || (e.start||'').length<=10;
+    let start=parseWhen(e.start), end;
+    if(allDay){
+      end = e.end ? addDays(parseYMD(e.end), (e.end.length<=10 && e.end!==e.start) ? -1 : 0) : new Date(start);
+      if(e.time_start){ // date + separate times
+        start=parseYMD(e.start); const [h1,m1]=e.time_start.split(':'); start.setHours(+h1,+m1);
+        end=parseYMD(e.start); const [h2,m2]=(e.time_end||e.time_start).split(':'); end.setHours(+h2,+m2);
+        push(mk(e,start,end,false)); continue;
+      }
+      if(end<start) end=new Date(start);
+      push(mk(e,start,end,true));
     } else {
-      start = e.start;
-      end = e.end || e.start; // end is INCLUSIVE (matches eventDates semantics)
-      allDay = true;
+      end=e.end?parseWhen(e.end):new Date(start.getTime()+3600000);
+      push(mk(e,start,end,false));
     }
-    return {
-      id: 'st_' + i,
-      kid: KID_MAP[e.kid] || 'F',
-      type: e.type || classifyStatic(e),
-      title: e.title,
-      start, end, allDay,
-      location: e.location || '',
-      link: e.link || e.url || '',
-      notes: e.notes || '',
-      source: e.title.split(':')[0].trim(),
-    };
-  });
-}
-// Inject Tracking items with parseable dates as "Potential" calendar events
-function trackingCalendarEvents() {
-  const out = [];
-  TRACKING_ITEMS.forEach((t, i) => {
-    if (!t.dates || /TBD/i.test(t.dates)) return;
-    const parsed = parseTrackingDates(t.dates, t.monthKey);
-    if (!parsed) return;
-    const kidCode = t.kid; // already T/E/S
-    out.push({
-      id: 'trk_' + i,
-      kid: kidCode,
-      type: 'tournament',
-      title: `Potential: ${t.name}`,
-      start: parsed.start,
-      end: parsed.end,
-      allDay: true,
-      color: '#d97706',
-      location: t.location || '',
-      link: t.url || '',
-      notes: `Ages: ${t.ages||''} · Registration: ${t.registration||''}`,
-      source: 'Tracking',
-    });
-  });
+  }
+  // 2) masselite_practices.json — {kid,title,start(date),time_start,time_end,location}
+  for(const e of masselite){
+    const s=parseYMD(e.start), en=parseYMD(e.start);
+    if(e.time_start){const [h,m]=e.time_start.split(':');s.setHours(+h,+m);}
+    if(e.time_end){const [h,m]=e.time_end.split(':');en.setHours(+h,+m);} else en.setTime(s.getTime()+5400000);
+    push(mk({...e, id:'me-'+(e.kid||'')+'-'+e.start, type:'practice', source:'masselite'},s,en,false));
+  }
+  // 3) site_data static events — end INCLUSIVE; practice-time lookup for known titles
+  for(let i=0;i<site.static_events.length;i++){
+    const e=site.static_events[i];
+    const pt=e.time?{start:e.time,end:e.endTime||e.time}:lookupPracticeTime(e.title);
+    if(pt && !e.end){
+      const s=parseYMD(e.start), en=parseYMD(e.start);
+      const [h1,m1]=pt.start.split(':'), [h2,m2]=pt.end.split(':');
+      s.setHours(+h1,+m1); en.setHours(+h2,+m2);
+      push(mk({...e,id:e.id||'static-'+i},s,en,false));
+    } else {
+      push(mk({...e,id:e.id||'static-'+i}, parseYMD(e.start), e.end?parseYMD(e.end):parseYMD(e.start), true));
+    }
+  }
+  // 4) tracking items → potential events when dates parseable
+  for(let i=0;i<site.tracking_items.length;i++){
+    const t=site.tracking_items[i];
+    const d=parseTrackingDates(t);
+    if(d) push({id:'track-'+i, title:(t.kid?t.kid+' — ':'')+t.name+' (potential)', person:t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F',
+      type:'potential', start:d[0], end:d[1], allDay:true, location:t.location||'', link:t.url||'',
+      notes:`Ages ${t.ages||'—'} · Registration: ${t.registration||'?'} · ${t.dates||''}`, source:'tracking', reg:t.registration});
+  }
+  // 5) user events (localStorage)
+  for(const e of userEvents){
+    const allDay=e.allDay!==false;
+    let s,en;
+    if(allDay){s=parseYMD(e.start);en=e.end?parseYMD(e.end):new Date(s);}
+    else{
+      s=parseYMD(e.start);const [h1,m1]=(e.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
+      en=parseYMD(e.end||e.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
+    }
+    push({id:e.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
+      location:e.location||'', link:e.link||'', notes:e.notes||'', source:'user'});
+  }
   return out;
-}
-// Parse "Jul 20–21, 2026" / "Oct 25, 2026" / "Jan 9–10, 2027" / "Jul 27–28, 2026"
-function parseTrackingDates(str, monthKey) {
-  const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-  const m = str.match(/([A-Za-z]{3})\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?,?\s*(\d{4})/);
-  if (!m) return null;
-  const mo = MONTHS[m[1].toLowerCase().slice(0,3)];
-  if (mo === undefined) return null;
-  const d1 = parseInt(m[2],10), d2 = m[3] ? parseInt(m[3],10) : d1;
-  const yr = parseInt(m[4],10);
-  const pad = n => String(n).padStart(2,'0');
-  return { start: `${yr}-${pad(mo+1)}-${pad(d1)}`, end: `${yr}-${pad(mo+1)}-${pad(d2)}` };
-}
 
-let scrapedMEEvents = [];
-function normalizeMEScraped(raw) {
-  return raw.map((e,i) => ({
-    id: 'me_' + i,
-    kid: e.kid === 'Emily' ? 'E' : (e.kid === 'Sophie' ? 'S' : 'F'),
-    type: 'practice',
-    title: e.title,
-    start: `${e.start}T${e.time_start}:00`,
-    end:   `${e.start}T${e.time_end}:00`,
-    allDay: false,
-    location: e.location || '',
-    link: 'https://www.masselite.com/team/schedules/practice-schedule/',
-    source: 'Mass Elite',
-  }));
-}
-function allEvents() {
-  // Skip legacy static "ME: Practice" entries when scraped data is present (avoid dupes)
-  const staticEvts = normalizeStatic().filter(e => !(scrapedMEEvents.length && /ME: Practice/.test(e.title)));
-  return [...staticEvts, ...familyEvents, ...scrapedMEEvents, ...userEvents, ...trackingCalendarEvents()];
-}
-
-// ============ HELPERS ============
-function fmtTime(iso) {
-  if (!iso || iso.length <= 10) return '';
-  const d = new Date(iso);
-  let h = d.getHours(), m = d.getMinutes();
-  const ap = h >= 12 ? 'p' : 'a';
-  h = h % 12 || 12;
-  return m ? `${h}:${String(m).padStart(2,'0')}${ap}` : `${h}${ap}`;
-}
-function escapeHtml(s) {
-  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function dateKey(d) {
-  return d.toISOString().slice(0,10);
-}
-function eventDates(e) {
-  // returns array of YYYY-MM-DD strings this event occupies (end is inclusive)
-  const start = new Date(e.start.slice(0,10));
-  const end = e.end ? new Date(e.end.slice(0,10)) : start;
-  const dates = [];
-  const d = new Date(start);
-  while (d.getTime() <= end.getTime()) {
-    dates.push(dateKey(d));
-    d.setDate(d.getDate()+1);
-    if (dates.length > 60) break; // safety
+  function mk(e,start,end,allDay){
+    return {id:e.id||e.title+e.start, title:e.title, person:detectPerson(e), type:detectType(e),
+      start, end, allDay, location:e.location||'', link:e.link||'', notes:e.notes||'', source:e.source||''};
   }
-  return dates.length ? dates : [dateKey(start)];
 }
-function passesFilter(e) {
-  if (hiddenIds.has(e.id)) return false;
-  if (!filters.kids[e.kid]) return false;
-  if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') return filters.games;
-  if (e.type === 'practice') return filters.practices;
-  if (e.type === 'academic' || e.type === 'noschool') return filters.academics;
-  return true; // family always shown when kid is on
+function parseTrackingDates(t){
+  // "Jul 20–21, 2026" | "Oct 25, 2026" | "Jan 9–10, 2027" | "Jul 27–28, 2026" — else null
+  const m=(t.dates||'').match(/^([A-Z][a-z]{2})[a-z]*\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?,\s*(\d{4})$/);
+  if(!m) return null;
+  const mo=MONTHS_S.indexOf(m[1]); if(mo<0) return null;
+  const s=new Date(+m[4],mo,+m[2]), e=new Date(+m[4],mo,+(m[3]||m[2]));
+  return [s,e];
 }
-function sortDayEvents(events) {
-  // Strictly chronological. All-day events treated as 00:00 so they land at top only when they're actually earliest.
-  const t = e => {
-    if (e.allDay) return '00:00';
-    const s = e.start || '';
-    const m = s.match(/T(\d{2}:\d{2})/);
-    return m ? m[1] : '00:00';
-  };
-  return events.slice().sort((a,b) => t(a).localeCompare(t(b)));
-}
-function buildIndex(events) {
-  const idx = {};
-  events.forEach(e => {
-    eventDates(e).forEach(k => {
-      (idx[k] = idx[k] || []).push(e);
-    });
+
+// ---------- filtering ----------
+function visible(){
+  return events.filter(e=>{
+    if(hiddenIds.has(e.id)) return false;
+    if(!filters.people[e.person]) return false;
+    if(!filters.types[e.type]) return false;
+    if(searchQ){
+      const q=searchQ.toLowerCase();
+      if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q))) return false;
+    }
+    return true;
   });
-  return idx;
+}
+function eventsOnDay(list,day){
+  const d0=startOfDay(day).getTime(), d1=d0+DAY;
+  return list.filter(e=>{
+    const s=e.allDay?startOfDay(e.start).getTime():e.start.getTime();
+    const en=e.allDay?startOfDay(e.end).getTime()+DAY:e.end.getTime();
+    return s<d1 && en>d0;
+  });
+}
+function evColor(e){return PEOPLE[e.person]?.hex||'#5f6368';}
+function evBg(e){
+  const c=evColor(e);
+  if(e.type==='noschool') return '#f1f3f4';
+  if(e.type==='potential') return '#fff';
+  if(e.type==='practice') return c+'26'; // ~15% alpha
+  return c;
+}
+function evFg(e){
+  if(e.type==='noschool') return '#5f6368';
+  if(e.type==='potential') return evColor(e);
+  if(e.type==='practice') return shade(evColor(e));
+  return '#fff';
+}
+function shade(hex){ // darker text version of color
+  const n=parseInt(hex.slice(1),16);
+  const r=(n>>16)*0.55|0, g=((n>>8)&255)*0.55|0, b=(n&255)*0.55|0;
+  return `rgb(${r},${g},${b})`;
+}
+function chipStyle(e){
+  let s=`background:${evBg(e)};color:${evFg(e)};`;
+  if(e.type==='potential') s+=`border:1.5px dashed ${evColor(e)};`;
+  if(e.type==='regcheck') s+=`background:#fce8e6;color:#c5221f;font-weight:600;`;
+  return s;
 }
 
-// ============ EVENT PILL RENDER ============
-function pillHTML(e, opts={}) {
-  const cls = e.type === 'noschool' ? 'noschool' :
-              e.type === 'tournament' ? 'tournament' :
-              e.type === 'showcase' ? 'showcase' :
-              e.type === 'game' ? 'game' :
-              e.type === 'practice' ? 'practice' :
-              e.type === 'family' ? 'family' :
-              e.type === 'academic' ? 'academic' : 'academic';
-  const time = !e.allDay ? `<span class="time">${fmtTime(e.start)}</span>` : '';
-  const init = `<span class="init ${e.kid}">${e.kid}</span>`;
-  return `<div class="evt ${cls}" data-detail="${e.id}" style="cursor:pointer;">${init}${time}${e.title}<span class="del" data-del="${e.id}">✕</span></div>`;
+// ---------- rendering ----------
+const $=id=>document.getElementById(id);
+const content=$('content');
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function render(){
+  document.querySelectorAll('#viewSwitch button').forEach(b=>b.classList.toggle('active',b.dataset.v===view));
+  localStorage.setItem(VIEW_KEY,view);
+  if(searchQ){renderAgenda();return;}
+  if(view==='month') renderMonth();
+  else if(view==='week') renderTimeGrid(7);
+  else if(view==='day') renderTimeGrid(1);
+  else if(view==='year') renderYear();
+  else renderPlan();
+  renderMini();
 }
 
-// ============ VIEWS ============
-function renderMonthly() {
-  const y = currentDate.getFullYear(), m = currentDate.getMonth();
-  const first = new Date(y,m,1);
-  const startDay = first.getDay();
-  const daysInMonth = new Date(y,m+1,0).getDate();
-  const gridStart = new Date(y,m,1-startDay);
-  const weeks = Math.ceil((startDay + daysInMonth) / 7);
-  const todayKey = dateKey(new Date());
-  const events = allEvents().filter(e => passesFilter(e) && !hiddenIds.has(e.id));
-  const monthName = first.toLocaleString('en-US',{month:'long',year:'numeric'});
-  let html = `<div class="nav-bar">
-    <button data-nav="prev">‹</button>
-    <button data-nav="today">Today</button>
-    <button data-nav="next">›</button>
-    <h2>${monthName}</h2>
-  </div>
-  <div class="mon-container">
-    <div class="mon-daynames">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>`;
-  for (let w = 0; w < weeks; w++) {
-    const weekStart = new Date(gridStart); weekStart.setDate(gridStart.getDate()+w*7);
-    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
-    // Compute segments for events overlapping this week
-    const segs = [];
-    events.forEach(e => {
-      const ds = eventDates(e);
-      if (!ds.length) return;
-      const ef = new Date(ds[0]+'T00:00:00'), el = new Date(ds[ds.length-1]+'T00:00:00');
-      if (el < weekStart || ef > weekEnd) return;
-      const s = ef < weekStart ? weekStart : ef;
-      const en = el > weekEnd ? weekEnd : el;
-      const startCol = Math.round((s-weekStart)/86400000)+1;
-      const endCol = Math.round((en-weekStart)/86400000)+1;
-      segs.push({e, startCol, span: endCol-startCol+1, dur: (el-ef)/86400000});
-    });
-    // Multi-day first (longer bars pack higher), then singles by time
-    segs.sort((a,b) => (b.dur - a.dur) || (a.startCol - b.startCol) || ((a.e.start||'').localeCompare(b.e.start||'')));
-    const rowOcc = [];
-    segs.forEach(s => {
-      const endCol = s.startCol + s.span - 1;
-      let r = 0;
-      while (true) {
-        rowOcc[r] = rowOcc[r] || [];
-        if (!rowOcc[r].some(o => !(endCol < o.startCol || s.startCol > o.endCol))) {
-          rowOcc[r].push({startCol: s.startCol, endCol});
-          s.row = r;
-          break;
-        }
-        r++;
-      }
-    });
-    const rows = Math.max(rowOcc.length, 1);
-    html += `<div class="mon-week" style="grid-template-rows: 22px repeat(${rows}, 20px) 1fr;">`;
-    // Background cells span all rows
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
-      const k = dateKey(d);
-      const inMonth = d.getMonth() === m;
-      const isToday = k === todayKey;
-      html += `<div class="mon-bg ${inMonth?'':'other'} ${isToday?'today':''}" style="grid-column:${i+1};grid-row:1/-1;" data-date="${k}"></div>`;
-    }
-    // Day number labels (row 1)
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
-      const isToday = dateKey(d) === todayKey;
-      html += `<div class="mon-daynum ${isToday?'today':''}" style="grid-column:${i+1};grid-row:1;">${d.getDate()}</div>`;
-    }
-    // Event segments
-    segs.forEach(s => {
-      const c = s.e.color || '#888';
-      const isMulti = s.span > 1;
-      const time = (!s.e.allDay && s.e.start && s.e.start.includes('T')) ? `<span class="mon-seg-time">${fmtTime(s.e.start)}</span> ` : '';
-      const label = `${time}${escapeHtml(s.e.title||'')}`;
-      const bg = isMulti ? `background:${c};color:#fff;` : `background:transparent;color:#111;`;
-      const border = isMulti ? '' : `border-left:3px solid ${c};padding-left:5px;`;
-      html += `<div class="mon-seg" data-detail="${s.e.id}" style="grid-column:${s.startCol} / span ${s.span}; grid-row:${s.row+2}; ${bg} ${border}" title="${escapeHtml(s.e.title||'')}">${label}</div>`;
-    });
-    html += `</div>`;
+// ----- MONTH -----
+function renderMonth(){
+  $('rangeLabel').textContent=`${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
+  const first=new Date(cursor.getFullYear(),cursor.getMonth(),1);
+  const gridStart=startOfWeek(first);
+  const list=visible();
+  let html=`<div class="month"><div class="mon-daynames">${DOW.map(d=>`<div>${d}</div>`).join('')}</div><div class="mon-body">`;
+  const weeks=[];
+  for(let w=0;w<6;w++){
+    const wkStart=addDays(gridStart,w*7);
+    if(w===5 && wkStart.getMonth()!==cursor.getMonth() && addDays(wkStart,6).getMonth()!==cursor.getMonth()) break;
+    weeks.push(wkStart);
   }
-  html += `</div>`;
-  document.getElementById('view-monthly').innerHTML = html;
-}
-
-function isMacro(e) {
-  // Annual now shows all events per Tom's request.
-  return true;
-}
-function renderAnnual() {
-  // Macro-only annual: holidays / days-off + tournaments/showcases.
-  // Multi-day events shown as spanning bubbles across the days they cover.
-  const today = new Date();
-  const startY = today.getFullYear(), startM = today.getMonth();
-  const todayKey = dateKey(today);
-  const macros = allEvents().filter(e => !hiddenIds.has(e.id) && isMacro(e) && (filters.kids[e.kid] !== false));
-  // Precompute event date ranges as Date objects
-  const evRanges = macros.map(e => {
-    const dates = eventDates(e);
-    return { e, first: new Date(dates[0]), last: new Date(dates[dates.length-1]) };
-  });
-  const annRestoreBtn = hiddenIds.size > 0 ? `<button id="ann-restore" style="margin-left:8px;">Restore ${hiddenIds.size} deleted</button>` : '';
-  let html = `<div class="nav-bar"><h2>Next 12 Months — Holidays & Tournaments</h2><div><button id="ann-edit-toggle">${annualEditMode ? '✕ Done' : '✎ Edit'}</button>${annRestoreBtn}<span style="color:var(--muted);font-size:12px;margin-left:8px;">Multi-day events span as bars</span></div></div>`;
-  for (let mi = 0; mi < 12; mi++) {
-    const d0 = new Date(startY, startM+mi, 1);
-    const y = d0.getFullYear(), m = d0.getMonth();
-    const startDay = d0.getDay();
-    const gridStart = new Date(y,m,1-startDay);
-    const monthName = d0.toLocaleString('en-US',{month:'long',year:'numeric'});
-    const daysInMonth = new Date(y,m+1,0).getDate();
-    const weeks = Math.ceil((startDay + daysInMonth) / 7);
-    html += `<div class="annfull-month"><h3 data-jump-month="${y}-${String(m+1).padStart(2,'0')}">${monthName}</h3>`;
-    html += `<div class="annwk-grid"><div class="annwk-head">Sun</div><div class="annwk-head">Mon</div><div class="annwk-head">Tue</div><div class="annwk-head">Wed</div><div class="annwk-head">Thu</div><div class="annwk-head">Fri</div><div class="annwk-head">Sat</div></div>`;
-    for (let w = 0; w < weeks; w++) {
-      const weekStart = new Date(gridStart); weekStart.setDate(gridStart.getDate()+w*7);
-      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
-      // Day number row
-      html += `<div class="annwk-grid annwk-days">`;
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
-        const k = dateKey(d);
-        const inMonth = d.getMonth() === m;
-        const isToday = k === todayKey;
-        html += `<div class="annwk-day ${inMonth?'':'other'} ${isToday?'today':''}" data-jump-day="${k}"><span class="annwk-num">${d.getDate()}</span></div>`;
+  const ROWH=22, TOP=30;
+  for(const wkStart of weeks){
+    const wkEnd=addDays(wkStart,7);
+    // lay out spanning segments for this week
+    const segs=[];
+    for(const e of list){
+      const s=e.allDay?startOfDay(e.start):startOfDay(e.start);
+      const en=e.allDay?addDays(startOfDay(e.end),1):(e.end.getHours()||e.end.getMinutes()?addDays(startOfDay(e.end),1):startOfDay(e.end));
+      const multiOrAllday=e.allDay||((en-s)>DAY);
+      const from=Math.max(s.getTime(),wkStart.getTime()), to=Math.min((e.allDay?addDays(startOfDay(e.end),1):new Date(Math.max(e.end.getTime(),e.start.getTime()+1))).getTime(),wkEnd.getTime());
+      if(from>=to) continue;
+      const c0=Math.floor((from-wkStart.getTime())/DAY), c1=Math.ceil((to-wkStart.getTime())/DAY)-1;
+      segs.push({e,c0,c1:Math.min(c1,6),multi:multiOrAllday,sort:(e.allDay?0:1)});
+    }
+    segs.sort((a,b)=>a.sort-b.sort||(b.c1-b.c0)-(a.c1-a.c0)||a.e.start-b.e.start);
+    // assign lanes
+    const lanes=[]; // lanes[i] = array of [c0,c1]
+    const perDayCount=Array(7).fill(0);
+    for(const sg of segs){
+      let lane=0;
+      while(true){
+        if(!lanes[lane]) lanes[lane]=[];
+        if(!lanes[lane].some(([a,b])=>!(sg.c1<a||sg.c0>b))) break;
+        lane++;
       }
-      html += `</div>`;
-      // Segments in this week
-      const segs = [];
-      evRanges.forEach(({e, first, last}) => {
-        if (last < weekStart || first > weekEnd) return;
-        const segStart = first < weekStart ? weekStart : first;
-        const segEnd = last > weekEnd ? weekEnd : last;
-        const startCol = Math.round((segStart - weekStart)/86400000) + 1; // 1..7
-        const endCol   = Math.round((segEnd   - weekStart)/86400000) + 1;
-        const span = endCol - startCol + 1;
-        segs.push({e, startCol, span, dur: (last - first)/86400000});
-      });
-      // Sort: longest first, then earlier start
-      segs.sort((a,b) => b.dur - a.dur || a.startCol - b.startCol);
-      // Row-pack: greedy assign each seg a row index that doesn't collide
-      const rowOccupancy = []; // rowOccupancy[r] = array of {startCol,endCol}
-      segs.forEach(s => {
-        const endCol = s.startCol + s.span - 1;
-        let r = 0;
-        while (true) {
-          rowOccupancy[r] = rowOccupancy[r] || [];
-          const clash = rowOccupancy[r].some(o => !(endCol < o.startCol || s.startCol > o.endCol));
-          if (!clash) { rowOccupancy[r].push({startCol:s.startCol, endCol}); s.row = r; break; }
-          r++;
-        }
-      });
-      const maxRow = Math.max(-1, ...segs.map(s=>s.row));
-      if (maxRow >= 0) {
-        html += `<div class="annwk-bars">`;
-        segs.forEach(s => {
-          const cls = s.e.type === 'noschool' ? 'noschool'
-                    : (s.e.type === 'tournament' || s.e.type === 'showcase') ? 'tournament'
-                    : (s.e.type === 'camp') ? 'camp'
-                    : (s.e.type === 'trip') ? 'trip'
-                    : (s.e.type === 'practice') ? 'practice'
-                    : (s.e.type === 'game') ? 'game'
-                    : 'other';
-          let label = s.e.title;
-          const kidName = s.e.kid === 'T' ? 'Tommy' : s.e.kid === 'E' ? 'Emily' : s.e.kid === 'S' ? 'Sophie' : '';
-          if (kidName && !label.toLowerCase().includes(kidName.toLowerCase())) label = `${kidName} — ${label}`;
-          const delBtn = annualEditMode ? `<span class="ann-del" data-del="${s.e.id}">×</span>` : '';
-          html += `<div class="annwk-bar ${cls}" style="grid-column: ${s.startCol} / span ${s.span}; grid-row: ${s.row+1};cursor:pointer;" data-detail="${s.e.id}" title="${label.replace(/"/g,'&quot;')}">${label}${delBtn}</div>`;
-        });
-        html += `</div>`;
+      lanes[lane].push([sg.c0,sg.c1]); sg.lane=lane;
+      for(let c=sg.c0;c<=sg.c1;c++) perDayCount[c]++;
+    }
+    html+=`<div class="mon-week">`;
+    for(let c=0;c<7;c++){
+      const d=addDays(wkStart,c);
+      const other=d.getMonth()!==cursor.getMonth();
+      html+=`<div class="mon-cell${other?' other':''}" data-day="${fmtYMD(d)}">
+        <span class="daynum${sameDay(d,TODAY)?' today':''}">${d.getDate()===1?MONTHS_S[d.getMonth()]+' ':''}${d.getDate()}</span></div>`;
+    }
+    // events layer
+    html+=`<div class="mon-events">`;
+    const maxLanes=Math.max(2,Math.floor((110-TOP)/ROWH)); // recomputed at runtime via CSS clamp; use 3
+    const MAXL=3;
+    const colW=100/7;
+    const hiddenPerDay=Array(7).fill(0);
+    for(const sg of segs){
+      if(sg.lane>=MAXL){ for(let c=sg.c0;c<=sg.c1;c++) hiddenPerDay[c]++; continue; }
+      const e=sg.e;
+      const left=`calc(${sg.c0*colW}% + 3px)`, width=`calc(${(sg.c1-sg.c0+1)*colW}% - 7px)`;
+      const top=sg.lane*ROWH;
+      if(sg.multi){
+        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:${left};width:${width};top:${top}px;${chipStyle(e)}">${TYPES[e.type]?.icon?'':''}${esc(e.title)}</div>`;
+      } else {
+        html+=`<div class="ev-chip timed" data-ev="${esc(String(e.id))}" style="left:${left};width:${width};top:${top}px;">
+          <span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${esc(e.title)}</span></div>`;
       }
     }
-    html += `</div>`;
+    for(let c=0;c<7;c++){
+      if(hiddenPerDay[c]>0){
+        html+=`<div class="ev-more" data-day="${fmtYMD(addDays(wkStart,c))}" style="left:calc(${c*colW}% + 3px);top:${MAXL*ROWH}px;">+${hiddenPerDay[c]} more</div>`;
+      }
+    }
+    html+=`</div></div>`;
   }
-  document.getElementById('view-annual').innerHTML = html;
+  html+=`</div></div>`;
+  content.innerHTML=html;
 }
 
-function dayKidColumns(evts) {
-  // Returns HTML for T/E/S columns. F (family) events show in all three.
-  const cols = { T:[], E:[], S:[] };
-  sortDayEvents(evts).forEach(e => {
-    if (e.kid === 'F') { cols.T.push(e); cols.E.push(e); cols.S.push(e); }
-    else if (cols[e.kid]) cols[e.kid].push(e);
-  });
-  const KIDS = [
-    { k:'T', name:'Tommy', color:'var(--T)' },
-    { k:'E', name:'Emily', color:'var(--E)' },
-    { k:'S', name:'Sophie', color:'var(--S)' },
-  ];
-  return `<div class="kid-cols">` + KIDS.map(({k,name,color}) => {
-    const items = cols[k];
-    return `<div class="kid-col">
-      <div class="kid-col-h" style="color:${color};border-bottom:2px solid ${color}">${name}</div>
-      <div class="kid-col-body">
-        ${items.length === 0 ? '<div class="kid-col-empty">—</div>' : items.map(e => pillHTML(e, {compact:true})).join('')}
-      </div>
+// ----- WEEK / DAY (time grid) -----
+function renderTimeGrid(nDays){
+  const start = nDays===7 ? startOfWeek(cursor) : startOfDay(cursor);
+  const end=addDays(start,nDays);
+  if(nDays===7){
+    const e2=addDays(start,6);
+    $('rangeLabel').textContent = start.getMonth()===e2.getMonth()
+      ? `${MONTHS[start.getMonth()]} ${start.getFullYear()}`
+      : `${MONTHS_S[start.getMonth()]} – ${MONTHS_S[e2.getMonth()]} ${e2.getFullYear()}`;
+  } else {
+    $('rangeLabel').textContent=`${MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
+  }
+  const list=visible();
+  const HOUR=48, DSTART=6, DEND=23; // 6am–11pm visible, scroll for rest
+  // split all-day/multi vs timed
+  const days=[...Array(nDays)].map((_,i)=>addDays(start,i));
+  const allday=[],timed=[];
+  for(const e of list){
+    const s=e.allDay?startOfDay(e.start):e.start;
+    const en=e.allDay?addDays(startOfDay(e.end),1):e.end;
+    if(s<end && en>start){ (e.allDay?allday:timed).push(e); }
+  }
+  // all-day lanes
+  const asegs=[];
+  for(const e of allday){
+    const s=startOfDay(e.start), en=addDays(startOfDay(e.end),1);
+    const c0=Math.max(0,Math.floor((s-start)/DAY)), c1=Math.min(nDays-1,Math.floor((en-start)/DAY-0.001));
+    asegs.push({e,c0,c1});
+  }
+  asegs.sort((a,b)=>(b.c1-b.c0)-(a.c1-a.c0));
+  const alanes=[];
+  for(const sg of asegs){
+    let l=0;
+    while(true){ if(!alanes[l])alanes[l]=[]; if(!alanes[l].some(([a,b])=>!(sg.c1<a||sg.c0>b))) break; l++; }
+    alanes[l].push([sg.c0,sg.c1]); sg.lane=l;
+  }
+  let html=`<div class="tgrid">
+    <div class="tg-head"><div class="tg-gutter"></div>${days.map(d=>`
+      <div class="col"><div class="dow">${DOW[d.getDay()]}</div>
+      <div class="dnum${sameDay(d,TODAY)?' today':''}" data-goday="${fmtYMD(d)}">${d.getDate()}</div></div>`).join('')}
     </div>`;
-  }).join('') + `</div>`;
-}
-
-function renderWeekly() {
-  const start = new Date(currentDate); start.setDate(start.getDate() - start.getDay());
-  const todayKey = dateKey(new Date());
-  const idx = buildIndex(allEvents().filter(passesFilter));
-  const end = new Date(start); end.setDate(end.getDate()+6);
-  const rangeStr = `${start.toLocaleString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-  let html = `<div class="nav-bar">
-    <button data-nav="prev">‹</button>
-    <button data-nav="today">This week</button>
-    <button data-nav="next">›</button>
-    <h2>Week of ${rangeStr}</h2>
-  </div><div class="week-grid-cols">`;
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    const k = dateKey(d);
-    const evts = idx[k]||[];
-    const dow = d.toLocaleString('en-US',{weekday:'short'});
-    html += `<div class="week-day-cols ${k===todayKey?'today':''}">
-      <h4 data-jump-day="${k}" style="cursor:pointer">${dow} <span class="daynum-lg">${d.getDate()}</span></h4>
-      ${dayKidColumns(evts)}
-    </div>`;
-  }
-  html += `</div>`;
-  document.getElementById('view-weekly').innerHTML = html;
-}
-
-function renderDaily() {
-  const k = dateKey(currentDate);
-  const idx = buildIndex(allEvents().filter(passesFilter));
-  const evts = idx[k]||[];
-  const label = currentDate.toLocaleString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  let html = `<div class="nav-bar">
-    <button data-nav="prev">‹</button>
-    <button data-nav="today">Today</button>
-    <button data-nav="next">›</button>
-    <h2>${label}</h2>
-  </div>
-  <div class="day-kid-cols">${dayKidColumns(evts)}</div>`;
-  document.getElementById('view-daily').innerHTML = html;
-}
-
-function schoolOf(e) {
-  const t = e.title || '';
-  if (t.startsWith('RL:') || t.startsWith('RL ')) return 'RL';
-  if (t.startsWith('NCDS:') || t.startsWith('NCDS ')) return 'NCDS';
-  if (t.startsWith('Tenacre:') || t.startsWith('Tenacre ')) return 'Tenacre';
-  if (e.kid === 'T') return 'RL';
-  if (e.kid === 'E') return 'NCDS';
-  if (e.kid === 'S') return 'Tenacre';
-  return '';
-}
-
-function renderOverview() {
-  const today = new Date();
-  const startY = today.getFullYear(), startM = today.getMonth();
-  const rangeStart = new Date(startY, startM, 1);
-  const rangeEnd = new Date(startY, startM+12, 0);
-
-  const evts = allEvents().filter(e => !hiddenIds.has(e.id));
-  // Gather academic (academic + noschool) and tournaments in range
-  const byDate = {}; // dateKey -> { acad: [], tour: [] }
-  function bucket(k) { return byDate[k] = byDate[k] || { acad: [], tour: [] }; }
-  const offByKid = { T:new Set(), E:new Set(), S:new Set() };
-
-  evts.forEach(e => {
-    const inRange = (k) => {
-      const d = new Date(k);
-      return d >= rangeStart && d <= rangeEnd;
-    };
-    if (e.type === 'academic' || e.type === 'noschool') {
-      eventDates(e).forEach(k => {
-        if (!inRange(k)) return;
-        bucket(k).acad.push(e);
-        if (e.type === 'noschool' && offByKid[e.kid]) offByKid[e.kid].add(k);
-      });
-    } else if (e.type === 'tournament' || e.type === 'showcase' || e.type === 'game') {
-      const k = (e.start||'').slice(0,10);
-      if (k && inRange(k)) bucket(k).tour.push(e);
+  if(asegs.length){
+    const h=Math.min(alanes.length,5)*24+6;
+    html+=`<div class="tg-allday"><div class="lbl">all-day</div><div class="lanes" style="height:${h}px;--cols:${nDays}">
+      <div class="grid">${days.map(()=>'<i></i>').join('')}</div>`;
+    for(const sg of asegs){
+      const colW=100/nDays;
+      html+=`<div class="ev-chip" data-ev="${esc(String(sg.e.id))}" style="left:calc(${sg.c0*colW}% + 3px);width:calc(${(sg.c1-sg.c0+1)*colW}% - 7px);top:${3+sg.lane*24}px;${chipStyle(sg.e)}">${esc(sg.e.title)}</div>`;
     }
-  });
-
-  const allDates = Object.keys(byDate).sort();
-  const allOffDays = [...offByKid.T].filter(d => offByKid.E.has(d) && offByKid.S.has(d));
-
-  // Group by month for readability
-  const byMonth = {};
-  allDates.forEach(k => {
-    const mk = k.slice(0,7);
-    (byMonth[mk] = byMonth[mk] || []).push(k);
-  });
-
-  const SCHOOL_META = {
-    RL: { name: 'RL', color: 'var(--T)', kid: 'T' },
-    NCDS: { name: 'NCDS', color: 'var(--E)', kid: 'E' },
-    Tenacre: { name: 'Tenacre', color: 'var(--S)', kid: 'S' },
-  };
-
-  function delBtn(e) {
-    return overviewEditMode ? `<button class="ov-del" data-del="${escapeHtml(e.id)}" title="Delete from all views">✕</button>` : '';
+    html+=`</div></div>`;
   }
-  function schoolCell(events) {
-    if (!events.length) return '<span class="ov-empty">—</span>';
-    return events.map(e => {
-      const isOff = e.type === 'noschool';
-      const link = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${escapeHtml(cleanTitle(e))}</a>` : escapeHtml(cleanTitle(e));
-      return `<div class="ov-acad-item ${isOff?'off':''}">${isOff?'🚫 ':''}${link}${delBtn(e)}</div>`;
-    }).join('');
+  // time grid
+  const gridH=24*HOUR;
+  html+=`<div class="tg-scroll" id="tgScroll"><div class="tg-canvas" style="height:${gridH}px;">
+    <div class="tg-times">`;
+  for(let h=1;h<24;h++){
+    const lbl=h%12||12, ap=h<12?'am':'pm';
+    html+=`<div style="top:${h*HOUR}px;">${lbl} ${ap}</div>`;
   }
-
-  function cleanTitle(e) {
-    return (e.title||'').replace(/^(RL|NCDS|Tenacre):\s*/, '').replace(/^(RL|NCDS|Tenacre)\s+/, '');
-  }
-
-  let listHtml = '';
-  Object.keys(byMonth).sort().forEach(mk => {
-    const [yy, mm] = mk.split('-').map(Number);
-    const monthName = new Date(yy, mm-1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-    listHtml += `<div class="ov-month-block"><h3 class="ov-month-h">${monthName}</h3>
-      <div class="ov-list-header">
-        <div>Date</div>
-        <div style="color:var(--T)">RL (Tommy)</div>
-        <div style="color:var(--E)">NCDS (Emily)</div>
-        <div style="color:var(--S)">Tenacre (Sophie)</div>
-        <div>🏆 Tournaments / Showcases</div>
-      </div>`;
-    byMonth[mk].forEach(k => {
-      const row = byDate[k];
-      const dObj = new Date(k+'T00:00:00');
-      const isAllOff = allOffDays.includes(k);
-      const rl = row.acad.filter(e => schoolOf(e)==='RL');
-      const nc = row.acad.filter(e => schoolOf(e)==='NCDS');
-      const te = row.acad.filter(e => schoolOf(e)==='Tenacre');
-      const tour = row.tour;
-      const dow = dObj.toLocaleString('en-US',{weekday:'short'});
-      const dayStr = `${dow} ${dObj.toLocaleString('en-US',{month:'short',day:'numeric'})}`;
-      listHtml += `<div class="ov-list-row ${isAllOff?'all-off-row':''}">
-        <div class="ov-date">${dayStr}${isAllOff?' 🎉':''}</div>
-        <div class="ov-school">${schoolCell(rl)}</div>
-        <div class="ov-school">${schoolCell(nc)}</div>
-        <div class="ov-school">${schoolCell(te)}</div>
-        <div class="ov-tour">${tour.length ? tour.map(t => `<div class="ov-tour-item"><span class="init ${t.kid}">${t.kid}</span> ${t.url?`<a href="${t.url}" target="_blank" rel="noopener">${escapeHtml(t.title)}</a>`:escapeHtml(t.title)}${delBtn(t)}</div>`).join('') : '<span class="ov-empty">—</span>'}</div>
-      </div>`;
-    });
-    listHtml += `</div>`;
-  });
-
-  // Scorecard
-  const stats = {
-    allOff: allOffDays.length,
-    tournaments: Object.values(byDate).reduce((n,r) => n + r.tour.length, 0),
-    practices: evts.filter(e => e.type==='practice').length,
-    academicDates: allDates.length,
-  };
-
-  const bySource = { T:[], E:[], S:[], F:[] };
-  SOURCES.forEach(s => { if (bySource[s.kid]) bySource[s.kid].push(s); });
-  const srcHtml = ['T','E','S','F'].map(k => {
-    const kName = {T:'Tommy',E:'Emily',S:'Sophie',F:'Family'}[k];
-    return `<div><strong style="color:var(--${k})">${kName}</strong><ul>${bySource[k].map(s => `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}</a></li>`).join('')}</ul></div>`;
-  }).join('');
-
-  const editBar = `<div class="ov-edit-bar">
-    <button id="ov-edit-toggle" class="ov-edit-btn ${overviewEditMode?'on':''}">${overviewEditMode?'✓ Done editing':'✎ Edit (delete events)'}</button>
-    ${overviewEditMode?'<span class="ov-edit-hint">Click the ✕ next to any event to remove it from all views.</span>':''}
-    ${hiddenIds.size?`<button id="ov-restore" class="ov-restore-btn">Restore ${hiddenIds.size} deleted</button>`:''}
-  </div>`;
-  document.getElementById('view-overview').innerHTML = `
-    ${editBar}
-    <div class="scorecard">
-      <div class="stat"><div class="num" style="color:#eab308">${stats.allOff}</div><div class="lbl">All-kids-off days</div></div>
-      <div class="stat"><div class="num" style="color:var(--tournament)">${stats.tournaments}</div><div class="lbl">Tournaments / Showcases</div></div>
-      <div class="stat"><div class="num">${stats.practices}</div><div class="lbl">Practices</div></div>
-      <div class="stat"><div class="num">${stats.academicDates}</div><div class="lbl">Academic dates</div></div>
-    </div>
-    <div class="ov-list">${listHtml || '<p class="muted-sm">No academic or tournament dates in this window.</p>'}</div>
-    <div class="sources"><h3>📡 Data Sources</h3><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">${srcHtml}</div></div>
-  `;
-  return;
-
-}
-
-function renderTracking() {
-  // Group by monthKey
-  const groups = {};
-  TRACKING_ITEMS.forEach(t => {
-    const k = t.monthKey || 'TBD';
-    if (!groups[k]) groups[k] = { T:[], E:[], S:[] };
-    if (groups[k][t.kid]) groups[k][t.kid].push(t);
-  });
-  const monthKeys = Object.keys(groups).sort((a,b) => {
-    if (a === 'TBD') return 1;
-    if (b === 'TBD') return -1;
-    return a.localeCompare(b);
-  });
-  const monthLabel = (k) => {
-    if (k === 'TBD') return 'TBD / Dates not yet posted';
-    const [y,m] = k.split('-');
-    const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    return `${names[+m-1]} ${y}`;
-  };
-  const regClass = (r) => {
-    const rl = (r||'').toLowerCase();
-    if (rl === 'open') return 'open';
-    if (rl === 'closed') return 'closed';
-    if (rl.includes('not yet') || rl.includes('coming')) return 'notyet';
-    return 'tbd';
-  };
-  const cardHtml = (t) => `
-    <div class="track-card">
-      <h4>${t.name}</h4>
-      <div class="track-meta">📅 ${t.dates}</div>
-      <div class="track-meta">📍 ${t.location || 'TBD'}</div>
-      <div class="track-meta">🎓 ${t.ages || 'All ages'}</div>
-      <span class="track-reg ${regClass(t.registration)}">${t.registration || 'Watch'}</span>
-      ${t.url ? `<div style="margin-top:6px;"><a href="${t.url}" target="_blank" rel="noopener">Open link →</a></div>` : ''}
-    </div>
-  `;
-  const monthHtml = monthKeys.map(mk => {
-    const g = groups[mk];
-    return `<div class="track-month">
-      <h3>${monthLabel(mk)}</h3>
-      <div class="track-cols">
-        <div><div class="track-col-head T">Tommy</div>${g.T.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
-        <div><div class="track-col-head E">Emily</div>${g.E.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
-        <div><div class="track-col-head S">Sophie</div>${g.S.map(cardHtml).join('') || '<div class="track-meta" style="text-align:center; padding:8px;">—</div>'}</div>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('view-tracking').innerHTML = `<h2 style="margin:0 0 12px;">📌 Registration Watch</h2>${monthHtml}`;
-}
-
-// ============ RENDER DISPATCH ============
-function render() {
-  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
-  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-'+currentView));
-  if (currentView === 'annual') renderAnnual();
-  else if (currentView === 'monthly') renderMonthly();
-  else if (currentView === 'weekly') renderWeekly();
-  else if (currentView === 'daily') renderDaily();
-  else if (currentView === 'overview') renderOverview();
-  else if (currentView === 'tracking') renderTracking();
-}
-
-// ============ EVENT WIRING ============
-document.querySelectorAll('nav.tabs button').forEach(b => {
-  b.addEventListener('click', () => { currentView = b.dataset.view; render(); });
-});
-document.querySelectorAll('#filters .chip.kid').forEach(c => {
-  c.addEventListener('click', () => {
-    const k = c.dataset.kid;
-    filters.kids[k] = !filters.kids[k];
-    c.classList.toggle('active', filters.kids[k]);
-    localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
-    render();
-  });
-});
-document.querySelectorAll('#filters .chip[data-type]').forEach(c => {
-  c.addEventListener('click', () => {
-    const t = c.dataset.type;
-    filters[t] = !filters[t];
-    c.classList.toggle('active', filters[t]);
-    localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
-    render();
-  });
-});
-
-// Apply saved filter state to UI
-function syncFilterUI() {
-  document.querySelectorAll('#filters .chip.kid').forEach(c => c.classList.toggle('active', filters.kids[c.dataset.kid]));
-  document.querySelectorAll('#filters .chip[data-type]').forEach(c => c.classList.toggle('active', !!filters[c.dataset.type]));
-}
-syncFilterUI();
-
-// Nav bar (delegate)
-function fmtDetailTime(e){
-  if (e.allDay || !e.start) return 'All day';
-  const s = e.start.slice(11,16) || e.time_start || '';
-  const en = e.time_end || (e.end && e.end.slice(11,16)) || '';
-  return s + (en?` – ${en}`:'');
-}
-function openDetailModal(id){
-  const ev = allEvents().find(x => String(x.id)===String(id));
-  if (!ev) return;
-  const dateStr = ev.start ? new Date((ev.start||'').slice(0,10)+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '';
-  const endStr = ev.end && ev.end.slice(0,10)!==ev.start.slice(0,10) ? ' → ' + new Date(ev.end.slice(0,10)+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric'}) : '';
-  const kidName = {T:'Tommy',E:'Emily',S:'Sophie',F:'Family',tommy:'Tommy',emily:'Emily',sophie:'Sophie',family:'Family'}[ev.kid]||'';
-  const loc = ev.location ? `<div><b>Location:</b> ${ev.location}</div>` : '';
-  const time = `<div><b>Time:</b> ${fmtDetailTime(ev)}</div>`;
-  const notes = ev.notes ? `<div style="margin-top:10px;white-space:pre-line;padding:10px;background:#f9fafb;border-radius:6px;border-left:3px solid var(--T);">${ev.notes}</div>` : '';
-  const type = ev.type ? `<div style="color:#6b7280;font-size:12px;text-transform:capitalize;margin-top:6px;">${ev.type}${kidName?' · '+kidName:''}</div>` : (kidName?`<div style="color:#6b7280;font-size:12px;margin-top:6px;">${kidName}</div>`:'');
-  document.getElementById('dm-title').textContent = ev.title || 'Event';
-  document.getElementById('dm-body').innerHTML = `<div style="margin-bottom:6px;"><b>${dateStr}${endStr}</b></div>${time}${loc}${type}${notes}`;
-  const src = document.getElementById('dm-source');
-  if (ev.link) { src.href = ev.link; src.style.display='inline-block'; } else { src.style.display='none'; }
-  document.getElementById('detail-modal').classList.add('open');
-}
-function closeDetailModal(){ document.getElementById('detail-modal').classList.remove('open'); }
-document.getElementById('dm-close').addEventListener('click', closeDetailModal);
-document.getElementById('detail-modal').addEventListener('click', (e) => { if (e.target.id==='detail-modal') closeDetailModal(); });
-
-document.body.addEventListener('click', (e) => {
-  // Event detail popup
-  if (e.target.closest('[data-del]') || e.target.closest('.ann-del')) { /* fallthrough to delete handlers */ }
-  else {
-    const det = e.target.closest('[data-detail]');
-    if (det) { e.preventDefault(); openDetailModal(det.dataset.detail); return; }
-  }
-  const nav = e.target.closest('[data-nav]');
-  if (nav) {
-    const action = nav.dataset.nav;
-    if (action === 'today') currentDate = new Date();
-    else if (action === 'prev') {
-      if (currentView === 'monthly') currentDate.setMonth(currentDate.getMonth()-1);
-      else if (currentView === 'weekly') currentDate.setDate(currentDate.getDate()-7);
-      else if (currentView === 'daily') currentDate.setDate(currentDate.getDate()-1);
-      else if (currentView === 'annual') currentDate.setFullYear(currentDate.getFullYear()-1);
-    } else if (action === 'next') {
-      if (currentView === 'monthly') currentDate.setMonth(currentDate.getMonth()+1);
-      else if (currentView === 'weekly') currentDate.setDate(currentDate.getDate()+7);
-      else if (currentView === 'daily') currentDate.setDate(currentDate.getDate()+1);
-      else if (currentView === 'annual') currentDate.setFullYear(currentDate.getFullYear()+1);
+  html+=`</div><div class="tg-cols" style="--cols:${nDays};">`;
+  // hour lines
+  let lines='';
+  for(let h=1;h<24;h++) lines+=`<div class="tg-hline" style="top:${h*HOUR}px;"></div>`;
+  for(let i=0;i<nDays;i++){
+    const d=days[i];
+    // collect timed events for this day, cluster overlaps
+    const evs=timed.filter(e=>e.start<addDays(d,1)&&e.end>d)
+      .map(e=>({e, s:Math.max(0,(Math.max(e.start,d)-d)/3600000), en:Math.min(24,(Math.min(e.end,addDays(d,1))-d)/3600000)}))
+      .sort((a,b)=>a.s-b.s||b.en-a.en);
+    // simple column layout for overlaps
+    const cols=[];
+    for(const ev of evs){
+      let c=0;
+      while(cols[c] && cols[c].some(o=>!(ev.en<=o.s||ev.s>=o.en))) c++;
+      if(!cols[c]) cols[c]=[];
+      cols[c].push(ev); ev.col=c;
     }
-    currentDate.setHours(0,0,0,0);
-    render();
-    return;
-  }
-  // Annual: click a day → jump to Daily view
-  const jumpDay = e.target.closest('[data-jump-day]');
-  if (jumpDay) {
-    const k = jumpDay.dataset.jumpDay;
-    currentDate = new Date(k+'T00:00:00');
-    currentView = 'daily';
-    render();
-    return;
-  }
-  // Annual: click month name → jump to Monthly
-  const jumpMonth = e.target.closest('[data-jump-month]');
-  if (jumpMonth) {
-    const [y,m] = jumpMonth.dataset.jumpMonth.split('-').map(Number);
-    currentDate = new Date(y, m-1, 1);
-    currentView = 'monthly';
-    render();
-    return;
-  }
-  // Overview: toggle edit mode
-  if (e.target.closest('#ov-edit-toggle')) {
-    overviewEditMode = !overviewEditMode;
-    render();
-    return;
-  }
-  if (e.target.closest('#ann-edit-toggle')) {
-    annualEditMode = !annualEditMode;
-    render();
-    return;
-  }
-  if (e.target.closest('#ann-restore')) {
-    if (confirm(`Restore ${hiddenIds.size} deleted events?`)) {
-      hiddenIds.clear();
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify([]));
-      render();
+    for(const ev of evs){
+      // width = share with any overlapping cluster
+      const overl=evs.filter(o=>!(ev.en<=o.s||ev.s>=o.en));
+      const ncol=Math.max(...overl.map(o=>o.col))+1;
+      ev.ncol=ncol;
     }
-    return;
-  }
-  // Overview: restore all deleted
-  if (e.target.closest('#ov-restore')) {
-    if (confirm(`Restore ${hiddenIds.size} deleted events?`)) {
-      hiddenIds.clear();
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify([]));
-      render();
+    let colHtml='';
+    for(const ev of evs){
+      const e=ev.e;
+      const top=ev.s*HOUR, h=Math.max(22,(ev.en-ev.s)*HOUR-2);
+      const w=100/ev.ncol, l=ev.col*w;
+      colHtml+=`<div class="tg-ev" data-ev="${esc(String(e.id))}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${chipStyle(e)};z-index:${5+ev.col};">
+        <div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}</div></div>`;
     }
-    return;
+    const isToday=sameDay(d,TODAY);
+    let now='';
+    if(isToday){
+      const mins=new Date().getHours()*60+new Date().getMinutes();
+      now=`<div class="nowline" style="top:${mins/60*HOUR}px;"></div>`;
+    }
+    html+=`<div class="tg-col">${lines}${colHtml}${now}</div>`;
   }
-  // Delete X on events
-  const del = e.target.closest('[data-del]');
-  if (del) {
-    e.preventDefault(); e.stopPropagation();
-    hiddenIds.add(del.dataset.del);
-    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hiddenIds]));
-    render();
-    return;
-  }
-});
-
-// ============ ADD EVENT MODAL ============
-function openAddModal(prefillDate) {
-  const modal = document.getElementById('add-modal');
-  document.getElementById('ae-title').value = '';
-  document.getElementById('ae-kid').value = 'F';
-  document.getElementById('ae-type').value = 'family';
-  document.getElementById('ae-date').value = prefillDate || dateKey(new Date());
-  document.getElementById('ae-allday').checked = false;
-  document.getElementById('ae-start').value = '09:00';
-  document.getElementById('ae-end').value = '10:00';
-  document.getElementById('ae-loc').value = '';
-  document.getElementById('ae-link').value = '';
-  document.getElementById('ae-times').style.display = 'flex';
-  modal.classList.add('open');
-  setTimeout(() => document.getElementById('ae-title').focus(), 50);
+  html+=`</div></div></div></div>`;
+  content.innerHTML=html;
+  // scroll to 7am (or now)
+  const sc=$('tgScroll');
+  if(sc) sc.scrollTop = (days.some(d=>sameDay(d,TODAY)) ? Math.max(0,(new Date().getHours()-2)) : 7)*HOUR;
 }
-function closeAddModal() { document.getElementById('add-modal').classList.remove('open'); }
-document.getElementById('add-btn').addEventListener('click', () => openAddModal());
-document.getElementById('ae-cancel').addEventListener('click', closeAddModal);
-document.getElementById('add-modal').addEventListener('click', (e) => {
-  if (e.target.id === 'add-modal') closeAddModal();
-});
-document.getElementById('ae-allday').addEventListener('change', (e) => {
-  document.getElementById('ae-times').style.display = e.target.checked ? 'none' : 'flex';
-});
-document.getElementById('ae-save').addEventListener('click', () => {
-  const title = document.getElementById('ae-title').value.trim();
-  if (!title) { alert('Title is required'); return; }
-  const date = document.getElementById('ae-date').value;
-  if (!date) { alert('Date is required'); return; }
-  const kid = document.getElementById('ae-kid').value;
-  const type = document.getElementById('ae-type').value;
-  const allday = document.getElementById('ae-allday').checked;
-  const st = document.getElementById('ae-start').value;
-  const en = document.getElementById('ae-end').value;
-  const loc = document.getElementById('ae-loc').value.trim();
-  const link = document.getElementById('ae-link').value.trim();
-  const evt = {
-    id: 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-    kid, type, title,
-    start: allday ? date : `${date}T${st}:00`,
-    end:   allday ? date : `${date}T${en}:00`,
-    allDay: allday,
-    location: loc,
-    link: link || undefined,
-    source: 'User',
-    level: 'operational',
+
+// ----- YEAR -----
+function renderYear(){
+  const y=cursor.getFullYear();
+  $('rangeLabel').textContent=String(y);
+  const list=visible();
+  // index events per day
+  const byDay={};
+  for(const e of list){
+    let d=startOfDay(e.start);
+    const en=e.allDay?startOfDay(e.end):startOfDay(e.end);
+    let guard=0;
+    while(d<=en && guard++<400){
+      if(d.getFullYear()===y){
+        const k=fmtYMD(d);
+        (byDay[k]=byDay[k]||new Set()).add(e.person);
+      }
+      d=addDays(d,1);
+    }
+  }
+  let html=`<div class="year"><div class="year-grid">`;
+  for(let m=0;m<12;m++){
+    const first=new Date(y,m,1), gs=startOfWeek(first);
+    html+=`<div class="ym"><h3 data-gomonth="${y}-${String(m+1).padStart(2,'0')}">${MONTHS[m]}</h3><div class="mini-grid">`;
+    html+=DOW.map(d=>`<div class="dn">${d[0]}</div>`).join('');
+    for(let i=0;i<42;i++){
+      const d=addDays(gs,i);
+      if(i>=35 && d.getMonth()!==m) break;
+      const other=d.getMonth()!==m;
+      const k=fmtYMD(d);
+      const ppl=byDay[k];
+      let dots='';
+      if(!other && ppl){
+        dots=`<span class="dots">${[...ppl].slice(0,3).map(p=>`<i style="background:${PEOPLE[p].hex}"></i>`).join('')}</span>`;
+      }
+      html+=`<div class="d${other?' other':''}${sameDay(d,TODAY)?' today':''}" data-goday="${k}">${d.getDate()}${dots}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  html+=`</div></div>`;
+  content.innerHTML=html;
+}
+
+// ----- PLANNING -----
+function renderPlan(){
+  $('rangeLabel').textContent='Planning';
+  const list=visible().filter(e=>['tournament','regcheck','potential','noschool'].includes(e.type)||((e.end-e.start)>=2*DAY&&e.allDay));
+  list.sort((a,b)=>a.start-b.start);
+  const from=addDays(TODAY,-14);
+  const groups={};
+  for(const e of list){
+    if(e.start<from) continue;
+    const k=`${e.start.getFullYear()}-${String(e.start.getMonth()+1).padStart(2,'0')}`;
+    (groups[k]=groups[k]||[]).push(e);
+  }
+  let html=`<div class="plan"><h2>Season & registration planning</h2>`;
+  if(!Object.keys(groups).length) html+=`<p style="color:var(--muted)">Nothing on the horizon matches the current filters.</p>`;
+  for(const k of Object.keys(groups).sort()){
+    const [y,m]=k.split('-');
+    html+=`<div class="pmonth"><h3>${MONTHS[+m-1]} ${y}</h3>`;
+    for(const e of groups[k]){
+      const dr = sameDay(e.start,e.end) ? `${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()}`
+        : `${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()} – ${MONTHS_S[e.end.getMonth()]} ${e.end.getDate()}`;
+      let tag='';
+      if(e.type==='regcheck') tag=`<span class="tag reg">Reg check</span>`;
+      else if(e.type==='potential'){
+        const r=(e.reg||'').toLowerCase();
+        tag=`<span class="tag ${r==='open'?'open':r==='closed'?'closed':'notyet'}">${esc(e.reg||'Potential')}</span>`;
+      }
+      else if(e.type==='noschool') tag=`<span class="tag" style="background:#f1f3f4;color:#5f6368;">No school</span>`;
+      html+=`<div class="prow" data-ev="${esc(String(e.id))}">
+        <div class="date">${dr}</div>
+        <div class="pill" style="background:${evColor(e)}"></div>
+        <div class="body"><div class="t">${esc(e.title)}</div>
+        <div class="sub">${esc([PEOPLE[e.person].name, e.location].filter(Boolean).join(' · '))}</div></div>
+        ${tag}</div>`;
+    }
+    html+=`</div>`;
+  }
+  // tracking items without parseable dates
+  const tbd=siteData.tracking_items.filter(t=>!parseTrackingDates(t));
+  if(tbd.length){
+    html+=`<div class="pmonth"><h3>Watching — dates TBD</h3>`;
+    for(const t of tbd){
+      html+=`<div class="prow" data-link="${esc(t.url||'')}">
+        <div class="date">${esc(t.dates||'TBD')}</div>
+        <div class="pill" style="background:${PEOPLE[t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F'].hex}"></div>
+        <div class="body"><div class="t">${esc(t.name)}</div><div class="sub">${esc([t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}</div></div>
+        <span class="tag ${String(t.registration).toLowerCase()==='open'?'open':'notyet'}">${esc(t.registration||'TBD')}</span></div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  content.innerHTML=html;
+}
+
+// ----- AGENDA (search) -----
+function renderAgenda(){
+  $('rangeLabel').textContent=`Search: “${searchQ}”`;
+  const list=visible().sort((a,b)=>a.start-b.start);
+  let html=`<div class="agenda">`;
+  if(!list.length) html+=`<p style="color:var(--muted);margin-top:20px;">No events match.</p>`;
+  let lastKey='';
+  for(const e of list){
+    const k=fmtYMD(e.start);
+    if(k!==lastKey){
+      lastKey=k;
+      html+=`<div class="day-h">${DOW[e.start.getDay()]}, ${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()}, ${e.start.getFullYear()}</div>`;
+    }
+    html+=`<div class="prow" data-ev="${esc(String(e.id))}">
+      <div class="date">${e.allDay?'All day':fmtTime(e.start)}</div>
+      <div class="pill" style="background:${evColor(e)}"></div>
+      <div class="body"><div class="t">${esc(e.title)}</div><div class="sub">${esc([PEOPLE[e.person].name,e.location].filter(Boolean).join(' · '))}</div></div></div>`;
+  }
+  html+=`</div>`;
+  content.innerHTML=html;
+}
+
+// ----- MINI CALENDAR -----
+function renderMini(){
+  const y=miniCursor.getFullYear(), m=miniCursor.getMonth();
+  const first=new Date(y,m,1), gs=startOfWeek(first);
+  let html=`<div class="mini-head">
+    <span class="m-label">${MONTHS[m]} ${y}</span>
+    <span><button id="miniPrev">‹</button><button id="miniNext">›</button></span></div>
+    <div class="mini-grid">${DOW.map(d=>`<div class="dn">${d[0]}</div>`).join('')}`;
+  for(let i=0;i<42;i++){
+    const d=addDays(gs,i);
+    if(i>=35&&d.getMonth()!==m) break;
+    html+=`<div class="d${d.getMonth()!==m?' other':''}${sameDay(d,TODAY)?' today':''}${sameDay(d,cursor)?' sel':''}" data-goday="${fmtYMD(d)}">${d.getDate()}</div>`;
+  }
+  html+=`</div>`;
+  $('miniCal').innerHTML=html;
+  $('miniPrev').onclick=()=>{miniCursor=new Date(y,m-1,1);renderMini();};
+  $('miniNext').onclick=()=>{miniCursor=new Date(y,m+1,1);renderMini();};
+}
+
+// ----- SIDEBAR FILTERS -----
+function renderFilters(){
+  const counts={people:{},types:{}};
+  for(const e of events){
+    counts.people[e.person]=(counts.people[e.person]||0)+1;
+    counts.types[e.type]=(counts.types[e.type]||0)+1;
+  }
+  let ph='<h4>People</h4>';
+  for(const [k,p] of Object.entries(PEOPLE)){
+    const on=filters.people[k];
+    ph+=`<div class="frow${on?' on':''}" data-fp="${k}">
+      <span class="cb" style="${on?`background:${p.hex}`:''}">${on?'✓':''}</span>
+      <span class="lbl">${p.name}</span><span class="cnt">${counts.people[k]||0}</span></div>`;
+  }
+  $('peopleFilters').innerHTML=ph;
+  let th='<h4>Event types</h4>';
+  for(const [k,t] of Object.entries(TYPES)){
+    const on=filters.types[k];
+    th+=`<div class="frow${on?' on':''}" data-ft="${k}">
+      <span class="cb" style="${on?'background:#5f6368':''}">${on?'✓':''}</span>
+      <span class="lbl">${t.icon} ${t.label}</span><span class="cnt">${counts.types[k]||0}</span></div>`;
+  }
+  $('typeFilters').innerHTML=th;
+  $('srcList').innerHTML=siteData.sources.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">↗ ${esc(s.label)}</a>`).join('');
+}
+
+// ---------- modals ----------
+function openOverlay(m){ $('overlay').classList.add('show'); m.classList.add('show'); }
+function closeModals(){
+  $('overlay').classList.remove('show');
+  document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'));
+}
+let currentEv=null;
+function showEvent(id){
+  const e=events.find(x=>String(x.id)===String(id));
+  if(!e) return;
+  currentEv=e;
+  const p=PEOPLE[e.person];
+  const dr = e.allDay
+    ? (sameDay(e.start,e.end)?fullDate(e.start):`${fullDate(e.start)} – ${fullDate(e.end)}`)
+    : `${fullDate(e.start)} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
+  let html=`<div class="ev-title"><span class="swatch" style="background:${evColor(e)}"></span><span>${esc(e.title)}</span></div>
+    <div class="ev-meta">${dr}</div>
+    <div class="ev-detail"><span class="ic">👤</span><span><span class="chip-person" style="background:${p.hex}">${p.name}</span>
+      &nbsp;<span style="color:var(--muted);font-size:12px;">${TYPES[e.type]?.icon||''} ${TYPES[e.type]?.label||e.type}</span></span></div>`;
+  if(e.location) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
+  if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
+  if(e.source&&e.source!=='user') html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(e.source)}</span></div>`;
+  if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
+  $('evBody').innerHTML=html;
+  $('evEdit').style.display = e.source==='user' ? '' : 'none';
+  openOverlay($('evModal'));
+}
+function fullDate(d){return `${DOW[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;}
+
+function openForm(edit){
+  editingId = edit ? currentEv.id : null;
+  $('formTitle').textContent = edit?'Edit event':'Add event';
+  $('fDelete').style.display = edit?'':'none';
+  if(edit){
+    const u=userEvents.find(x=>String(x.id)===String(currentEv.id));
+    $('fTitle').value=u.title; $('fPerson').value=u.person||'F'; $('fType').value=u.type||'family';
+    $('fStart').value=u.start; $('fEnd').value=u.end||u.start;
+    $('fAllDay').checked=u.allDay!==false;
+    $('fTimeStart').value=u.timeStart||'09:00'; $('fTimeEnd').value=u.timeEnd||'10:00';
+    $('fLoc').value=u.location||''; $('fLink').value=u.link||''; $('fNotes').value=u.notes||'';
+  } else {
+    $('fTitle').value=''; $('fPerson').value='F'; $('fType').value='family';
+    $('fStart').value=fmtYMD(cursor); $('fEnd').value=fmtYMD(cursor);
+    $('fAllDay').checked=true; $('fLoc').value=''; $('fLink').value=''; $('fNotes').value='';
+  }
+  $('timeRow').style.display=$('fAllDay').checked?'none':'flex';
+  closeModals(); openOverlay($('formModal'));
+}
+function saveForm(){
+  const title=$('fTitle').value.trim();
+  if(!title){toast('Give the event a title');return;}
+  const obj={
+    id: editingId || 'u-'+Date.now(),
+    title, person:$('fPerson').value, type:$('fType').value,
+    start:$('fStart').value, end:$('fEnd').value||$('fStart').value,
+    allDay:$('fAllDay').checked,
+    timeStart:$('fTimeStart').value, timeEnd:$('fTimeEnd').value,
+    location:$('fLoc').value.trim(), link:$('fLink').value.trim(), notes:$('fNotes').value.trim(),
   };
-  userEvents.push(evt);
-  saveUserEvents();
-  closeAddModal();
+  if(editingId){
+    const i=userEvents.findIndex(x=>String(x.id)===String(editingId));
+    if(i>=0) userEvents[i]=obj;
+  } else userEvents.push(obj);
+  localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  rebuild(); closeModals(); toast('Saved — note: stored in this browser only');
+}
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',3200);
+}
+
+// ---------- navigation ----------
+function nav(dir){
+  if(view==='month') cursor=new Date(cursor.getFullYear(),cursor.getMonth()+dir,1);
+  else if(view==='week') cursor=addDays(cursor,7*dir);
+  else if(view==='day') cursor=addDays(cursor,dir);
+  else if(view==='year') cursor=new Date(cursor.getFullYear()+dir,cursor.getMonth(),1);
+  miniCursor=new Date(cursor);
   render();
+}
+
+// ---------- events wiring ----------
+document.addEventListener('click',ev=>{
+  const t=ev.target;
+  const evEl=t.closest('[data-ev]');
+  if(evEl){ showEvent(evEl.dataset.ev); return; }
+  const more=t.closest('.ev-more');
+  if(more){ openDayPop(more.dataset.day); return; }
+  const god=t.closest('[data-goday]');
+  if(god){ cursor=parseYMD(god.dataset.goday); miniCursor=new Date(cursor); if(view==='year'||view==='plan') view='day'; if(t.closest('.mini-grid')){} else view = view==='month'||view==='week'?view:'day'; render(); return; }
+  const gom=t.closest('[data-gomonth]');
+  if(gom){ const [y,m]=gom.dataset.gomonth.split('-'); cursor=new Date(+y,+m-1,1); view='month'; render(); return; }
+  const cell=t.closest('.mon-cell');
+  if(cell && !t.closest('.ev-chip')){ cursor=parseYMD(cell.dataset.day); view='day'; miniCursor=new Date(cursor); render(); return; }
+  const fp=t.closest('[data-fp]');
+  if(fp){ filters.people[fp.dataset.fp]=!filters.people[fp.dataset.fp]; persistFilters(); return; }
+  const ft=t.closest('[data-ft]');
+  if(ft){ filters.types[ft.dataset.ft]=!filters.types[ft.dataset.ft]; persistFilters(); return; }
+  const lk=t.closest('[data-link]');
+  if(lk&&lk.dataset.link){ window.open(lk.dataset.link,'_blank'); return; }
+  if(t.classList.contains('mclose')||t.id==='overlay'){ closeModals(); return; }
+});
+function persistFilters(){ localStorage.setItem(FILTER_KEY,JSON.stringify(filters)); renderFilters(); render(); }
+function openDayPop(dayStr){
+  const d=parseYMD(dayStr);
+  const evs=eventsOnDay(visible(),d).sort((a,b)=>(a.allDay?-1:1)-(b.allDay?-1:1)||a.start-b.start);
+  let html=`<h3>${DOW[d.getDay()]}, ${MONTHS_S[d.getMonth()]} ${d.getDate()}</h3>`;
+  for(const e of evs){
+    html+= e.allDay
+      ? `<div class="ev-chip" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}">${esc(e.title)}</div>`
+      : `<div class="ev-chip timed" data-ev="${esc(String(e.id))}"><span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${esc(e.title)}</span></div>`;
+  }
+  $('dayPopBody').innerHTML=html;
+  openOverlay($('dayPop'));
+}
+$('todayBtn').onclick=()=>{cursor=new Date(TODAY);miniCursor=new Date(cursor);render();};
+$('prevBtn').onclick=()=>nav(-1);
+$('nextBtn').onclick=()=>nav(1);
+$('viewSwitch').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  view=b.dataset.v; $('searchBox').value=''; searchQ=''; render();
+});
+$('burger').onclick=()=>{
+  const sb=$('sidebar');
+  if(window.innerWidth<=900) sb.classList.toggle('open');
+  else sb.classList.toggle('hidden');
+};
+$('searchBox').addEventListener('input',e=>{ searchQ=e.target.value.trim(); render(); });
+$('addBtn').onclick=()=>openForm(false);
+$('evEdit').onclick=()=>openForm(true);
+$('evHide').onclick=()=>{
+  if(!currentEv) return;
+  if(currentEv.source==='user'){
+    userEvents=userEvents.filter(x=>String(x.id)!==String(currentEv.id));
+    localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  } else {
+    hiddenIds.add(currentEv.id);
+    localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
+  }
+  rebuild(); closeModals(); toast('Removed (hidden in this browser)');
+};
+$('fSave').onclick=saveForm;
+$('fDelete').onclick=()=>{ $('evHide').onclick(); };
+$('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; };
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModals();
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return;
+  if(e.key==='t') $('todayBtn').onclick();
+  if(e.key==='ArrowLeft') nav(-1);
+  if(e.key==='ArrowRight') nav(1);
+  if(e.key==='m'){view='month';render();}
+  if(e.key==='w'){view='week';render();}
+  if(e.key==='d'){view='day';render();}
+  if(e.key==='y'){view='year';render();}
+  if(e.key==='p'){view='plan';render();}
 });
 
-// ============ INIT: load family_cal.json then render ============
+// ---------- boot ----------
+function rebuild(){
+  events=normAll(window._fam||[],window._mass||[],siteData);
+  renderFilters(); render();
+}
 Promise.all([
-  fetch('family_cal.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(()=>[]),
-  fetch('masselite_practices.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(()=>[]),
-]).then(([fam, me]) => {
-  familyEvents = normalizeFamilyCal(fam);
-  scrapedMEEvents = normalizeMEScraped(me);
-  render();
+  fetch('family_cal.json?v='+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[]),
+  fetch('masselite_practices.json?v='+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[]),
+  fetch('site_data.json?v='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
+]).then(([fam,mass,site])=>{
+  window._fam=fam; window._mass=mass;
+  if(site) siteData=site;
+  rebuild();
 });
-
-// initial render immediately (before family cal loads)
-render();
 </script>
 </body>
 </html>
