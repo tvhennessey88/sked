@@ -163,6 +163,7 @@ button{font-family:inherit; cursor:pointer;}
 .ym h3{font-size:14px;font-weight:600;margin-bottom:6px;padding-left:4px;color:var(--text);cursor:pointer;}
 .ym h3:hover{color:var(--T);}
 .ym .mini-grid .d{height:24px;line-height:24px;cursor:pointer;}
+.ybubble{position:static;display:block;margin-bottom:5px;height:22px;line-height:22px;font-size:12px;}
 
 /* ============ PLANNING VIEW ============ */
 .plan{padding:20px 26px;overflow-y:auto;flex:1;max-width:1100px;}
@@ -894,43 +895,37 @@ function renderTimeGrid(nDays){
   if(sc) sc.scrollTop = (days.some(d=>sameDay(d,TODAY)) ? Math.max(0,(new Date().getHours()-2)) : 7)*HOUR;
 }
 
-// ----- YEAR -----
+// ----- YEAR (exceptions only: breaks, tournaments/showcases, potentials) -----
 function renderYear(){
   const y=cursor.getFullYear();
   $('rangeLabel').textContent=String(y);
-  const list=visible();
-  // index events per day
-  const byDay={};
+  const list=visible().filter(e=>{
+    if(e.type==='tournament'||e.type==='potential') return true;
+    const multi=(startOfDay(e.end)-startOfDay(e.start))>=DAY;
+    return multi && !['practice','regcheck'].includes(e.type);
+  });
+  const byM=Array.from({length:12},()=>[]);
   for(const e of list){
-    let d=startOfDay(e.start);
-    const en=e.allDay?startOfDay(e.end):startOfDay(e.end);
-    let guard=0;
-    while(d<=en && guard++<400){
-      if(d.getFullYear()===y){
-        const k=fmtYMD(d);
-        (byDay[k]=byDay[k]||new Set()).add(e.person);
-      }
-      d=addDays(d,1);
+    const s=startOfDay(e.start), en=addDays(startOfDay(e.end),1);
+    for(let m=0;m<12;m++){
+      const m0=new Date(y,m,1), m1=new Date(y,m+1,1);
+      if(s<m1 && en>m0) byM[m].push(e);
     }
   }
-  let html=`<div class="year"><div class="year-grid">`;
+  const rangeLbl=e=>sameDay(e.start,e.end)
+    ? `${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()}`
+    : `${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()} – ${MONTHS_S[e.end.getMonth()]} ${e.end.getDate()}`;
+  let html=`<div class="year">
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px;">Exceptions only — vacations &amp; breaks, tournaments &amp; showcases, and potential events (dashed). Day-to-day practices and games are hidden here.</p>
+    <div class="year-grid" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr));">`;
   for(let m=0;m<12;m++){
-    const first=new Date(y,m,1), gs=startOfWeek(first);
-    html+=`<div class="ym"><h3 data-gomonth="${y}-${String(m+1).padStart(2,'0')}">${MONTHS[m]}</h3><div class="mini-grid">`;
-    html+=DOW.map(d=>`<div class="dn">${d[0]}</div>`).join('');
-    for(let i=0;i<42;i++){
-      const d=addDays(gs,i);
-      if(i>=35 && d.getMonth()!==m) break;
-      const other=d.getMonth()!==m;
-      const k=fmtYMD(d);
-      const ppl=byDay[k];
-      let dots='';
-      if(!other && ppl){
-        dots=`<span class="dots">${[...ppl].slice(0,3).map(p=>`<i style="background:${PEOPLE[p].hex}"></i>`).join('')}</span>`;
-      }
-      html+=`<div class="d${other?' other':''}${sameDay(d,TODAY)?' today':''}" data-goday="${k}">${d.getDate()}${dots}</div>`;
+    const evs=byM[m].sort((a,b)=>a.start-b.start);
+    html+=`<div class="ym" style="padding:12px 12px 9px;"><h3 data-gomonth="${y}-${String(m+1).padStart(2,'0')}" style="font-size:15px;margin-bottom:9px;">${MONTHS[m]}</h3>`;
+    if(!evs.length) html+=`<div style="color:#b8bcc1;font-size:12px;padding:0 4px 4px;">—</div>`;
+    for(const e of evs){
+      html+=`<div class="ev-chip ybubble" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}" title="${esc(e.title)}"><b style="font-weight:600;">${esc(rangeLbl(e))}</b> &nbsp;${esc(e.title)}</div>`;
     }
-    html+=`</div></div>`;
+    html+=`</div>`;
   }
   html+=`</div></div>`;
   content.innerHTML=html;
@@ -1285,6 +1280,20 @@ function openDayPop(dayStr){
   $('dayPopBody').innerHTML=html;
   openOverlay($('dayPop'));
 }
+// wheel-scroll flips months in Month view (desktop)
+let wheelAcc=0, wheelLock=0;
+content.addEventListener('wheel',e=>{
+  if(view!=='month'||searchQ||window.innerWidth<=900) return;
+  if(document.querySelector('.modal.show')) return;
+  e.preventDefault();
+  const now=performance.now();
+  if(now<wheelLock) return;
+  wheelAcc+=e.deltaY;
+  if(Math.abs(wheelAcc)>140){
+    nav(wheelAcc>0?1:-1);
+    wheelAcc=0; wheelLock=now+450;
+  }
+},{passive:false});
 $('todayBtn').onclick=()=>{cursor=new Date(TODAY);miniCursor=new Date(cursor);render();};
 $('prevBtn').onclick=()=>nav(-1);
 $('nextBtn').onclick=()=>nav(1);
