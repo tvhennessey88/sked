@@ -960,7 +960,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-d01d4f4d00",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2032 · Union Point Field 4 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Union Pt)",
@@ -969,7 +972,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-a988d05658",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:30",
+   "endTime": "18:30",
+   "notes": "2032 · Union Point Field 3 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Forekicks Marlboro)",
@@ -978,7 +984,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-210ee15839",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "18:00",
+   "endTime": "20:00",
+   "notes": "2032 · Forekicks Marlboro Field 9 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Union Pt)",
@@ -987,7 +996,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-f3a0b90e17",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "18:00",
+   "endTime": "20:00",
+   "notes": "2032 · Union Point Field 4 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Union Pt)",
@@ -996,16 +1008,20 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-0e08612a0c",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "17:30",
+   "endTime": "19:30",
+   "notes": "2032 (with 2031) · Union Point Field 4 · verified 2026-08-16"
   },
   {
-   "title": "E — ME: Practice (Union Pt)",
+   "title": "E — ME: Practice (TBA)",
    "start": "2026-10-10",
    "color": "#db2777",
    "kid": "emily",
    "level": "practice",
    "id": "st-883d2a918c",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "notes": "2032 (with 2033) · time and venue not yet posted · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Union Pt)",
@@ -1014,7 +1030,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-1dda4b2438",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "17:30",
+   "endTime": "19:30",
+   "notes": "2032 (with 2033) · Union Point Field 4 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Forekicks Marlboro)",
@@ -1023,7 +1042,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-d48e80b5b4",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "18:00",
+   "endTime": "20:00",
+   "notes": "2032 · Forekicks Marlboro Field 9 · verified 2026-08-16"
   },
   {
    "title": "E — ME: Practice (Forekicks Marlboro)",
@@ -1032,7 +1054,10 @@
    "kid": "emily",
    "level": "practice",
    "id": "st-0ea489f6fe",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2032 (with 2033) · Forekicks Marlboro Field 8 · verified 2026-08-16"
   },
   {
    "title": "S — ME: Xtreme Sixes (Weymouth)",
@@ -1198,7 +1223,10 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-ff6dce9243",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2035/2036 · Union Point Field 2 · verified 2026-08-16"
   },
   {
    "title": "S — ME: Practice (Union Pt)",
@@ -1207,7 +1235,10 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-d8ec09dd3f",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:30",
+   "endTime": "18:00",
+   "notes": "2035/2036 · Union Point Field 4 · verified 2026-08-16"
   },
   {
    "title": "S — ME: Practice (Forekicks Marlboro)",
@@ -1216,7 +1247,10 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-1333f9d94b",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2035/2036 · Forekicks Marlboro Field 8 · verified 2026-08-16"
   },
   {
    "title": "S — ME: Practice (Union Pt)",
@@ -1225,7 +1259,10 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-412373755a",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2035/2036 · Union Point Field 3 · verified 2026-08-16"
   },
   {
    "title": "S — ME: Practice (Union Pt)",
@@ -1234,16 +1271,20 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-7b60e7347e",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "17:30",
+   "endTime": "19:30",
+   "notes": "2034/2035/2036 · Union Point Field 4 · verified 2026-08-16"
   },
   {
-   "title": "S — ME: Practice (Union Pt)",
+   "title": "S — ME: Practice (TBA)",
    "start": "2026-10-10",
    "color": "#059669",
    "kid": "sophie",
    "level": "practice",
    "id": "st-dc7d0e7777",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "notes": "2034/2035/2036 · time and venue not yet posted · verified 2026-08-16"
   },
   {
    "title": "S — ME: Practice (Forekicks Marlboro)",
@@ -1252,7 +1293,10 @@
    "kid": "sophie",
    "level": "practice",
    "id": "st-a8441861b6",
-   "link": "https://www.masselite.com/team/schedules/practice-schedule/"
+   "link": "https://www.masselite.com/team/schedules/practice-schedule/",
+   "time": "16:00",
+   "endTime": "18:00",
+   "notes": "2035/2036 · Forekicks Marlboro Field 8 · verified 2026-08-16"
   }
  ],
  "all_kids_out": [
