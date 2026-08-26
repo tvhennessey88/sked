@@ -386,12 +386,13 @@ const TYPES = {
   potential:{label:'Potential (tracking)', icon:'👀'},
   regcheck:{label:'Registration reminders', icon:'⏰'},
 };
-const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1', NOTES_KEY='sked_notes_v1';
+const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', CONFIRMED_KEY='sked_confirmed_ids_v1', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1', NOTES_KEY='sked_notes_v1';
 
 // ---------- state ----------
 let events=[];            // normalized events
 let userEvents=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
 let hiddenIds=new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]'));
+let confirmedIds=new Set(JSON.parse(localStorage.getItem(CONFIRMED_KEY)||'[]'));
 let userNotes=JSON.parse(localStorage.getItem(NOTES_KEY)||'{}');
 for(const k of Object.keys(userNotes)){ if(typeof userNotes[k]==='string') userNotes[k]={t:userNotes[k],ts:0}; }
 function noteText(id){ const n=userNotes[String(id)]; return n&&n.t?n.t:''; }
@@ -403,7 +404,7 @@ let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
 let lastSharedJson='';
 function localDoc(){
-  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], user_events:userEvents,
+  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], user_events:userEvents,
     deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||''};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
@@ -415,6 +416,7 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
     if(!cc || (vv.ts||0)>=(cc.ts||0)) notes[k]=vv; else notes[k]=cc;
   }
   const hidden=[...new Set([...(a.hidden||[]),...(b.hidden||[])])];
+  const confirmed=[...new Set([...(a.confirmed||[]),...(b.confirmed||[])])];
   const deleted=[...new Set([...(a.deleted_user||[]),...(b.deleted_user||[])])].map(String);
   const evMap={};
   for(const e of [...(a.user_events||[]),...(b.user_events||[])]){
@@ -424,15 +426,16 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
-  return {v:Date.now(), notes, hidden, user_events, deleted_user:deleted,
+  return {v:Date.now(), notes, hidden, confirmed, user_events, deleted_user:deleted,
     tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA};
 }
 function adoptDoc(doc){
-  userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]);
+  userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]);
   userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
   tomWork=doc.tom_work||[];
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
   localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
+  localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
   localStorage.setItem(TOMWORK_KEY,JSON.stringify(tomWork));
@@ -510,6 +513,7 @@ const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMont
 const startOfWeek=d=>{const x=startOfDay(d);x.setDate(x.getDate()-x.getDay());return x;}; // Sunday
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_S=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW_L=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const TODAY=startOfDay(new Date());
 function fmtTime(d){
@@ -615,9 +619,14 @@ function normAll(famCal,masselite,site){
   for(let i=0;i<site.tracking_items.length;i++){
     const t=site.tracking_items[i];
     const d=parseTrackingDates(t);
-    if(d) push({id:'track-'+i, title:(t.kid?t.kid+' — ':'')+t.name+' (potential)', person:t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F',
-      type:'potential', start:d[0], end:d[1], allDay:true, location:t.location||'', link:t.url||'',
-      notes:`Ages ${t.ages||'—'} · Registration: ${t.registration||'?'} · ${t.dates||''}`, source:'tracking', reg:t.registration});
+    if(t.eventId) continue; // already on the calendar as a real event — Tracking tab only
+    const tid=trackId(t,i), conf=confirmedIds.has(tid)||/^(registered|confirmed)$/i.test(t.registration||'');
+    const base={title:(t.kid?t.kid+' — ':'')+t.name+(conf?'':' (potential)'), person:t.kid==='T'?'T':t.kid==='E'?'E':t.kid==='S'?'S':'F',
+      type:conf?'tournament':'potential', allDay:true, location:t.location||'', link:t.url||'',
+      notes:`Ages ${t.ages||'—'} · Registration: ${conf?'CONFIRMED ✓':(t.registration||'?')} · ${t.dates||''}${t.notes?' · '+t.notes:''}`, source:'tracking', reg:t.registration, tracking:true, trackRoot:tid};
+    if(Array.isArray(t.dates_list)&&t.dates_list.length){ // recurring (e.g. an indoor league) — one chip per date, all sharing one tracking id
+      for(const ds of t.dates_list){ const dd=parseYMD(ds); push({...base, id:tid+'@'+ds, start:dd, end:dd}); }
+    } else if(d) push({...base, id:tid, start:d[0], end:d[1]});
   }
   // 5) user events (localStorage)
   for(const e of userEvents){
@@ -638,19 +647,21 @@ function normAll(famCal,masselite,site){
       start, end, allDay, location:e.location||'', link:e.link||'', notes:e.notes||'', source:e.source||''};
   }
 }
+function trackId(t,i){ return t.id||('track-'+i); }
 function parseTrackingDates(t){
-  // "Jul 20–21, 2026" | "Oct 25, 2026" | "Jan 9–10, 2027" | "Jul 27–28, 2026" — else null
-  const m=(t.dates||'').match(/^([A-Z][a-z]{2})[a-z]*\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?,\s*(\d{4})$/);
+  // "Jul 20–21, 2026" | "Oct 25, 2026" | "Nov 7 – Dec 19, 2026" — else null
+  const m=(t.dates||'').match(/^([A-Z][a-z]{2})[a-z]*\s+(\d{1,2})(?:\s*[–-]\s*(?:([A-Z][a-z]{2})[a-z]*\s+)?(\d{1,2}))?,\s*(\d{4})$/);
   if(!m) return null;
   const mo=MONTHS_S.indexOf(m[1]); if(mo<0) return null;
-  const s=new Date(+m[4],mo,+m[2]), e=new Date(+m[4],mo,+(m[3]||m[2]));
+  const mo2=m[3]?MONTHS_S.indexOf(m[3]):mo; if(mo2<0) return null;
+  const s=new Date(+m[5],mo,+m[2]), e=new Date(+m[5],mo2,+(m[4]||m[2]));
   return [s,e];
 }
 
 // ---------- filtering ----------
 function visible(){
   return events.filter(e=>{
-    if(hiddenIds.has(e.id)) return false;
+    if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))) return false;
     if(!filters.people[e.person]) return false;
     if(!filters.types[e.type]) return false;
     if(searchQ){
@@ -726,6 +737,7 @@ function renderMonth(){
     weeks.push(wkStart);
   }
   const ROWH=22, TOP=30;
+  const availH=Math.max(0,content.clientHeight-28), weekH=window.innerWidth<=900?Math.max(96,availH/weeks.length):availH/weeks.length;
   for(const wkStart of weeks){
     const wkEnd=addDays(wkStart,7);
     // lay out spanning segments for this week
@@ -762,8 +774,10 @@ function renderMonth(){
     }
     // events layer
     html+=`<div class="mon-events">`;
-    const maxLanes=Math.max(2,Math.floor((110-TOP)/ROWH)); // recomputed at runtime via CSS clamp; use 3
-    const MAXL=3;
+    // how many lanes actually fit in this week's row (fill the screen before falling back to "+N more")
+    const fitLanes=Math.max(2,Math.floor((weekH-TOP)/ROWH));
+    const needLanes=lanes.length;
+    const MAXL=needLanes<=fitLanes?needLanes:Math.max(1,fitLanes-1);
     const colW=100/7;
     const hiddenPerDay=Array(7).fill(0);
     for(const sg of segs){
@@ -995,34 +1009,43 @@ function renderTracking(){
     byKid[k].push({t,i,d:parseTrackingDates(t)});
   });
   const row=x=>{
-    const {t,i}=x; const id='track-'+i;
-    const st=trackStatus(t);
+    const {t,i}=x; const id=trackId(t,i);
+    let st=trackStatus(t);
+    const removed=hiddenIds.has(id), conf=confirmedIds.has(id)||/^(registered|confirmed)$/i.test(t.registration||'');
+    if(removed) st={label:'Removed',cls:'closed',past:true};
+    else if(conf && !st.past) st={label:'Confirmed ✓',cls:'open',past:false};
     const note=noteText(id);
+    const canAct=!removed && !st.past && !t.eventId;
+    const acts=canAct?`<div style="display:flex;gap:6px;margin-left:8px;">
+        ${conf?'':`<button class="btn" data-confirm="${id}" title="Mark as registered / going" style="padding:4px 10px;font-size:12px;background:#1e8e3e;color:#fff;border-color:#1e8e3e;">✓ Confirm</button>`}
+        <button class="btn" data-remove="${id}" title="Not doing this — remove from calendar" style="padding:4px 10px;font-size:12px;">🗑</button></div>`:'';
     return `<div class="prow" style="cursor:default;flex-wrap:wrap;${st.past?'opacity:.55;':''}">
       <div class="body" style="flex:1;min-width:0;">
         <div class="t">${esc(t.name)}</div>
         <div class="sub">${esc([t.dates||'TBD',t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">page ↗</a>`:''}</div>
       </div>
-      <span class="tag ${st.cls}">${esc(st.label)}</span>
+      <span class="tag ${st.cls}">${esc(st.label)}</span>${acts}
       <div style="flex-basis:100%;display:flex;gap:6px;margin-top:6px;">
         <textarea data-note="${id}" rows="1" placeholder="📝 Add a family note…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;">${esc(note)}</textarea>
         <button class="btn" data-notesave="${id}" style="padding:5px 12px;font-size:12px;align-self:flex-start;">Save</button>
       </div></div>`;
   };
   let html=`<div class="plan" style="max-width:none;"><h2>Events being tracked</h2>
-    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched. Notes sync to the whole family.</p>
+    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched. <b>✓ Confirm</b> once registered (the calendar entry turns solid); <b>🗑</b> if we're skipping it. Notes sync to the whole family.</p>
     <div class="track-grid">`;
   for(const k of KIDS){
     const items=byKid[k];
-    const dated=items.filter(x=>x.d&&x.d[1]>=TODAY).sort((a,b)=>a.d[0]-b.d[0]);
-    const tbd=items.filter(x=>!x.d);
-    const past=items.filter(x=>x.d&&x.d[1]<TODAY).sort((a,b)=>b.d[0]-a.d[0]);
+    const dated=items.filter(x=>x.d&&x.d[1]>=TODAY&&!hiddenIds.has(trackId(x.t,x.i))).sort((a,b)=>a.d[0]-b.d[0]);
+    const tbd=items.filter(x=>!x.d&&!hiddenIds.has(trackId(x.t,x.i)));
+    const past=items.filter(x=>x.d&&x.d[1]<TODAY&&!hiddenIds.has(trackId(x.t,x.i))).sort((a,b)=>b.d[0]-a.d[0]);
+    const removedItems=items.filter(x=>hiddenIds.has(trackId(x.t,x.i)));
     html+=`<div class="track-col">
       <h3 style="border-bottom:3px solid ${PEOPLE[k].hex};"><span class="chip-person" style="background:${PEOPLE[k].hex}">${PEOPLE[k].name}</span><span style="color:var(--muted);font-size:12px;font-weight:400;">${items.length} tracked</span></h3>`;
     if(!items.length) html+=`<p style="color:var(--muted);font-size:13px;padding:8px 2px;">Nothing tracked yet.</p>`;
     if(dated.length) html+=`<h4 class="track-sub">Upcoming</h4>`+dated.map(row).join('');
     if(tbd.length) html+=`<h4 class="track-sub">Watching — dates TBD</h4>`+tbd.map(row).join('');
     if(past.length) html+=`<h4 class="track-sub">Past</h4>`+past.map(row).join('');
+    if(removedItems.length) html+=`<h4 class="track-sub">Removed (not registering)</h4>`+removedItems.map(row).join('');
     html+=`</div>`;
   }
   html+=`</div></div>`;
@@ -1032,7 +1055,7 @@ function renderTracking(){
 // ----- DAY VIEW (one column per person) -----
 function renderDayCols(){
   const day=startOfDay(cursor);
-  $('rangeLabel').textContent=`${MONTHS[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
+  $('rangeLabel').textContent=`${DOW_L?DOW_L[day.getDay()]:DOW[day.getDay()]}, ${MONTHS[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
   const list=eventsOnDay(visible(),day);
   const ORDER=['T','E','S','L','D','F'];
   const cols=ORDER.filter(p=>['T','E','S'].includes(p)?filters.people[p]:list.some(e=>e.person===p));
@@ -1182,8 +1205,13 @@ function showEvent(id){
     <textarea id="noteBox" rows="2" placeholder="Add a note — the whole family will see it" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(noteText(e.id))}</textarea>
     <div style="text-align:right;margin-top:6px;"><button class="btn" id="noteSave" style="padding:6px 14px;font-size:13px;">Save note</button></div>
   </div>`;
+  if(e.tracking && e.type==='potential') html+=`<div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="btn" id="evConfirm" style="flex:1;background:#1e8e3e;color:#fff;border-color:#1e8e3e;">✓ Confirm — we're registered</button>
+    <button class="btn" id="evSkip" style="flex:1;">🗑 Not doing this</button></div>`;
   $('evBody').innerHTML=html;
   $('noteSave').onclick=()=>{ saveNote(String(e.id),$('noteBox').value); toast('Note saved — syncing to the family'); };
+  const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
+  const sb=$('evSkip'); if(sb) sb.onclick=()=>$('evHide').onclick();
   $('evEdit').style.display = e.source==='user' ? '' : 'none';
   openOverlay($('evModal'));
 }
@@ -1317,12 +1345,22 @@ $('evHide').onclick=()=>{
     localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
     localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
   } else {
-    hiddenIds.add(currentEv.id);
+    hiddenIds.add(currentEv.trackRoot||currentEv.id);
     localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   }
   pushSharedSoon();
   rebuild(); closeModals(); toast('Removed for the whole family');
 };
+function confirmTracked(id){
+  confirmedIds.add(String(id));
+  localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
+  pushSharedSoon(); rebuild(); closeModals(); toast('Confirmed — now a real event for the whole family');
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-confirm]'); if(c){ confirmTracked(c.dataset.confirm); return; }
+  const r=e.target.closest('[data-remove]'); if(r){ hiddenIds.add(r.dataset.remove); localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds])); pushSharedSoon(); rebuild(); toast('Removed for the whole family'); }
+});
+let rsT=null; window.addEventListener('resize',()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{ if(view==='month'&&!searchQ) render(); },150); });
 $('fSave').onclick=saveForm;
 $('fDelete').onclick=()=>{ $('evHide').onclick(); };
 $('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; };

@@ -730,19 +730,6 @@
    "link": "https://www.tenacrecds.org/calendar"
   },
   {
-   "title": "T — BIC Winter Showcase (IMG Academy, Bradenton FL)",
-   "start": "2027-01-09",
-   "end": "2027-01-10",
-   "color": "#f59e0b",
-   "kid": "tommy",
-   "level": "operational",
-   "type": "showcase",
-   "location": "IMG Academy, Bradenton FL",
-   "notes": "Men's 2030 · Position: Midfield · Registered & paid ($826.97) · Conf #3087179",
-   "id": "st-78afa36043",
-   "link": "https://1stclasslax.sprocketsports.com/players/687276/player-registrations/3087179"
-  },
-  {
    "title": "E — ME: Xtreme Sixes (Weymouth)",
    "start": "2026-06-13",
    "color": "#db2777",
@@ -833,124 +820,6 @@
    "kid": "emily",
    "level": "operational",
    "id": "st-e6fa1cac70",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Intrasquad 5v5 (Weston)",
-   "start": "2026-09-20",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-d21690e927",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: September Sixes (Taunton)",
-   "start": "2026-09-27",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-ae7bae7f76",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Love 2 Lax (Ft Devens)",
-   "start": "2026-10-03",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-76833ee3b8",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Fall Fear (Ft Devens)",
-   "start": "2026-10-12",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-ff707a909f",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Ghost Games (Farmington CT)",
-   "start": "2026-10-24",
-   "end": "2026-10-26",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-95abc5ce1a",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Turkey Challenge (Marlboro)",
-   "start": "2026-11-27",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-3e8be5b44d",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-07",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-c15f42c6e4",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-14",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-dd32b6ea2b",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-21",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-8b9ccb89ad",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-28",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-3ad0b9cdbb",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-05",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-ab0ff6409e",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-12",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-83172852c5",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "E — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-19",
-   "color": "#db2777",
-   "kid": "emily",
-   "level": "operational",
-   "id": "st-adb08eaa68",
    "link": "https://www.masselite.com/"
   },
   {
@@ -1057,7 +926,7 @@
    "link": "https://www.masselite.com/team/schedules/practice-schedule/",
    "time": "16:00",
    "endTime": "18:00",
-   "notes": "2032 (with 2033) · Forekicks Marlboro Field 8 · verified 2026-08-16"
+   "notes": "2032 team — Field 9 (with 2031). Forekicks Marlboro. Per masselite.com practice schedule (re-read 8/23)."
   },
   {
    "title": "S — ME: Xtreme Sixes (Weymouth)",
@@ -1096,124 +965,6 @@
    "kid": "sophie",
    "level": "operational",
    "id": "st-aae091e73a",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Intrasquad 5v5 (Weston)",
-   "start": "2026-09-20",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-3e970874ba",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: September Sixes (Taunton)",
-   "start": "2026-09-27",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-8a5bb597da",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Love 2 Lax (Ft Devens)",
-   "start": "2026-10-03",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-83305dc91e",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Fall Fear (Ft Devens)",
-   "start": "2026-10-12",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-9c300ae7da",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Ghost Games (Farmington CT)",
-   "start": "2026-10-24",
-   "end": "2026-10-26",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-e389aba08c",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Turkey Challenge (Marlboro)",
-   "start": "2026-11-27",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-8c0517613c",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-07",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-a176a8215e",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-14",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-1840c4b812",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-21",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-01c5f9cd2f",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-11-28",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-9caffd549f",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-05",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-a26c068910",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-12",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-8defafb16d",
-   "link": "https://www.masselite.com/"
-  },
-  {
-   "title": "S — ME: Achievelax Indoor Session 1 (Canton)",
-   "start": "2026-12-19",
-   "color": "#059669",
-   "kid": "sophie",
-   "level": "operational",
-   "id": "st-02bf06d40d",
    "link": "https://www.masselite.com/"
   },
   {
@@ -1355,7 +1106,8 @@
    "location": "Newport, RI",
    "ages": "2029/2030",
    "registration": "Open",
-   "url": "https://www.ml8events.com/events/future-phenoms-newport"
+   "url": "https://www.ml8events.com/events/future-phenoms-newport",
+   "id": "track-0"
   },
   {
    "kid": "T",
@@ -1365,7 +1117,8 @@
    "location": "Medford, MA",
    "ages": "2026–2029",
    "registration": "Open",
-   "url": "https://jumbolacrosseclinics.com/july-prospect-day/"
+   "url": "https://jumbolacrosseclinics.com/july-prospect-day/",
+   "id": "track-1"
   },
   {
    "kid": "T",
@@ -1375,7 +1128,8 @@
    "location": "Baltimore, MD",
    "ages": "2027–2029",
    "registration": "Open",
-   "url": "https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp"
+   "url": "https://www.pointbreaklacrosse.com/content/camps-clinics/future-blue-prospect-camp",
+   "id": "track-2"
   },
   {
    "kid": "T",
@@ -1385,7 +1139,8 @@
    "location": "Durham, NC",
    "ages": "2027–2029",
    "registration": "Open",
-   "url": "https://dukelacrossecampforboys.com/info1.html"
+   "url": "https://dukelacrossecampforboys.com/info1.html",
+   "id": "track-3"
   },
   {
    "kid": "T",
@@ -1395,7 +1150,8 @@
    "location": "Washington, DC",
    "ages": "2027–2029",
    "registration": "Open",
-   "url": "https://www.blueandgreylacrosse.com/content/2026-july-prospect-day"
+   "url": "https://www.blueandgreylacrosse.com/content/2026-july-prospect-day",
+   "id": "track-4"
   },
   {
    "kid": "T",
@@ -1405,7 +1161,8 @@
    "location": "Annapolis, MD",
    "ages": "2028–2029",
    "registration": "Not yet open",
-   "url": "https://navylacrossecamp.com/prospect-camp"
+   "url": "https://navylacrossecamp.com/prospect-camp",
+   "id": "track-5"
   },
   {
    "kid": "T",
@@ -1415,17 +1172,19 @@
    "location": "Wilmington, DE",
    "ages": "2029/2030",
    "registration": "Open",
-   "url": "https://www.1stclasslax.com/best-in-class-fall"
+   "url": "https://www.1stclasslax.com/best-in-class-fall",
+   "id": "track-6"
   },
   {
    "kid": "T",
    "name": "The Spotlight (ML8)",
    "monthKey": "2026-10",
    "dates": "Oct 17–18, 2026",
-   "location": "TBD",
+   "location": "Chase Fieldhouse, Wilmington, DE",
    "ages": "2029/2030",
    "registration": "Open",
-   "url": "https://www.ml8events.com/events/the-spotlight"
+   "url": "https://www.ml8events.com/events/the-spotlight",
+   "id": "track-7"
   },
   {
    "kid": "T",
@@ -1435,7 +1194,8 @@
    "location": "Boca Raton, FL",
    "ages": "2029/2030",
    "registration": "Open",
-   "url": "https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/"
+   "url": "https://mylacrossetournaments.com/event/matt-chandik-winter-one-percent-lacrosse/",
+   "id": "track-8"
   },
   {
    "kid": "T",
@@ -1445,17 +1205,20 @@
    "location": "Florida",
    "ages": "2029/2030",
    "registration": "Open",
-   "url": "https://www.ml8events.com/events/future-phenoms"
+   "url": "https://www.ml8events.com/events/future-phenoms",
+   "id": "track-9"
   },
   {
    "kid": "T",
    "name": "NLF Futures at IMG Academy",
    "monthKey": "2027-01",
-   "dates": "Jan 17–19, 2027",
+   "dates": "Jan 16–18, 2027",
    "location": "Bradenton, FL",
    "ages": "2029/2030",
-   "registration": "Not yet open",
-   "url": "https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/"
+   "registration": "Open",
+   "url": "https://nationallacrossefederation.com/events/winter-events/nlf-futures-at-img-academy/",
+   "id": "track-10",
+   "notes": "MLK weekend; cancel-by Jan 1 2027. One week after BIC Winter at IMG."
   },
   {
    "kid": "T",
@@ -1465,7 +1228,8 @@
    "location": "Williamstown, MA",
    "ages": "2027–2028",
    "registration": "Closed",
-   "url": "https://register.ryzer.com/camp.cfm?sport=27&id=324131"
+   "url": "https://register.ryzer.com/camp.cfm?sport=27&id=324131",
+   "id": "track-11"
   },
   {
    "kid": "T",
@@ -1475,7 +1239,8 @@
    "location": "Medford, MA",
    "ages": "2026–2029",
    "registration": "Not yet open",
-   "url": "https://jumbolacrosseclinics.com/february-prospect-day/"
+   "url": "https://jumbolacrosseclinics.com/february-prospect-day/",
+   "id": "track-12"
   },
   {
    "kid": "T",
@@ -1485,7 +1250,9 @@
    "location": "Brunswick, ME",
    "ages": "2027–2029",
    "registration": "Not yet open",
-   "url": "https://www.paramountlacrossecamps.com/"
+   "url": "https://www.ryzer.com/camp/318971",
+   "id": "track-13",
+   "notes": "paramountlacrossecamps.com 404s; Ryzer id 318971 = completed Jun 2026 Bowdoin camp."
   },
   {
    "kid": "E",
@@ -1495,7 +1262,8 @@
    "location": "Hanover, NH",
    "ages": "Gr 8–College Frosh",
    "registration": "Not yet open",
-   "url": "https://register.ryzer.com/camp.cfm?id=303287"
+   "url": "https://register.ryzer.com/camp.cfm?id=303287",
+   "id": "track-14"
   },
   {
    "kid": "E",
@@ -1505,7 +1273,208 @@
    "location": "TBD",
    "ages": "2032",
    "registration": "Not yet open",
-   "url": "https://americanselectlacrosse.com/2026-regional-tryouts-for-main-event"
+   "url": "https://americanselectlacrosse.com/2027-regional-tryouts-for-main-event",
+   "id": "track-15",
+   "notes": "2027 page live; MA region still TBD (CT posted Sep 20 2026). 2026 MA tryout was at Rivers School, Weston."
+  },
+  {
+   "id": "trk-3dne-showcase-2026",
+   "kid": "T",
+   "name": "3d New England Fall Classic Showcase",
+   "monthKey": "2026-11",
+   "dates": "Nov 7, 2026",
+   "location": "Forekicks Marlboro, MA",
+   "ages": "2029/2030",
+   "registration": "Open",
+   "url": "https://newengland.3dlacrosse.com/",
+   "eventId": "amy-3dne-showcase-2026-11-07",
+   "notes": "Optional individual showcase, $350/player — separate registration from the Fall Classic (Nov 8). Already on the calendar; register via the 3dNE email link."
+  },
+  {
+   "id": "trk-me-intrasquad-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Intrasquad 5v5",
+   "monthKey": "2026-09",
+   "dates": "Sep 20, 2026",
+   "location": "Weston, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-sixes-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: September Sixes",
+   "monthKey": "2026-09",
+   "dates": "Sep 27, 2026",
+   "location": "Taunton, MA",
+   "ages": "2031–2034",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2034; Emily = 2032). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-love2lax-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Love 2 Lax",
+   "monthKey": "2026-10",
+   "dates": "Oct 3, 2026",
+   "location": "Fort Devens, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-fallfear-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Fall Fear",
+   "monthKey": "2026-10",
+   "dates": "Oct 12, 2026",
+   "location": "Fort Devens, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-ghost-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Ghost Games",
+   "monthKey": "2026-10",
+   "dates": "Oct 24–25, 2026",
+   "location": "Farmington, CT",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping. Two-day event, Sat–Sun."
+  },
+  {
+   "id": "trk-me-turkey-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Turkey Challenge 7v7",
+   "monthKey": "2026-11",
+   "dates": "Nov 27, 2026",
+   "location": "Marlboro, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-achieve-2026-e",
+   "kid": "E",
+   "name": "Mass Elite: Achievelax Indoor League Session 1 (7 Saturdays)",
+   "monthKey": "2026-11",
+   "dates": "Nov 7 – Dec 19, 2026",
+   "location": "Canton, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Emily = 2032). Confirm once registered, or remove if skipping.",
+   "dates_list": [
+    "2026-11-07",
+    "2026-11-14",
+    "2026-11-21",
+    "2026-11-28",
+    "2026-12-05",
+    "2026-12-12",
+    "2026-12-19"
+   ]
+  },
+  {
+   "id": "trk-me-intrasquad-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Intrasquad 5v5",
+   "monthKey": "2026-09",
+   "dates": "Sep 20, 2026",
+   "location": "Weston, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-sixes-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: September Sixes",
+   "monthKey": "2026-09",
+   "dates": "Sep 27, 2026",
+   "location": "Taunton, MA",
+   "ages": "2031–2034",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2034; Sophie = 2034). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-love2lax-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Love 2 Lax",
+   "monthKey": "2026-10",
+   "dates": "Oct 3, 2026",
+   "location": "Fort Devens, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-fallfear-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Fall Fear",
+   "monthKey": "2026-10",
+   "dates": "Oct 12, 2026",
+   "location": "Fort Devens, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-ghost-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Ghost Games",
+   "monthKey": "2026-10",
+   "dates": "Oct 24–25, 2026",
+   "location": "Farmington, CT",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping. Two-day event, Sat–Sun."
+  },
+  {
+   "id": "trk-me-turkey-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Turkey Challenge 7v7",
+   "monthKey": "2026-11",
+   "dates": "Nov 27, 2026",
+   "location": "Marlboro, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping."
+  },
+  {
+   "id": "trk-me-achieve-2026-s",
+   "kid": "S",
+   "name": "Mass Elite: Achievelax Indoor League Session 1 (7 Saturdays)",
+   "monthKey": "2026-11",
+   "dates": "Nov 7 – Dec 19, 2026",
+   "location": "Canton, MA",
+   "ages": "2031–2036",
+   "registration": "TBD",
+   "url": "https://www.masselite.com/team/schedules/tournament-schedule/",
+   "notes": "Mass Elite fall tournament (YOG 2031–2036; Sophie = 2034). Confirm once registered, or remove if skipping.",
+   "dates_list": [
+    "2026-11-07",
+    "2026-11-14",
+    "2026-11-21",
+    "2026-11-28",
+    "2026-12-05",
+    "2026-12-12",
+    "2026-12-19"
+   ]
   }
  ],
  "sources": [
