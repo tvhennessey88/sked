@@ -393,6 +393,8 @@ let events=[];            // normalized events
 let userEvents=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
 let hiddenIds=new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]'));
 let confirmedIds=new Set(JSON.parse(localStorage.getItem(CONFIRMED_KEY)||'[]'));
+let sharedTracking=[]; // tracking items added by the feeds/scheduled tasks (store key tracking_items) — merged with site_data.tracking_items
+function allTracking(){ const ids=new Set(siteData.tracking_items.map(t=>t.id)); return siteData.tracking_items.concat(sharedTracking.filter(t=>t&&t.id&&!ids.has(t.id))); }
 let userNotes=JSON.parse(localStorage.getItem(NOTES_KEY)||'{}');
 for(const k of Object.keys(userNotes)){ if(typeof userNotes[k]==='string') userNotes[k]={t:userNotes[k],ts:0}; }
 function noteText(id){ const n=userNotes[String(id)]; return n&&n.t?n.t:''; }
@@ -404,7 +406,7 @@ let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
 let lastSharedJson='';
 function localDoc(){
-  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], user_events:userEvents,
+  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
     deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||''};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
@@ -417,6 +419,8 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   }
   const hidden=[...new Set([...(a.hidden||[]),...(b.hidden||[])])];
   const confirmed=[...new Set([...(a.confirmed||[]),...(b.confirmed||[])])];
+  const trMap={}; for(const t of [...(a.tracking_items||[]),...(b.tracking_items||[])]){ if(!t||!t.id) continue; if(!trMap[t.id]||(t.ts||0)>=(trMap[t.id].ts||0)) trMap[t.id]=t; }
+  const tracking_items=Object.values(trMap);
   const deleted=[...new Set([...(a.deleted_user||[]),...(b.deleted_user||[])])].map(String);
   const evMap={};
   for(const e of [...(a.user_events||[]),...(b.user_events||[])]){
@@ -426,11 +430,11 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
-  return {v:Date.now(), notes, hidden, confirmed, user_events, deleted_user:deleted,
+  return {v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
     tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA};
 }
 function adoptDoc(doc){
-  userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]);
+  userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]); sharedTracking=doc.tracking_items||[];
   userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
   tomWork=doc.tom_work||[];
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
@@ -616,8 +620,9 @@ function normAll(famCal,masselite,site){
       location:'', link:'', notes:'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work'});
   }
   // 4) tracking items → potential events when dates parseable
-  for(let i=0;i<site.tracking_items.length;i++){
-    const t=site.tracking_items[i];
+  const trackAll=allTracking();
+  for(let i=0;i<trackAll.length;i++){
+    const t=trackAll[i];
     const d=parseTrackingDates(t);
     if(t.eventId) continue; // already on the calendar as a real event — Tracking tab only
     const tid=trackId(t,i), conf=confirmedIds.has(tid)||/^(registered|confirmed)$/i.test(t.registration||'');
@@ -983,7 +988,7 @@ function renderPlan(){
     html+=`</div>`;
   }
   // tracking items without parseable dates
-  const tbd=siteData.tracking_items.filter(t=>!parseTrackingDates(t));
+  const tbd=allTracking().filter(t=>!parseTrackingDates(t));
   if(tbd.length){
     html+=`<div class="pmonth"><h3>Watching — dates TBD</h3>`;
     for(const t of tbd){
@@ -1004,7 +1009,7 @@ function renderTracking(){
   $('rangeLabel').textContent='Tracking';
   const KIDS=['T','E','S'];
   const byKid={T:[],E:[],S:[]};
-  siteData.tracking_items.forEach((t,i)=>{
+  allTracking().forEach((t,i)=>{
     const k=KIDS.includes(t.kid)?t.kid:'T';
     byKid[k].push({t,i,d:parseTrackingDates(t)});
   });
