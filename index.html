@@ -156,6 +156,17 @@ button{font-family:inherit; cursor:pointer;}
 .nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
 .nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
+/* day view: everyone / by-person toggle */
+.daymode{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.daymode .seg{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.daymode .seg button{border:none;background:#fff;padding:5px 13px;font-size:12.5px;color:var(--text);border-right:1px solid var(--border);}
+.daymode .seg button:last-child{border-right:none;}
+.daymode .seg button.active{background:var(--T-l);color:var(--T);font-weight:600;}
+.daymode .seg button:hover:not(.active){background:var(--surface);}
+.daymode .hint{font-size:11.5px;color:var(--muted);}
+@media(max-width:900px){.daymode .hint{display:none;}}
+.tg-ev .who{font-size:10px;font-weight:700;opacity:.9;text-transform:uppercase;letter-spacing:.4px;}
+
 /* ============ YEAR VIEW ============ */
 .year{padding:16px;overflow-y:auto;flex:1;}
 .year-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
@@ -633,17 +644,20 @@ function normAll(famCal,masselite,site){
       for(const ds of t.dates_list){ const dd=parseYMD(ds); push({...base, id:tid+'@'+ds, start:dd, end:dd}); }
     } else if(d) push({...base, id:tid, start:d[0], end:d[1]});
   }
-  // 5) user events (localStorage)
+  // 5) user events (localStorage) — a `repeat` block is expanded here, client-side
   for(const e of userEvents){
-    const allDay=e.allDay!==false;
-    let s,en;
-    if(allDay){s=parseYMD(e.start);en=e.end?parseYMD(e.end):new Date(s);}
-    else{
-      s=parseYMD(e.start);const [h1,m1]=(e.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
-      en=parseYMD(e.end||e.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
+    for(const inst of expandRepeat(e)){
+      const allDay=e.allDay!==false;
+      let s,en;
+      if(allDay){s=parseYMD(inst.start);en=inst.end?parseYMD(inst.end):new Date(s);}
+      else{
+        s=parseYMD(inst.start);const [h1,m1]=(e.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
+        en=parseYMD(inst.end||inst.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
+      }
+      push({id:inst.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
+        location:e.location||'', link:e.link||'', notes:e.notes||'',
+        source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||''});
     }
-    push({id:e.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
-      location:e.location||'', link:e.link||'', notes:e.notes||'', source:'user'});
   }
   return out;
 
@@ -651,6 +665,30 @@ function normAll(famCal,masselite,site){
     return {id:e.id||e.title+e.start, title:e.title, person:detectPerson(e), type:detectType(e),
       start, end, allDay, location:e.location||'', link:e.link||'', notes:e.notes||'', source:e.source||''};
   }
+}
+/* ---------- weekly recurrence ----------
+   A user_event may carry  repeat:{days:[0..6], until:'YYYY-MM-DD', except:['YYYY-MM-DD',…]}
+   `start` is the first candidate date; one instance is generated per matching weekday
+   through `until`. Instances take the id `<rootId>@YYYY-MM-DD`, so removing one day
+   drops that id into `hidden` and leaves the series alone; removing the root id
+   (deleted_user) removes the whole series. Keeps the shared store small — one row
+   per pattern instead of one row per date. */
+const RECUR_MAX=520;
+function expandRepeat(e){
+  const r=e&&e.repeat;
+  if(!r||!Array.isArray(r.days)||!r.days.length) return [{id:e.id,start:e.start,end:e.end}];
+  const out=[], skip=new Set(r.except||[]);
+  const span=(e.end&&e.end!==e.start)?Math.round((parseYMD(e.end)-parseYMD(e.start))/DAY):0;
+  const until=parseYMD(r.until||e.start);
+  let d=parseYMD(e.start), n=0;
+  while(d<=until && n<RECUR_MAX){
+    if(r.days.includes(d.getDay())){
+      const ds=fmtYMD(d); n++;
+      if(!skip.has(ds)) out.push({id:e.id+'@'+ds, start:ds, end:fmtYMD(addDays(d,span)), recurRoot:String(e.id)});
+    }
+    d=addDays(d,1);
+  }
+  return out;
 }
 function trackId(t,i){ return t.id||('track-'+i); }
 function parseTrackingDates(t){
@@ -666,7 +704,7 @@ function parseTrackingDates(t){
 // ---------- filtering ----------
 function visible(){
   return events.filter(e=>{
-    if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))) return false;
+    if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))||(e.recurRoot&&hiddenIds.has(e.recurRoot))) return false;
     if(!filters.people[e.person]) return false;
     if(!filters.types[e.type]) return false;
     if(searchQ){
@@ -1057,22 +1095,38 @@ function renderTracking(){
   content.innerHTML=html;
 }
 
-// ----- DAY VIEW (one column per person) -----
+// ----- DAY VIEW -----
+// Default is one combined, full-width column merging everyone; the toggle switches
+// back to one column per person.
+const DAYMODE_KEY='sked_daymode_v1';
+let dayMode=localStorage.getItem(DAYMODE_KEY)||'combined';
 function renderDayCols(){
   const day=startOfDay(cursor);
   $('rangeLabel').textContent=`${DOW_L?DOW_L[day.getDay()]:DOW[day.getDay()]}, ${MONTHS[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
   const list=eventsOnDay(visible(),day);
+  const combined = dayMode!=='people';
   const ORDER=['T','E','S','L','D','F'];
-  const cols=ORDER.filter(p=>['T','E','S'].includes(p)?filters.people[p]:list.some(e=>e.person===p));
+  let cols = combined ? ['*'] : ORDER.filter(p=>['T','E','S'].includes(p)?filters.people[p]:list.some(e=>e.person===p));
+  if(!cols.length) cols=['*'];
   const HOUR=48;
   const byP={}; cols.forEach(p=>byP[p]={allday:[],timed:[]});
-  for(const e of list){ if(byP[e.person]) (e.allDay?byP[e.person].allday:byP[e.person].timed).push(e); }
-  const n=cols.length||1;
+  for(const e of list){ const k=combined?'*':e.person; if(byP[k]) (e.allDay?byP[k].allday:byP[k].timed).push(e); }
+  const n=cols.length;
+  const who=p=>PEOPLE[p]?PEOPLE[p].name:'';
+  // in the combined column, only badge the owner when the title doesn't already say it
+  const needsWho=e=>{ const nm=who(e.person); if(!nm) return false;
+    return !new RegExp('(^|:\\s*)'+nm+'\\b','i').test(e.title||''); };
+  const head = combined
+    ? `<div class="col"><div class="dow" style="font-size:12px;">Everyone &nbsp;<span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">${list.length} event${list.length===1?'':'s'}</span></div>
+        <div style="height:5px;border-radius:3px;margin:5px 16px 7px;background:linear-gradient(90deg,${ORDER.map(p=>PEOPLE[p].hex).join(',')});"></div></div>`
+    : cols.map(p=>`<div class="col"><div class="dow" style="color:${PEOPLE[p].hex};font-size:12px;">${who(p)}</div>
+        <div style="height:5px;border-radius:3px;background:${PEOPLE[p].hex};margin:5px 16px 7px;"></div></div>`).join('');
   let html=`<div class="tgrid">
-    <div class="tg-head"><div class="tg-gutter"></div>${cols.map(p=>`
-      <div class="col"><div class="dow" style="color:${PEOPLE[p].hex};font-size:12px;">${PEOPLE[p].name}</div>
-      <div style="height:5px;border-radius:3px;background:${PEOPLE[p].hex};margin:5px 16px 7px;"></div></div>`).join('')}
-    </div>`;
+    <div class="daymode"><div class="seg">
+      <button data-daymode="combined" class="${combined?'active':''}">Everyone</button>
+      <button data-daymode="people" class="${combined?'':'active'}">By person</button>
+    </div><span class="hint">${combined?'One column for the whole family — colours show who.':'One column per person.'}</span></div>
+    <div class="tg-head"><div class="tg-gutter"></div>${head}</div>`;
   const maxA=Math.max(0,...cols.map(p=>byP[p].allday.length));
   if(maxA>0){
     const h=Math.min(maxA,5)*24+6;
@@ -1081,7 +1135,7 @@ function renderDayCols(){
     const colW=100/n;
     cols.forEach((p,ci)=>{
       byP[p].allday.forEach((e,li)=>{
-        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:calc(${ci*colW}% + 3px);width:calc(${colW}% - 7px);top:${3+li*24}px;${chipStyle(e)}">${esc(e.title)}</div>`;
+        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:calc(${ci*colW}% + 3px);width:calc(${colW}% - 7px);top:${3+li*24}px;${chipStyle(e)}">${combined&&needsWho(e)?esc(who(e.person))+' · ':''}${esc(e.title)}</div>`;
       });
     });
     html+=`</div></div>`;
@@ -1105,7 +1159,7 @@ function renderDayCols(){
     for(const ev of evs){
       const e=ev.e, top=ev.s*HOUR, hh=Math.max(22,(ev.en-ev.s)*HOUR-2), w=100/ev.ncol, l=ev.col*w;
       colHtml+=`<div class="tg-ev" data-ev="${esc(String(e.id))}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${chipStyle(e)};z-index:${5+ev.col};">
-        <div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}</div></div>`;
+        ${combined&&needsWho(e)?`<div class="who">${esc(who(e.person))}</div>`:''}<div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}</div></div>`;
     }
     html+=`<div class="tg-col">${lines}${colHtml}${now}</div>`;
   }
@@ -1203,7 +1257,8 @@ function showEvent(id){
       &nbsp;<span style="color:var(--muted);font-size:12px;">${TYPES[e.type]?.icon||''} ${TYPES[e.type]?.label||e.type}</span></span></div>`;
   if(e.location) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
-  if(e.source&&e.source!=='user') html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(e.source)}</span></div>`;
+  if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
+  else if(e.source&&e.source!=='user') html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(e.source)}</span></div>`;
   if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
   html+=`<div style="margin-top:14px;">
     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
@@ -1215,6 +1270,15 @@ function showEvent(id){
     <button class="btn" id="evSkip" style="flex:1;">🗑 Not doing this</button></div>`;
   $('evBody').innerHTML=html;
   $('noteSave').onclick=()=>{ saveNote(String(e.id),$('noteBox').value); toast('Note saved — syncing to the family'); };
+  const sd=$('evSeriesDel');
+  if(sd) sd.onclick=()=>{
+    const root=String(e.recurRoot);
+    userEvents=userEvents.filter(x=>String(x.id)!==root);
+    deletedUser.add(root);
+    localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+    localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
+    pushSharedSoon(); rebuild(); closeModals(); toast('Series removed for the whole family');
+  };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=()=>$('evHide').onclick();
   $('evEdit').style.display = e.source==='user' ? '' : 'none';
@@ -1292,6 +1356,8 @@ document.addEventListener('click',ev=>{
   if(gom){ const [y,m]=gom.dataset.gomonth.split('-'); cursor=new Date(+y,+m-1,1); view='month'; render(); return; }
   const cell=t.closest('.mon-cell');
   if(cell && !t.closest('.ev-chip')){ cursor=parseYMD(cell.dataset.day); view='day'; miniCursor=new Date(cursor); render(); return; }
+  const dm=t.closest('[data-daymode]');
+  if(dm){ dayMode=dm.dataset.daymode; localStorage.setItem(DAYMODE_KEY,dayMode); render(); return; }
   const fp=t.closest('[data-fp]');
   if(fp){ filters.people[fp.dataset.fp]=!filters.people[fp.dataset.fp]; persistFilters(); return; }
   const ft=t.closest('[data-ft]');
