@@ -421,11 +421,23 @@ const DELETED_KEY='sked_deleted_user_v1', TOMWORK_KEY='sked_tomwork_cache_v1', T
 let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
 let lastSharedJson='';
+// Keys this page owns.  Everything else in the store belongs to a scheduled
+// feed (gcal_state, intake_last_run, …) and must survive a browser push —
+// before this, any unknown key was silently wiped on every save.
+const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated']);
+let foreignKeys={};
+function keepForeign(doc){
+  if(!doc||typeof doc!=='object') return doc;
+  for(const k of Object.keys(doc)) if(!MANAGED_KEYS.has(k)) foreignKeys[k]=doc[k];
+  return doc;
+}
 function localDoc(){
-  return {v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
+  return {...foreignKeys,
+    v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
     deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||''};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
+  keepForeign(a); keepForeign(b);          // feed-owned keys pass straight through
   if(!a) return b; if(!b) return a;
   const notes={...(a.notes||{})};
   for(const [k,v] of Object.entries(b.notes||{})){
@@ -446,10 +458,12 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
-  return {v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
+  return {...foreignKeys,
+    v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
     tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA};
 }
 function adoptDoc(doc){
+  keepForeign(doc);
   userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]); sharedTracking=doc.tracking_items||[];
   userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
   tomWork=doc.tom_work||[];
