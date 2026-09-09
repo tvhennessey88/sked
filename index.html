@@ -528,7 +528,7 @@ async function refreshShared(){
   adoptDoc(mergeDocs(localDoc(),remote)); // remote wins ties (others' edits)
   rebuild();
 }
-setInterval(refreshShared,60000);
+setInterval(()=>{ if(refreshToday()) rebuild(); refreshShared(); },60000);
 
 function saveNote(id,text){
   userNotes[String(id)]={t:(text||'').trim(),ts:Date.now()};
@@ -572,7 +572,13 @@ const MONTHS=['January','February','March','April','May','June','July','August',
 const MONTHS_S=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DOW_L=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const TODAY=startOfDay(new Date());
+// TODAY was computed once at page load. A phone keeps this tab alive for days, so "Today"
+// kept jumping to the day the page was first opened (Tom, 9/9). It is now refreshed
+// whenever the tab is shown again, on every 60-s sync poll, and before the button acts.
+let TODAY=startOfDay(new Date());
+function refreshToday(){ const t=startOfDay(new Date()); if(sameDay(t,TODAY)) return false; TODAY=t; return true; }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && refreshToday() && typeof rebuild==='function') rebuild(); });
+window.addEventListener('pageshow',()=>{ if(refreshToday() && typeof rebuild==='function') rebuild(); });
 function fmtTime(d){
   let h=d.getHours(),m=d.getMinutes();const ap=h>=12?'pm':'am';h=h%12||12;
   return m?`${h}:${String(m).padStart(2,'0')}${ap}`:`${h}${ap}`;
@@ -1623,7 +1629,7 @@ content.addEventListener('wheel',e=>{
 
   content.addEventListener('touchcancel',()=>{ if(tracking){tracking=false; committed?snapBack():clear();} },{passive:true});
 })();
-$('todayBtn').onclick=()=>{cursor=new Date(TODAY);miniCursor=new Date(cursor);render();};
+$('todayBtn').onclick=()=>{refreshToday();cursor=new Date(TODAY);miniCursor=new Date(cursor);render();};
 $('prevBtn').onclick=()=>nav(-1);
 $('nextBtn').onclick=()=>nav(1);
 $('viewSwitch').addEventListener('click',e=>{
