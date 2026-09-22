@@ -400,7 +400,11 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v12 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v13 (Google-Calendar-style)
+   v13 (9/22): cross-feed de-duplication. The same real event arriving from two
+   or three feeds is shown as ONE chip; expanding it names every calendar it sits
+   on. Grouping happens at render time and writes nothing, so it stays correct
+   when a feed re-adds a row. See mergeDuplicates().
    v12 (9/22): Tom's Work Cal — tom@coalition.ventures as a calendar of its
    own, with a sidebar switch, off by default.
    Data: family_cal.json + masselite_practices.json + site_data.json
@@ -449,6 +453,9 @@ function allTracking(){ const ids=new Set(siteData.tracking_items.map(t=>t.id));
 let userNotes=JSON.parse(localStorage.getItem(NOTES_KEY)||'{}');
 for(const k of Object.keys(userNotes)){ if(typeof userNotes[k]==='string') userNotes[k]={t:userNotes[k],ts:0}; }
 function noteText(id){ const n=userNotes[String(id)]; return n&&n.t?n.t:''; }
+// a family note written against a copy that has since been merged away is still
+// the family's note — find it wherever on the group it was left
+function famNote(e){ for(const m of (e?[e,...(e._dupes||[])]:[])){ const t=noteText(m.id); if(t) return t; } return ''; }
 
 /* ---------- family sync: shared notes / deletions / added events / Tom's work cal ---------- */
 const SYNC_URL='https://textdb.dev/api/data/hsked-1578268b-3ae8-4007-b940-9b27e5be8917';
@@ -779,15 +786,165 @@ function parseTrackingDates(t){
   return [s,e];
 }
 
+/* ---------- de-duplication across feeds (v13) ----------
+   Seven feeds write into one calendar and several of them legitimately carry the
+   same real-world event: a dinner Laura puts on the family Google calendar also
+   sits on Tom's work calendar; a TeamSnap game also arrives as a Google
+   invitation.  Tom, 2026-09-22: "If a calendar view has multiple feeds of the
+   same event (or close to it) you should show one event and the three cals its
+   on when I expand."
+
+   This runs on every rebuild and CHANGES NO DATA — it groups, it never writes.
+   That is deliberate: a store-side merge (the 2026-09-14 sweep) is a one-off that
+   goes stale the moment a feed re-adds a row, while grouping at render time is
+   correct again on the next paint, forever, with no cleanup job to run.
+
+   Three rules, strongest first.  Every one of them requires the same calendar day.
+     A. IDENTITY — two feeds derived their id from the same Google event.
+        `gcal_sync.py` and `work_sync.py` both id a row as <prefix><md5(googleId)[:12]>,
+        so an identical 12-hex tail is proof, not a guess, and merges even when the
+        two feeds disagree about whose event it is.
+     B. EXACT — same person, same start time, identical normalized title.
+     C. CLOSE — same person, same start time, and titles that overlap heavily
+        (Jaccard ≥ 0.72 on words of 3+ letters).  This is the "or close to it"
+        case: "WPC U13: Game vs Stars" and "Game: WPC U13 Girls FC vs Stars".
+
+   The person guard on B and C is what keeps real same-time pairs apart: the U13
+   and U11 practices share a field and an hour but belong to Emily and Sophie, and
+   the two carpool slivers differ the same way.  Rule A ignores person on purpose —
+   there the ids prove it is one event.  Time is compared exactly, so the optional
+   Bando sessions (16:00 and 17:30) can never collapse into each other. */
+const DUP_FEEDS=['gcall-','gcal-','tw-'];      // longest prefix first — gcall- before gcal-
+function dupHash(id){
+  const s=String(id).split('@')[0];
+  for(const p of DUP_FEEDS) if(s.startsWith(p)){
+    const tail=s.slice(p.length);
+    if(/^[0-9a-f]{12}$/.test(tail)) return tail;
+  }
+  return null;
+}
+function dupTitle(t){
+  return (t||'').toLowerCase()
+    // a leading owner name is decoration, with or without a separator: the same
+    // tutoring slot arrives as "Tommy - French tutoring" from one feed and
+    // "Tommy French tutoring" from another, and those are one event
+    .replace(/^(tom|tommy|emily|sophie|laura|family|hennessey)\b[\s\-–—:]*/,'')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function dupTokens(t){ return new Set(dupTitle(t).split(' ').filter(w=>w.length>=3)); }
+function dupClose(a,b){
+  const A=dupTokens(a), B=dupTokens(b);
+  if(A.size<1||B.size<1) return false;
+  let inter=0; A.forEach(w=>{ if(B.has(w)) inter++; });
+  if(inter<2) return false;
+  return inter/(A.size+B.size-inter) >= 0.72;
+}
+// lower wins: the family's own edit beats a feed, a feed beats a pulled Google
+// calendar, and the work calendar always loses — so an event stays on screen when
+// the Work Cal switch is off.
+function dupRank(e){
+  const id=String(e.id);
+  if(e.source==='user'&&id.startsWith('u-')) return 0;
+  if(id.startsWith('tw-')) return 3;
+  if(id.startsWith('gcal-')||id.startsWith('gcall-')) return 2;
+  return 1;
+}
+function dupBetter(a,b){
+  const ra=dupRank(a), rb=dupRank(b);
+  if(ra!==rb) return ra<rb;
+  const fa=(a.location?1:0)+(a.link?1:0)+(a.notes?1:0), fb=(b.location?1:0)+(b.link?1:0)+(b.notes?1:0);
+  if(fa!==fb) return fa>fb;
+  const la=(a.title||'').length, lb=(b.title||'').length;
+  if(la!==lb) return la>lb;
+  return String(a.id)<String(b.id);
+}
+function mergeDuplicates(list){
+  const byDay={};
+  for(const e of list){
+    if(e.type==='regcheck') continue;             // registration nags are not events
+    (byDay[fmtYMD(e.start)]=byDay[fmtYMD(e.start)]||[]).push(e);
+  }
+  const foldedInto=new Map();
+  for(const day of Object.keys(byDay)){
+    const rows=byDay[day], groups=[];
+    for(const e of rows){
+      const h=dupHash(e.id), slot=e.allDay?('AD|'+fmtYMD(e.end)):('T|'+(e.timeStart||fmtTime(e.start)));
+      let hit=null;
+      for(const g of groups){
+        const p=g[0];
+        const ph=dupHash(p.id);
+        if(h&&ph&&h===ph){ hit=g; break; }                       // A — same Google event
+        if(p.person!==e.person) continue;
+        if(p.allDay!==e.allDay) continue;
+        const pslot=p.allDay?('AD|'+fmtYMD(p.end)):('T|'+(p.timeStart||fmtTime(p.start)));
+        if(pslot!==slot) continue;
+        const pt=dupTitle(p.title), et=dupTitle(e.title);
+        if(pt&&pt===et){ hit=g; break; }                          // B — identical title
+        if(dupClose(p.title,e.title)){ hit=g; break; }            // C — close enough
+      }
+      if(hit) hit.push(e); else groups.push([e]);
+    }
+    for(const g of groups){
+      if(g.length<2) continue;
+      let primary=g[0];
+      for(const e of g) if(dupBetter(e,primary)) primary=e;
+      // If one of the copies came off Tom's work calendar, the event is Tom's,
+      // whatever the pulled family calendar guessed. Laura's calendar defaults an
+      // unrecognised title to her, so "LA demo Day" arrives as Laura's and the work
+      // calendar is the one telling the truth. The primary stays a family row so the
+      // event does not vanish when the Work Cal switch is off — only the owner moves.
+      if(primary.person!=='D' && g.some(e=>String(e.id).startsWith('tw-')&&e.person==='D')) primary.person='D';
+      primary._dupes=g.filter(e=>e!==primary);
+      for(const e of primary._dupes) foldedInto.set(e, primary);
+    }
+  }
+  return list.filter(e=>!foldedInto.has(e));
+}
+// Every calendar an event can arrive from, for the "also on" list in the modal.
+const FEED_LABELS=[
+  [/^tw-/,                     "Tom's Work Cal · tom@coalition.ventures"],
+  [/^gcall-/,                  "Laura's Google Calendar"],
+  [/^gcal-/,                   'Hennessey Family Google Calendar'],
+  [/^wpc13-/,                  'TeamSnap · WPC U13 Girls FC'],
+  [/^wpc11-/,                  'TeamSnap · WPC U11 Girls FC'],
+  [/^town5g-/,                 'TeamSnap · Warriors 5G'],
+  [/^aces-/,                   'TeamSnap · Aces'],
+  [/^ncds-msprac-/,            'NCDS MS practice schedule'],
+  [/^ncds-soca-/,              'NCDS MS Soccer A schedule'],
+  [/^ncds-/,                   'NCDS school calendar'],
+  [/^rlsoc-/,                  'Roxbury Latin parent portal'],
+  [/^rl-(am|pm)-/,             'RL carpool sheet'],
+  [/^(dropoff|pickup)-/,       'Carpool schedule'],
+  [/^bando-/,                  'Bando training'],
+  [/^hol-/,                    'US holidays'],
+  [/^amy-/,                    'Email intake · amy@coalition.ventures'],
+  [/^trk-|^todo-/,             'Tracking'],
+  [/^u-/,                      'Added on the scheduler'],
+  [/^st-|^static/,             'School calendar'],
+];
+function feedLabel(e){
+  const id=String(e.id).split('@')[0];
+  for(const [re,lbl] of FEED_LABELS) if(re.test(id)) return lbl;
+  if(e.source==='family_cal') return 'Google Calendar export';
+  return e.source||'Calendar';
+}
+// every id a merged event stands for — used when removing it, so a duplicate
+// cannot reappear tomorrow because only one of its copies was hidden
+function dupFamily(e){ return [e,...(e._dupes||[])]; }
+
 // ---------- filtering ----------
+function passesOwner(e){
+  // a subscribed calendar is governed by its own switch, not by the people filter —
+  // one control, so "Work Cal on" can never be quietly overruled by "Tom off"
+  const cal=Object.keys(CALS).find(k=>CALS[k].match(e));
+  if(cal) return !!filters.cals[cal];
+  return !!filters.people[e.person];
+}
 function visible(){
   return events.filter(e=>{
     if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))||(e.recurRoot&&hiddenIds.has(e.recurRoot))) return false;
-    // a subscribed calendar is governed by its own switch, not by the people filter —
-    // one control, so "Work Cal on" can never be quietly overruled by "Tom off"
-    const cal=Object.keys(CALS).find(k=>CALS[k].match(e));
-    if(cal){ if(!filters.cals[cal]) return false; }
-    else if(!filters.people[e.person]) return false;
+    // a merged event survives if ANY of the calendars it sits on is switched on
+    if(!dupFamily(e).some(passesOwner)) return false;
     if(!filters.types[e.type]) return false;
     if(searchQ){
       const q=searchQ.toLowerCase();
@@ -1471,15 +1628,25 @@ function showEvent(id){
   if(e.location) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
-  else if(e.source&&e.source!=='user'){
+  const fam=dupFamily(e);
+  if(fam.length>1){
+    // shown once, but it really is on several calendars — say which
+    const seen=new Set(), lines=[];
+    for(const m of fam){ const l=feedLabel(m); if(!seen.has(l)){ seen.add(l); lines.push(l); } }
+    html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">
+      Shown once — this event is on ${lines.length} calendar${lines.length>1?'s':''}:
+      <span style="display:block;margin-top:4px;">${lines.map(l=>`• ${esc(l)}`).join('<br>')}</span></span></div>`;
+  } else if(e.source&&e.source!=='user'){
     const ck=Object.keys(CALS).find(k=>CALS[k].match(e));
-    const lbl=ck?`${CALS[ck].label} · ${CALS[ck].sub}`:e.source;
+    const lbl=ck?`${CALS[ck].label} · ${CALS[ck].sub}`:feedLabel(e);
     html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(lbl)}</span></div>`;
   }
-  if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
+  const noteSet=new Set(); let allNotes='';
+  for(const m of fam){ const n=(m.notes||'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
+  if(allNotes) html+=`<div class="ev-notes">${esc(allNotes)}</div>`;
   html+=`<div style="margin-top:14px;">
     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
-    <textarea id="noteBox" rows="2" placeholder="Add a note — the whole family will see it" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(noteText(e.id))}</textarea>
+    <textarea id="noteBox" rows="2" placeholder="Add a note — the whole family will see it" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;resize:vertical;">${esc(famNote(e))}</textarea>
     <div style="text-align:right;margin-top:6px;"><button class="btn" id="noteSave" style="padding:6px 14px;font-size:13px;">Save note</button></div>
   </div>`;
   if(e.tracking && e.type==='potential') html+=`<div style="display:flex;gap:8px;margin-top:14px;">
@@ -1696,15 +1863,19 @@ $('addBtn').onclick=()=>openForm(false);
 $('evEdit').onclick=()=>openForm(true);
 $('evHide').onclick=()=>{
   if(!currentEv) return;
-  if(currentEv.source==='user'){
-    userEvents=userEvents.filter(x=>String(x.id)!==String(currentEv.id));
-    deletedUser.add(String(currentEv.id));
-    localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
-    localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
-  } else {
-    hiddenIds.add(currentEv.trackRoot||currentEv.id);
-    localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
+  // a merged event is several rows wearing one chip — remove every one of them,
+  // or tomorrow's render brings the copy that was left behind back as its own event
+  for(const m of dupFamily(currentEv)){
+    if(m.source==='user'){
+      userEvents=userEvents.filter(x=>String(x.id)!==String(m.id));
+      deletedUser.add(String(m.id));
+    } else {
+      hiddenIds.add(m.trackRoot||m.id);
+    }
   }
+  localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
+  localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   pushSharedSoon();
   rebuild(); closeModals(); toast('Removed for the whole family');
 };
@@ -1738,7 +1909,7 @@ document.addEventListener('keydown',e=>{
 function rebuild(){
   // a re-render of the same Day/Week grid (a drop, a sync poll) keeps the scroll position
   const sc=$('tgScroll'); if(sc&&keepScroll==null) keepScroll=sc.scrollTop;
-  events=normAll(window._fam||[],window._mass||[],siteData);
+  events=mergeDuplicates(normAll(window._fam||[],window._mass||[],siteData));
   renderFilters(); render();
 }
 Promise.all([
