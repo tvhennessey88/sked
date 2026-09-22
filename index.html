@@ -329,6 +329,7 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
   <div class="sidebar" id="sidebar">
     <button class="btn primary" id="addBtn" style="width:100%;padding:11px;margin-bottom:16px;border-radius:22px;font-size:14px;">＋ &nbsp;Add event</button>
     <div class="mini" id="miniCal"></div>
+    <div class="fgroup" id="calFilters"><h4>Calendars</h4></div>
     <div class="fgroup" id="peopleFilters"><h4>People</h4></div>
     <div class="fgroup" id="typeFilters"><h4>Event types</h4></div>
     <div class="fgroup"><h4>Data sources</h4><div class="src-list" id="srcList"></div></div>
@@ -358,7 +359,7 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
       <div><label>Person</label>
         <select id="fPerson">
           <option value="T">Tommy</option><option value="E">Emily</option><option value="S">Sophie</option>
-          <option value="L">Laura</option><option value="F" selected>Family</option>
+          <option value="L">Laura</option><option value="D">Tom</option><option value="F" selected>Family</option>
         </select></div>
       <div><label>Type</label>
         <select id="fType">
@@ -398,7 +399,9 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v2 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v12 (Google-Calendar-style)
+   v12 (9/22): Tom's Work Cal — tom@coalition.ventures as a calendar of its
+   own, with a sidebar switch, off by default.
    Data: family_cal.json + masselite_practices.json + site_data.json
    ================================================================ */
 
@@ -420,6 +423,14 @@ const TYPES = {
   family:{label:'Family & personal', icon:'🏠'},
   potential:{label:'Potential (tracking)', icon:'👀'},
   regcheck:{label:'Registration reminders', icon:'⏰'},
+};
+// Subscribed calendars that are toggled as a whole, independently of the people and
+// type filters. Tom's work calendar is the first (Tom, 9/22): everything on
+// tom@coalition.ventures — meetings, their times, locations and links, plus travel —
+// but OFF by default, so the family view stays a family view until he asks for it.
+const CALS = {
+  work:{label:"Tom's Work Cal", sub:'tom@coalition.ventures', hex:'#00838f',
+        match:e=>e.source==='tom-work'},
 };
 const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', CONFIRMED_KEY='sked_confirmed_ids_v1', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1', NOTES_KEY='sked_notes_v1';
 
@@ -538,9 +549,12 @@ function saveNote(id,text){
 let filters=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')||{
   people:{T:true,E:true,S:true,L:true,F:true},
   types:{game:true,practice:true,tournament:true,academic:true,noschool:true,family:true,potential:true,regcheck:true},
+  cals:{work:false},
 };
 for(const k of Object.keys(PEOPLE)) if(filters.people[k]===undefined) filters.people[k]=true;
 for(const k of Object.keys(TYPES)) if(filters.types[k]===undefined) filters.types[k]=true;
+if(!filters.cals) filters.cals={};
+for(const k of Object.keys(CALS)) if(filters.cals[k]===undefined) filters.cals[k]=false; // a subscribed calendar starts off
 let view=localStorage.getItem(VIEW_KEY)||'month';
 let cursor=new Date(); cursor.setHours(0,0,0,0);
 let miniCursor=new Date(cursor);
@@ -670,13 +684,28 @@ function normAll(famCal,masselite,site){
       push(mk({...e,id:e.id||'static-'+i}, parseYMD(e.start), e.end?parseYMD(e.end):parseYMD(e.start), true));
     }
   }
-  // 3b) Tom's work calendar — all-day / multi-day only (travel), synced daily
+  // 3b) Tom's work calendar (tom@coalition.ventures) — a calendar of its own, toggled
+  // in the sidebar and off by default (Tom, 9/22). Rows carry times, a location and a
+  // link, and a recurring meeting arrives as one `repeat` row rather than 91 of them.
+  // Legacy rows (all-day travel, no id) still render — the feed replaces them on its
+  // next run, and nothing should break in between.
   for(let i=0;i<tomWork.length;i++){
     const e=tomWork[i];
     if(!e||!e.start) continue;
-    push({id:'tw-'+e.start+'-'+i, title:e.title||'(work)', person:'D', type:'family',
-      start:parseYMD(e.start), end:parseYMD(e.end||e.start), allDay:true,
-      location:'', link:'', notes:'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work'});
+    const rid=e.id||('tw-'+e.start+'-'+i);
+    for(const inst of expandRepeat({...e,id:rid})){
+      const allDay = e.allDay!==false && !e.timeStart;
+      let s,en;
+      if(allDay){ s=parseYMD(inst.start); en=parseYMD(inst.end||inst.start); }
+      else{
+        s=parseYMD(inst.start); const [h1,m1]=(e.timeStart||'09:00').split(':'); s.setHours(+h1,+m1);
+        en=parseYMD(inst.end||inst.start); const [h2,m2]=(e.timeEnd||e.timeStart).split(':'); en.setHours(+h2,+m2);
+        if(en<=s) en=new Date(s.getTime()+1800000);
+      }
+      push({id:inst.id, title:e.title||'(work)', person:'D', type:e.type||'family',
+        start:s, end:en, allDay, location:e.location||'', link:e.link||'',
+        notes:e.notes||'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work'});
+    }
   }
   // 4) tracking items → potential events when dates parseable
   const trackAll=allTracking();
@@ -753,7 +782,11 @@ function parseTrackingDates(t){
 function visible(){
   return events.filter(e=>{
     if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))||(e.recurRoot&&hiddenIds.has(e.recurRoot))) return false;
-    if(!filters.people[e.person]) return false;
+    // a subscribed calendar is governed by its own switch, not by the people filter —
+    // one control, so "Work Cal on" can never be quietly overruled by "Tom off"
+    const cal=Object.keys(CALS).find(k=>CALS[k].match(e));
+    if(cal){ if(!filters.cals[cal]) return false; }
+    else if(!filters.people[e.person]) return false;
     if(!filters.types[e.type]) return false;
     if(searchQ){
       const q=searchQ.toLowerCase();
@@ -1381,11 +1414,21 @@ function renderMini(){
 
 // ----- SIDEBAR FILTERS -----
 function renderFilters(){
-  const counts={people:{},types:{}};
+  const counts={people:{},types:{},cals:{}};
   for(const e of events){
+    const cal=Object.keys(CALS).find(k=>CALS[k].match(e));
+    if(cal){ counts.cals[cal]=(counts.cals[cal]||0)+1; continue; } // its own row, not Tom's people count
     counts.people[e.person]=(counts.people[e.person]||0)+1;
     counts.types[e.type]=(counts.types[e.type]||0)+1;
   }
+  let ch='<h4>Calendars</h4>';
+  for(const [k,c] of Object.entries(CALS)){
+    const on=filters.cals[k];
+    ch+=`<div class="frow${on?' on':''}" data-fc="${k}" title="${esc(c.sub||'')}">
+      <span class="cb" style="${on?`background:${c.hex}`:''}">${on?'✓':''}</span>
+      <span class="lbl">${esc(c.label)}</span><span class="cnt">${counts.cals[k]||0}</span></div>`;
+  }
+  $('calFilters').innerHTML=ch;
   let ph='<h4>People</h4>';
   for(const [k,p] of Object.entries(PEOPLE)){
     const on=filters.people[k];
@@ -1427,7 +1470,11 @@ function showEvent(id){
   if(e.location) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
-  else if(e.source&&e.source!=='user') html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(e.source)}</span></div>`;
+  else if(e.source&&e.source!=='user'){
+    const ck=Object.keys(CALS).find(k=>CALS[k].match(e));
+    const lbl=ck?`${CALS[ck].label} · ${CALS[ck].sub}`:e.source;
+    html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(lbl)}</span></div>`;
+  }
   if(e.notes) html+=`<div class="ev-notes">${esc(e.notes)}</div>`;
   html+=`<div style="margin-top:14px;">
     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
@@ -1531,6 +1578,8 @@ document.addEventListener('click',ev=>{
   if(fp){ filters.people[fp.dataset.fp]=!filters.people[fp.dataset.fp]; persistFilters(); return; }
   const ft=t.closest('[data-ft]');
   if(ft){ filters.types[ft.dataset.ft]=!filters.types[ft.dataset.ft]; persistFilters(); return; }
+  const fc=t.closest('[data-fc]');
+  if(fc){ const k=fc.dataset.fc; filters.cals[k]=!filters.cals[k]; persistFilters(); toast(`${CALS[k].label} ${filters.cals[k]?'on':'off'}`); return; }
   const lk=t.closest('[data-link]');
   if(lk&&lk.dataset.link){ window.open(lk.dataset.link,'_blank'); return; }
   if(t.classList.contains('mclose')||t.id==='overlay'){ closeModals(); return; }
