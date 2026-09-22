@@ -148,12 +148,16 @@ button{font-family:inherit; cursor:pointer;}
 .tg-col{border-left:1px solid var(--border);position:relative;min-width:0;}
 .tg-hline{position:absolute;left:0;right:0;border-top:1px solid #eceef1;pointer-events:none;}
 .tg-ev{
-  position:absolute;border-radius:5px;padding:3px 6px;font-size:11.5px;overflow:hidden;cursor:pointer;
-  border:1px solid rgba(255,255,255,.7);line-height:1.25;
+  position:absolute;border-radius:6px;padding:3px 7px;font-size:12.5px;overflow:hidden;cursor:pointer;
+  line-height:1.25;
 }
 .tg-ev:hover{box-shadow:var(--shadow);z-index:20 !important;}
-.tg-ev .tt{font-weight:600;}
-.tg-ev .tm{font-size:10.5px;opacity:.85;}
+/* every line is clamped and clipped INSIDE the block. Before v14 the title had
+   no clamp of its own here and spilled over neighbouring events whenever the
+   block was shorter than the text — the wall of half-words on a busy day. */
+.tg-ev .tt{font-weight:600;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+.tg-ev .tm{font-size:11px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tg-ev .tm.loc{opacity:.75;}
 .nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
 .nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
@@ -287,9 +291,13 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
   .sidebar.open{margin-left:0;}
   .tg-gutter,.tg-times,.tg-allday .lbl{width:40px;}
   .ev-chip{font-size:10.5px;}
-  /* phone day view: every pixel goes to the event's name (Tom, 9/7) */
-  .tg-ev{padding:2px 4px;font-size:11.5px;line-height:1.2;border-radius:4px;}
-  .tg-ev .tm{font-size:10px;}
+  /* phone day view: every pixel goes to the event's name (Tom, 9/7).
+     v14: bigger, not smaller. 11.5px was below what iOS Calendar uses and it was
+     the difference between reading a title and guessing at it. The tint styling
+     in blockStyle() buys back the contrast that a larger size on a small block
+     would otherwise cost. */
+  .tg-ev{padding:3px 6px;font-size:13px;line-height:1.22;border-radius:5px;}
+  .tg-ev .tm{font-size:11px;}
   .daymode{padding:6px 10px;gap:6px;}
   .daymode .daydate{font-size:14px;}
   .daymode .seg button{padding:4px 9px;font-size:12px;}
@@ -400,7 +408,13 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v13 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v14 (Google-Calendar-style)
+   v14 (9/22): readable on a phone. Timed blocks are a pale tint with a coloured
+   left rail and dark text (iOS Calendar's treatment) instead of a saturated fill
+   with white text; every line is clamped and clipped INSIDE its block; content
+   adapts to the block's height; overlap is judged on the DRAWN extent so short
+   back-to-back events stop being painted on top of each other; a prefix shared by
+   3+ events on a day is stripped; the grid opens on the day's first event.
    v13 (9/22): cross-feed de-duplication. The same real event arriving from two
    or three feeds is shown as ONE chip; expanding it names every calendar it sits
    on. Grouping happens at render time and writes nothing, so it stays correct
@@ -987,6 +1001,58 @@ function chipStyle(e){
   return s;
 }
 
+/* ---------- timed blocks in the Day and Week grids (v14) ----------
+   Tom, on a phone, looking at a conference day: "hard on an iPhone and when
+   there are alot of overlapping events", and then, pointing at iOS Calendar,
+   "iphone doesn't give an agenda it just renders better".
+
+   What iOS does that a solid-fill chip cannot: a PALE TINT with the calendar's
+   colour as a left rail and dark text on top. Solid saturated fill needs white
+   text, and white-on-colour at 11px inside a 22px sliver is the thing that was
+   unreadable. The tint keeps the colour coding, pays for a much higher contrast
+   ratio, and lets several overlapping blocks sit next to each other without the
+   screen turning into a wall of teal. */
+function blockStyle(e){
+  const c=evColor(e);
+  if(e.type==='regcheck') return `background:#fce8e6;color:#c5221f;font-weight:600;border-left:3px solid #c5221f;`;
+  if(e.type==='noschool') return `background:#f1f3f4;color:#5f6368;border-left:3px solid #9aa0a6;`;
+  const dash=e.type==='potential'?`border:1px dashed ${c};`:'';
+  return `background:${c}1f;color:${shade(c)};border-left:3px solid ${c};${dash}`;
+}
+/* How much fits is a function of how tall the block actually is. A 22px sliver
+   gets one clipped line and nothing else — the old code rendered a title AND a
+   time line into it, which is why text was escaping its box all over the 11am
+   to 3pm stretch. */
+/* A conference day is 12 blocks that all begin "MXO Spark Tank: ". On a phone
+   that prefix IS the block — every one of them read "MXO…" and nothing else.
+   Strip a prefix shared by three or more events on the same day so the width
+   goes to the part that differs. The full title is still in the modal, and the
+   all-day row normally names the thing anyway. Person names are never stripped
+   (the 8-character floor keeps Emily/Tommy/Sophie/Laura/Family out of it) —
+   losing whose event it is would trade one kind of unreadable for another. */
+const PRE_RE=/^(.{8,40}?)\s*[:\u2014\u2013]\s+/;
+function dayPrefixes(list){
+  const n={}, names=new Set(Object.values(PEOPLE).map(p=>p.name.toLowerCase()));
+  for(const e of list){
+    const m=(e.title||'').match(PRE_RE);
+    if(m && !names.has(m[1].toLowerCase())) n[m[1]]=(n[m[1]]||0)+1;
+  }
+  return new Set(Object.keys(n).filter(k=>n[k]>=3));
+}
+function shortTitle(e,pre){
+  const t=e.title||'';
+  if(!pre||!pre.size) return t;
+  const m=t.match(PRE_RE);
+  return (m&&pre.has(m[1])) ? t.slice(m[0].length) : t;
+}
+function blockBody(e,hh,whoTag,pre){
+  const t=`<div class="tt" style="-webkit-line-clamp:${hh<34?1:hh<70?2:3}">${esc(shortTitle(e,pre))}</div>`;
+  if(hh<34) return t;                                    // title only
+  let s=t+`<div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}${whoTag}</div>`;
+  if(hh>=76&&e.location) s+=`<div class="tm loc">${esc(e.location)}</div>`;
+  return s;
+}
+
 // ---------- rendering ----------
 const $=id=>document.getElementById(id);
 const content=$('content');
@@ -1098,7 +1164,10 @@ function renderTimeGrid(nDays){
     $('rangeLabel').textContent=`${MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
   }
   const list=visible();
-  const HOUR=48, DSTART=6, DEND=23; // 6am–11pm visible, scroll for rest
+  const HOUR=48, DSTART=6, DEND=23, MINH=26; // 6am–11pm visible, scroll for rest
+  // MINH: no block is drawn shorter than this, so overlap is judged on the drawn
+  // extent (see the Day view's note) — otherwise short back-to-back events share
+  // a column and are painted on top of one another.
   // split all-day/multi vs timed
   const days=[...Array(nDays)].map((_,i)=>addDays(start,i));
   const allday=[],timed=[];
@@ -1158,23 +1227,24 @@ function renderTimeGrid(nDays){
     const cols=[];
     for(const ev of evs){
       let c=0;
-      while(cols[c] && cols[c].some(o=>!(ev.en<=o.s||ev.s>=o.en))) c++;
+      ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
+      while(cols[c] && cols[c].some(o=>!(ev.enD<=o.s||ev.s>=o.enD))) c++;
       if(!cols[c]) cols[c]=[];
       cols[c].push(ev); ev.col=c;
     }
     for(const ev of evs){
       // width = share with any overlapping cluster
-      const overl=evs.filter(o=>!(ev.en<=o.s||ev.s>=o.en));
+      const overl=evs.filter(o=>!(ev.enD<=o.s||ev.s>=o.enD));
       const ncol=Math.max(...overl.map(o=>o.col))+1;
       ev.ncol=ncol;
     }
+    const preD=dayPrefixes(evs.map(x=>x.e));
     let colHtml='';
     for(const ev of evs){
       const e=ev.e;
-      const top=ev.s*HOUR, h=Math.max(22,(ev.en-ev.s)*HOUR-2);
+      const top=ev.s*HOUR, h=Math.max(MINH,(ev.en-ev.s)*HOUR-2);
       const w=100/ev.ncol, l=ev.col*w;
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${chipStyle(e)};z-index:${5+ev.col};">
-        <div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}</div></div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};">${blockBody(e,h,'',preD)}</div>`;
     }
     const isToday=sameDay(d,TODAY);
     let now='';
@@ -1188,7 +1258,7 @@ function renderTimeGrid(nDays){
   content.innerHTML=html;
   // scroll to 7am (or now) — unless a drag just re-rendered and wants its scroll position back
   const sc=$('tgScroll');
-  if(sc) sc.scrollTop = takeKeepScroll((days.some(d=>sameDay(d,TODAY)) ? Math.max(0,(new Date().getHours()-2)) : 7)*HOUR);
+  if(sc) sc.scrollTop = takeKeepScroll(firstHour(days.flatMap(d=>eventsOnDay(list,d)), days.some(d=>sameDay(d,TODAY)) ? Math.max(0,(new Date().getHours()-2)) : 7)*HOUR);
 }
 
 // ----- YEAR (exceptions only: breaks, tournaments/showcases, potentials) -----
@@ -1343,11 +1413,12 @@ function renderDayCols(){
   const day=startOfDay(cursor);
   $('rangeLabel').textContent=`${DOW_L?DOW_L[day.getDay()]:DOW[day.getDay()]}, ${MONTHS[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
   const list=eventsOnDay(visible(),day);
+  const pre=dayPrefixes(list);
   const combined = dayMode!=='people';
   const ORDER=['T','E','S','L','D','F'];
   let cols = combined ? ['*'] : ORDER.filter(p=>['T','E','S'].includes(p)?filters.people[p]:list.some(e=>e.person===p));
   if(!cols.length) cols=['*'];
-  const HOUR=48;
+  const HOUR=48, MINH=26;
   const byP={}; cols.forEach(p=>byP[p]={allday:[],timed:[]});
   for(const e of list){ const k=combined?'*':e.person; if(byP[k]) (e.allDay?byP[k].allday:byP[k].timed).push(e); }
   const n=cols.length;
@@ -1395,22 +1466,29 @@ function renderDayCols(){
       .map(e=>({e, s:Math.max(0,(Math.max(e.start,day)-day)/3600000), en:Math.min(24,(Math.min(e.end,addDays(day,1))-day)/3600000)}))
       .sort((a,b)=>a.s-b.s||b.en-a.en);
     const lanes=[];
-    for(const ev of evs){ let c=0; while(lanes[c]&&lanes[c].some(o=>!(ev.en<=o.s||ev.s>=o.en))) c++; if(!lanes[c])lanes[c]=[]; lanes[c].push(ev); ev.col=c; }
-    for(const ev of evs){ const overl=evs.filter(o=>!(ev.en<=o.s||ev.s>=o.en)); ev.ncol=Math.max(...overl.map(o=>o.col))+1; }
+      // A block is never drawn shorter than MINH px, so a 15-minute event occupies
+      // far more of the column than its duration. The overlap test used the true
+      // end time, so consecutive short events were judged NOT to overlap, given
+      // the same column, and then drawn on top of each other — that is why the
+      // 11am–2pm run of Spark Tank sessions was a stack of colliding half-lines.
+      // Collide on the DRAWN extent instead: they get their own columns, which is
+      // the only way they are readable anyway.
+    for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
+    for(const ev of evs){ let c=0; while(lanes[c]&&lanes[c].some(o=>!(ev.enD<=o.s||ev.s>=o.enD))) c++; if(!lanes[c])lanes[c]=[]; lanes[c].push(ev); ev.col=c; }
+    for(const ev of evs){ const overl=evs.filter(o=>!(ev.enD<=o.s||ev.s>=o.enD)); ev.ncol=Math.max(...overl.map(o=>o.col))+1; }
     let colHtml='';
     for(const ev of evs){
-      const e=ev.e, top=ev.s*HOUR, hh=Math.max(22,(ev.en-ev.s)*HOUR-2), w=100/ev.ncol, l=ev.col*w;
+      const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), w=100/ev.ncol, l=ev.col*w;
       // title first — that's what Tom wants to read; the owner rides on the time line (colour already says who)
       const whoTag=combined&&needsWho(e)?` <span class="who">· ${esc(who(e.person))}</span>`:'';
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${chipStyle(e)};z-index:${5+ev.col};">
-        <div class="tt">${esc(e.title)}</div><div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}${whoTag}</div></div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};">${blockBody(e,hh,whoTag,pre)}</div>`;
     }
     html+=`<div class="tg-col" data-day="${fmtYMD(day)}">${lines}${colHtml}${now}</div>`;
   }
   html+=`</div></div></div></div>`;
   content.innerHTML=html;
   const sc=$('tgScroll');
-  if(sc) sc.scrollTop=takeKeepScroll((isToday?Math.max(0,new Date().getHours()-2):7)*HOUR);
+  if(sc) sc.scrollTop=takeKeepScroll(firstHour(list, isToday?Math.max(0,new Date().getHours()-2):7)*HOUR);
 }
 
 // ----- DRAG TO MOVE (Day + Week grids) -----
@@ -1422,6 +1500,15 @@ function renderDayCols(){
 function canDrag(e){ return !!e && !e.allDay && (e.source==='user'||e.source==='user-recur'); }
 let keepScroll=null;
 function takeKeepScroll(dflt){ const v=keepScroll; keepScroll=null; return v==null?dflt:v; }
+/* Open the grid on the day's first event rather than a fixed 7am (or 2 hours
+   before now, which on a phone at 9pm showed an empty evening). iOS scrolls to
+   where the day actually starts; a screen of empty small hours is wasted on a
+   390px display. Falls back to the old behaviour when the day is empty. */
+function firstHour(list,dflt){
+  let h=null;
+  for(const e of list){ if(e.allDay) continue; const s=e.start.getHours()+e.start.getMinutes()/60; if(h===null||s<h) h=s; }
+  return h===null?dflt:Math.max(0,h-0.5);
+}
 const mmStr=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const fmtMin=m=>fmtTime(new Date(2000,0,1,Math.floor(m/60),m%60));
 let dragEndedAt=0;
