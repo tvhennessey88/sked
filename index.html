@@ -162,6 +162,8 @@ button{font-family:inherit; cursor:pointer;}
 .tg-ev .tm{font-size:11px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tg-ev .tm.loc{opacity:.75;}
 .tg-ev.bare{padding:0;border-radius:4px;}
+.cx-tag{font-weight:700;color:#c5221f;letter-spacing:.02em;font-size:.85em;white-space:nowrap;}
+.cx-t{text-decoration:line-through;text-decoration-thickness:1.5px;}
 .nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
 .nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
@@ -760,7 +762,7 @@ function normAll(famCal,masselite,site){
         en=parseYMD(inst.end||inst.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
       }
       push({id:inst.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
-        location:e.location||'', link:e.link||'', notes:e.notes||'',
+        location:e.location||'', link:e.link||'', notes:e.notes||'', status:e.status||'',
         source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||''});
     }
   }
@@ -844,7 +846,7 @@ function dupHash(id){
   return null;
 }
 function dupTitle(t){
-  return (t||'').toLowerCase()
+  return cxStrip(t).toLowerCase()
     // a leading owner name is decoration, with or without a separator: the same
     // tutoring slot arrives as "Tommy - French tutoring" from one feed and
     // "Tommy French tutoring" from another, and those are one event
@@ -914,6 +916,7 @@ function mergeDuplicates(list){
       // calendar is the one telling the truth. The primary stays a family row so the
       // event does not vanish when the Work Cal switch is off — only the owner moves.
       if(primary.person!=='D' && g.some(e=>String(e.id).startsWith('tw-')&&e.person==='D')) primary.person='D';
+      if(!cxKind(primary)){ const cx=g.find(e=>cxKind(e)); if(cx) primary.status=cxKind(cx).toLowerCase(); }
       primary._dupes=g.filter(e=>e!==primary);
       for(const e of primary._dupes) foldedInto.set(e, primary);
     }
@@ -1008,6 +1011,7 @@ function shade(hex){ // darker text version of color
    now. The rail is what keeps the colour coding legible once the fill is pale. */
 function chipStyle(e){
   const c=evColor(e);
+  if(cxKind(e)) return `background:#f1f3f4;color:#5f6368;border-left:3px solid ${c};`;
   if(e.type==='regcheck') return `background:#fce8e6;color:#c5221f;font-weight:600;border-left:3px solid #c5221f;`;
   if(e.type==='noschool') return `background:#f1f3f4;color:#5f6368;border-left:3px solid #9aa0a6;`;
   if(e.type==='potential') return `background:#fff;color:${shade(c)};border:1.5px dashed ${c};border-left:3px solid ${c};`;
@@ -1027,6 +1031,7 @@ function chipStyle(e){
    screen turning into a wall of teal. */
 function blockStyle(e){
   const c=evColor(e);
+  if(cxKind(e)) return `background:#f1f3f4;color:#5f6368;border-left:3px solid ${c};`;
   if(e.type==='regcheck') return `background:#fce8e6;color:#c5221f;font-weight:600;border-left:3px solid #c5221f;`;
   if(e.type==='noschool') return `background:#f1f3f4;color:#5f6368;border-left:3px solid #9aa0a6;`;
   const dash=e.type==='potential'?`border:1px dashed ${c};`:'';
@@ -1059,7 +1064,7 @@ function shortTitle(e,pre){
   return (m&&pre.has(m[1])) ? t.slice(m[0].length) : t;
 }
 function blockBody(e,hh,whoTag,pre){
-  const t=`<div class="tt" style="-webkit-line-clamp:${hh<34?1:hh<70?2:3}">${esc(shortTitle(e,pre))}</div>`;
+  const t=`<div class="tt" style="-webkit-line-clamp:${hh<34?1:hh<70?2:3}">${ttl(e,shortTitle(e,pre))}</div>`;
   if(hh<34) return t;                                    // title only
   let s=t+`<div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}${whoTag}</div>`;
   if(hh>=76&&e.location) s+=`<div class="tm loc">${esc(e.location)}</div>`;
@@ -1070,6 +1075,25 @@ function blockBody(e,hh,whoTag,pre){
 const $=id=>document.getElementById(id);
 const content=$('content');
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+/* v15 — cancelled events stay on the calendar, crossed out (Tom, 2026-09-24):
+   "Cancelled games within a week shouldn't be removed they should appear crossed
+   out and CANCELLED applied."  A feed marks a row with status:'cancelled' (or
+   'postponed') AND a "CANCELLED: " title prefix, so the row still reads right in
+   Google Calendar and on any device still running an older build.  ttl() is the
+   one place every view turns an event into title HTML. */
+const CX_RE=/^\s*(CANCELL?ED|POSTPONED)\b\s*[:\u2014\u2013-]?\s*/i;
+function cxKind(e){
+  if(e.status==='cancelled') return 'CANCELLED';
+  if(e.status==='postponed') return 'POSTPONED';
+  const m=(e.title||'').match(CX_RE);
+  return m ? (/^post/i.test(m[1])?'POSTPONED':'CANCELLED') : '';
+}
+function cxStrip(t){ return (t||'').replace(CX_RE,''); }
+function ttl(e,t){
+  if(t==null) t=e.title;
+  const k=cxKind(e);
+  return k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t);
+}
 
 function render(){
   document.querySelectorAll('#viewSwitch button').forEach(b=>b.classList.toggle('active',b.dataset.v===view));
@@ -1147,10 +1171,10 @@ function renderMonth(){
       const left=`calc(${sg.c0*colW}% + 3px)`, width=`calc(${(sg.c1-sg.c0+1)*colW}% - 7px)`;
       const top=sg.lane*ROWH;
       if(sg.multi){
-        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:${left};width:${width};top:${top}px;${chipStyle(e)}">${TYPES[e.type]?.icon?'':''}${esc(e.title)}</div>`;
+        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:${left};width:${width};top:${top}px;${chipStyle(e)}">${TYPES[e.type]?.icon?'':''}${ttl(e)}</div>`;
       } else {
         html+=`<div class="ev-chip timed" data-ev="${esc(String(e.id))}" style="left:${left};width:${width};top:${top}px;">
-          <span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${esc(e.title)}</span></div>`;
+          <span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${ttl(e)}</span></div>`;
       }
     }
     for(let c=0;c<7;c++){
@@ -1214,7 +1238,7 @@ function renderTimeGrid(nDays){
       <div class="grid">${days.map(()=>'<i></i>').join('')}</div>`;
     for(const sg of asegs){
       const colW=100/nDays;
-      html+=`<div class="ev-chip" data-ev="${esc(String(sg.e.id))}" style="left:calc(${sg.c0*colW}% + 3px);width:calc(${(sg.c1-sg.c0+1)*colW}% - 7px);top:${3+sg.lane*24}px;${chipStyle(sg.e)}">${esc(sg.e.title)}</div>`;
+      html+=`<div class="ev-chip" data-ev="${esc(String(sg.e.id))}" style="left:calc(${sg.c0*colW}% + 3px);width:calc(${(sg.c1-sg.c0+1)*colW}% - 7px);top:${3+sg.lane*24}px;${chipStyle(sg.e)}">${ttl(sg.e)}</div>`;
     }
     html+=`</div></div>`;
   }
@@ -1307,7 +1331,7 @@ function renderYear(){
     html+=`<div class="ym" style="padding:12px 12px 9px;"><h3 data-gomonth="${y}-${String(m+1).padStart(2,'0')}" style="font-size:15px;margin-bottom:9px;">${MONTHS[m]}</h3>`;
     if(!evs.length) html+=`<div style="color:#b8bcc1;font-size:12px;padding:0 4px 4px;">—</div>`;
     for(const e of evs){
-      html+=`<div class="ev-chip ybubble" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}" title="${esc(e.title)}"><b style="font-weight:600;">${esc(rangeLbl(e))}</b> &nbsp;${esc(e.title)}</div>`;
+      html+=`<div class="ev-chip ybubble" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}" title="${esc(e.title)}"><b style="font-weight:600;">${esc(rangeLbl(e))}</b> &nbsp;${ttl(e)}</div>`;
     }
     html+=`</div>`;
   }
@@ -1346,7 +1370,7 @@ function renderPlan(){
       html+=`<div class="prow" data-ev="${esc(String(e.id))}">
         <div class="date">${dr}</div>
         <div class="pill" style="background:${evColor(e)}"></div>
-        <div class="body"><div class="t">${esc(e.title)}</div>
+        <div class="body"><div class="t">${ttl(e)}</div>
         <div class="sub">${esc([PEOPLE[e.person].name, e.location].filter(Boolean).join(' · '))}</div></div>
         ${tag}</div>`;
     }
@@ -1466,7 +1490,7 @@ function renderDayCols(){
     const colW=100/n;
     cols.forEach((p,ci)=>{
       byP[p].allday.forEach((e,li)=>{
-        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:calc(${ci*colW}% + 3px);width:calc(${colW}% - 7px);top:${3+li*24}px;${chipStyle(e)}">${combined&&needsWho(e)?esc(who(e.person))+' · ':''}${esc(e.title)}</div>`;
+        html+=`<div class="ev-chip" data-ev="${esc(String(e.id))}" style="left:calc(${ci*colW}% + 3px);width:calc(${colW}% - 7px);top:${3+li*24}px;${chipStyle(e)}">${combined&&needsWho(e)?esc(who(e.person))+' · ':''}${ttl(e)}</div>`;
       });
     });
     html+=`</div></div>`;
@@ -1650,7 +1674,7 @@ function renderAgenda(){
     html+=`<div class="prow" data-ev="${esc(String(e.id))}">
       <div class="date">${e.allDay?'All day':fmtTime(e.start)}</div>
       <div class="pill" style="background:${evColor(e)}"></div>
-      <div class="body"><div class="t">${esc(e.title)}</div><div class="sub">${esc([PEOPLE[e.person].name,e.location].filter(Boolean).join(' · '))}</div></div></div>`;
+      <div class="body"><div class="t">${ttl(e)}</div><div class="sub">${esc([PEOPLE[e.person].name,e.location].filter(Boolean).join(' · '))}</div></div></div>`;
   }
   html+=`</div>`;
   content.innerHTML=html;
@@ -1726,7 +1750,7 @@ function showEvent(id){
   const dr = e.allDay
     ? (sameDay(e.start,e.end)?fullDate(e.start):`${fullDate(e.start)} – ${fullDate(e.end)}`)
     : `${fullDate(e.start)} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
-  let html=`<div class="ev-title"><span class="swatch" style="background:${evColor(e)}"></span><span>${esc(e.title)}</span></div>
+  let html=`<div class="ev-title"><span class="swatch" style="background:${evColor(e)}"></span><span>${ttl(e)}</span></div>
     <div class="ev-meta">${dr}</div>
     <div class="ev-detail"><span class="ic">👤</span><span><span class="chip-person" style="background:${p.hex}">${p.name}</span>
       &nbsp;<span style="color:var(--muted);font-size:12px;">${TYPES[e.type]?.icon||''} ${TYPES[e.type]?.label||e.type}</span></span></div>`;
@@ -1864,8 +1888,8 @@ function openDayPop(dayStr){
   let html=`<h3>${DOW[d.getDay()]}, ${MONTHS_S[d.getMonth()]} ${d.getDate()}</h3>`;
   for(const e of evs){
     html+= e.allDay
-      ? `<div class="ev-chip" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}">${esc(e.title)}</div>`
-      : `<div class="ev-chip timed" data-ev="${esc(String(e.id))}"><span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${esc(e.title)}</span></div>`;
+      ? `<div class="ev-chip" data-ev="${esc(String(e.id))}" style="${chipStyle(e)}">${ttl(e)}</div>`
+      : `<div class="ev-chip timed" data-ev="${esc(String(e.id))}"><span class="bullet" style="background:${evColor(e)}"></span><span class="t">${fmtTime(e.start)}</span><span class="n">${ttl(e)}</span></div>`;
   }
   $('dayPopBody').innerHTML=html;
   openOverlay($('dayPop'));
