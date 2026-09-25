@@ -164,6 +164,23 @@ button{font-family:inherit; cursor:pointer;}
 .tg-ev.bare{padding:0;border-radius:4px;}
 .cx-tag{font-weight:700;color:#c5221f;letter-spacing:.02em;font-size:.85em;white-space:nowrap;}
 .cx-t{text-decoration:line-through;text-decoration-thickness:1.5px;}
+/* v16 — double-tap on an empty grid slot adds an event; no double-tap zoom there */
+.tg-col{touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+.tr-flag{font-weight:700;color:#b06000;white-space:nowrap;}
+.tr-flag.bad{color:#c5221f;}
+.ride-box{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fafbfc;}
+.ride-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;}
+.ride-btns{display:flex;flex-wrap:wrap;gap:6px;}
+.ride-btns .btn{padding:6px 11px;font-size:13px;}
+.ride-btns .btn.on{background:#1a73e8;color:#fff;border-color:#1a73e8;}
+.train-opt{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-top:7px;background:#fff;}
+.train-opt.rec{border-color:#1a73e8;box-shadow:0 0 0 1px #1a73e8 inset;}
+.train-opt .tw{flex:1;font-size:13px;line-height:1.35;}
+.train-opt .tw b{font-size:14px;}
+.train-opt .sub{color:var(--muted);font-size:12px;}
+.train-alert{margin-top:8px;padding:7px 9px;border-radius:6px;background:#fef7e0;color:#7a4f01;font-size:12.5px;line-height:1.35;}
+.train-alert.bad{background:#fce8e6;color:#a50e0e;}
+.edit-note{color:#1e6b34;font-size:12.5px;}
 .nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
 .nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
@@ -414,7 +431,10 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v14 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v16 (Google-Calendar-style)
+   v16 (9/25): site edits are ground truth (store `overrides`); double-click/tap an
+   empty slot to add an event; linked events stack in one lane; Tommy's ride home
+   after every RL practice/game, with a Needham Line train picker and live delays.
    v14 (9/22): readable on a phone. Timed blocks are a pale tint with a coloured
    left rail and dark text (iOS Calendar's treatment) instead of a saturated fill
    with white text; every line is clamped and clipped INSIDE its block; content
@@ -488,7 +508,42 @@ let lastSharedJson='';
 // Keys this page owns.  Everything else in the store belongs to a scheduled
 // feed (gcal_state, intake_last_run, …) and must survive a browser push —
 // before this, any unknown key was silently wiped on every save.
-const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated']);
+const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides']);
+/* v16 — A CHANGE MADE ON THIS SITE IS THE GROUND TRUTH (Tom, 2026-09-25):
+   "any event updated from the sked.coalition.ventures site is direct feedback from
+   an authorized user - the event needs to treat that input as the ground truth -
+   details should not revert back to another source."
+   Before v16 an edit or a drag rewrote the store row in place, and the next run of
+   whichever feed owns that id (TeamSnap, NCDS, the RL portal, the Google calendar
+   pulls every two hours) rewrote it straight back.  Now every edit to a row the site
+   does not own also lands in store key `overrides` — {id: {f:{field:value}, ts}} —
+   and the site lays those fields over the row on EVERY render.  A feed can rewrite
+   its row as often as it likes; what the family sees is still what the family set.
+   Feeds carry `overrides` through untouched (they carry every key through), and the
+   Python feeds also honour it themselves (see apply_site_edits in each script). */
+const OVR_KEY='sked_overrides_v1';
+let overrides=JSON.parse(localStorage.getItem(OVR_KEY)||'{}');
+const EDIT_FIELDS=['title','person','type','start','end','allDay','timeStart','timeEnd','location','link','notes'];
+const siteOwned=id=>/^(u-|ride-)/.test(String(id));
+function withOverride(e){
+  const o=e&&overrides[String(e.id)];
+  if(!o||!o.f) return e;
+  const r={...e,...o.f,_edited:o.ts||1};
+  // a cancellation that arrives from the source AFTER the family's edit still shows
+  if(e.status&&!('status' in o.f)){ r.status=e.status; if(!CX_RE.test(r.title||'')) r.title=(e.status==='postponed'?'POSTPONED: ':'CANCELLED: ')+r.title; }
+  return r;
+}
+function recordOverride(before,after){
+  if(!before||siteOwned(before.id)) return;
+  const id=String(before.id), f={...((overrides[id]||{}).f||{})}; let n=0;
+  for(const k of EDIT_FIELDS){
+    if(after[k]===undefined) continue;
+    if(JSON.stringify(after[k])!==JSON.stringify(before[k])){ f[k]=after[k]; n++; }
+  }
+  if(!n) return;
+  overrides[id]={f, ts:Date.now(), by:'site'};
+  localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
+}
 let foreignKeys={};
 function keepForeign(doc){
   if(!doc||typeof doc!=='object') return doc;
@@ -498,7 +553,7 @@ function keepForeign(doc){
 function localDoc(){
   return {...foreignKeys,
     v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
-    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||''};
+    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
   keepForeign(a); keepForeign(b);          // feed-owned keys pass straight through
@@ -520,17 +575,21 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
     if(!evMap[e.id] || (e.ts||0)>=(evMap[e.id].ts||0)) evMap[e.id]=e;
   }
   const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
+  const ovr={...(a.overrides||{})};
+  for(const [k,v] of Object.entries(b.overrides||{})){ if(v&&(!ovr[k]||(v.ts||0)>=(ovr[k].ts||0))) ovr[k]=v; }
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
   return {...foreignKeys,
     v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
-    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA};
+    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr};
 }
 function adoptDoc(doc){
   keepForeign(doc);
   userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]); sharedTracking=doc.tracking_items||[];
   userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
   tomWork=doc.tom_work||[];
+  overrides=doc.overrides||{};
+  localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
   localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
@@ -752,7 +811,10 @@ function normAll(famCal,masselite,site){
     } else if(d) push({...base, id:tid, start:d[0], end:d[1]});
   }
   // 5) user events (localStorage) — a `repeat` block is expanded here, client-side
-  for(const e of userEvents){
+  const rideRows={};
+  for(const e0 of userEvents){
+    const e=withOverride(e0);
+    if(/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id))) rideRows[e.id]=e;
     for(const inst of expandRepeat(e)){
       const allDay=e.allDay!==false;
       let s,en;
@@ -761,10 +823,42 @@ function normAll(famCal,masselite,site){
         s=parseYMD(inst.start);const [h1,m1]=(e.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
         en=parseYMD(inst.end||inst.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
       }
+      if(!allDay&&en<=s) en=new Date(s.getTime()+1800000);
       push({id:inst.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
         location:e.location||'', link:e.link||'', notes:e.notes||'', status:e.status||'',
-        source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||''});
+        source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||'', edited:e._edited||0,
+        train:e.train||null, ride:e.ride||'', rideFor:e.rideFor||'', rideDate:e.rideDate||'', rideEnd:e.rideEnd||'', pickupId:e.pickupId||''});
     }
+  }
+  // 5b) Tommy's ride home after EVERY RL practice or game (Tom, 2026-09-25).
+  // Drawn from the rlsoc- rows at render time, so a practice the weekly RL sync adds
+  // gets its ride home with nothing else having to run.  Until someone picks who is
+  // driving it is a 15-minute "Tommy's ride home - ?" starting when he finishes; the
+  // choice is written to the store under the same id (ride-t-<date>) and replaces it.
+  const rlEnd={};
+  for(const e0 of userEvents){
+    if(!/^rlsoc-(prac|game)-/.test(String(e0.id))) continue;
+    const e=withOverride(e0);
+    if(e.allDay!==false||!e.timeEnd||cxKind(e)) continue;
+    if(hiddenIds.has(String(e.id))||deletedUser.has(String(e.id))) continue;
+    if(!rlEnd[e.start]||e.timeEnd>rlEnd[e.start].timeEnd) rlEnd[e.start]=e;
+  }
+  for(const [d,src] of Object.entries(rlEnd)){
+    const id='ride-t-'+d;
+    const chosen=rideRows[id];
+    if(chosen){ // follow the practice if its end time moved and nobody has moved the ride by hand
+      if(chosen.rideAuto&&chosen.rideEnd!==src.timeEnd&&!chosen.train){
+        const o=out.find(x=>x.id===id); if(o){ const [a,b]=rideSpan(chosen.ride,src.timeEnd); o.start=atMin(d,a); o.end=atMin(d,b); o.rideEnd=src.timeEnd; }
+      } else if(chosen.train&&chosen.rideEnd!==src.timeEnd){
+        const o=out.find(x=>x.id===id); if(o) o.rideStale=src.timeEnd;
+      }
+      continue;
+    }
+    if(hiddenIds.has(id)||deletedUser.has(id)||parseYMD(d)<TODAY) continue;   // past days: nothing left to decide
+    const endM=toMin(src.timeEnd), away=/\(Away\)/.test(src.title||'');
+    push({id, title:"Tommy's ride home - ?", person:'T', type:'family', start:atMin(d,endM), end:atMin(d,endM+15), allDay:false,
+      location:src.location||'', link:'', notes:`${cxStrip(src.title)} ends ${fmtMin(endM)}.${away?' Away game — the end time is an estimate and he may come back to RL on the bus first; check before booking.':''} Open this and pick who is bringing Tommy home.`,
+      source:'ride', rideFor:src.id, rideDate:d, rideEnd:src.timeEnd});
   }
   return out;
 
@@ -781,6 +875,16 @@ function normAll(famCal,masselite,site){
    (deleted_user) removes the whole series. Keeps the shared store small — one row
    per pattern instead of one row per date. */
 const RECUR_MAX=520;
+/* ---------- Tommy's ride home (v16, Tom 2026-09-25) ---------- */
+const toMin=t=>{ const [a,b]=String(t||'0:0').split(':'); return (+a)*60+(+b||0); };
+function atMin(d,m){ const x=parseYMD(d); x.setHours(0,0,0,0); return new Date(x.getTime()+m*60000); }
+const RIDE_OPTS=['Laura','Tom','Rose','Collier','Ameen','Mary/Tom','Train','Other'];
+// Laura or Tom driving: 45 minutes, leaving 20 minutes before he finishes.  Anyone else: a 15-minute marker at the end time.
+function rideSpan(who,endHM){ const e=toMin(endHM); return (who==='Laura'||who==='Tom')?[e-20,e+25]:[e,e+15]; }
+const MBTA='https://api-v3.mbta.com', MBTA_WR='place-NB-0080', MBTA_NC='place-NB-0127', WALK_MIN=15;
+const MBTA_TT='https://www.mbta.com/schedules/CR-Needham/timetable?schedule_direction[direction_id]=0';
+// Printed Needham Line outbound times (West Roxbury -> Needham Center), used only if the MBTA API can't be reached.
+const TRAIN_FALLBACK={"wk":[["07:13","07:29","617"],["08:13","08:29","621"],["09:13","09:29","625"],["10:13","10:29","629"],["11:13","11:29","633"],["12:13","12:29","637"],["13:13","13:29","641"],["14:18","14:29","645"],["15:18","15:29","649"],["16:18","16:31","655"],["17:20","17:33","661"],["18:18","18:31","667"],["19:18","19:29","673"],["20:18","20:29","677"],["21:43","21:54","683"],["23:13","23:24","689"]],"sat":[["07:38","07:50","5617"],["09:36","09:48","5627"],["11:38","11:50","5635"],["13:38","13:50","5643"],["15:38","15:50","5651"],["17:36","17:48","5663"],["19:38","19:50","5675"],["22:38","22:50","5687"]],"sun":[["07:38","07:50","5617"],["09:36","09:48","5627"],["11:38","11:50","5635"],["13:38","13:50","5643"],["15:38","15:50","5651"],["17:36","17:48","5663"],["19:38","19:50","5675"],["22:38","22:50","5687"]]};
 function expandRepeat(e){
   const r=e&&e.repeat;
   if(!r||!Array.isArray(r.days)||!r.days.length) return [{id:e.id,start:e.start,end:e.end}];
@@ -1092,7 +1196,8 @@ function cxStrip(t){ return (t||'').replace(CX_RE,''); }
 function ttl(e,t){
   if(t==null) t=e.title;
   const k=cxKind(e);
-  return k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t);
+  const fl=trainFlag(e);
+  return (fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
 }
 
 function render(){
@@ -1260,33 +1365,20 @@ function renderTimeGrid(nDays){
     const evs=timed.filter(e=>e.start<addDays(d,1)&&e.end>d)
       .map(e=>({e, s:Math.max(0,(Math.max(e.start,d)-d)/3600000), en:Math.min(24,(Math.min(e.end,addDays(d,1))-d)/3600000)}))
       .sort((a,b)=>a.s-b.s||b.en-a.en);
-    // simple column layout for overlaps
-    const cols=[];
-    for(const ev of evs){
-      let c=0;
-      ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
-      while(cols[c] && cols[c].some(o=>!(ev.enD<=o.s||ev.s>=o.enD))) c++;
-      if(!cols[c]) cols[c]=[];
-      cols[c].push(ev); ev.col=c;
-    }
-    for(const ev of evs){
-      // width = share with any overlapping cluster
-      const overl=evs.filter(o=>!(ev.enD<=o.s||ev.s>=o.enD));
-      const ncol=Math.max(...overl.map(o=>o.col))+1;
-      ev.ncol=ncol;
-    }
+    for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
+    layoutLanes(evs);
     const preD=dayPrefixes(evs.map(x=>x.e));
     let colHtml='';
     for(const ev of evs){
       const e=ev.e;
       const top=ev.s*HOUR, h=Math.max(MINH,(ev.en-ev.s)*HOUR-2);
-      const w=100/ev.ncol, l=ev.col*w;
+      const l=ev.col*100/ev.ncol, w=100*ev.span/ev.ncol, narrow=ev.ncol/ev.span>=4;
       // Week columns are already a seventh of the screen; split four ways there is
       // no room for even one word, and a column of single clipped letters is worse
       // than nothing. Draw a plain tinted bar instead — it still shows density and
       // still opens on tap.
-      const body = ev.ncol>=4 ? '' : blockBody(e,h,'',preD);
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${ev.ncol>=4?' bare':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};" title="${esc(e.title)}">${body}</div>`;
+      const body = narrow ? '' : blockBody(e,h,'',preD);
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${narrow?' bare':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};" title="${esc(e.title)}">${body}</div>`;
     }
     const isToday=sameDay(d,TODAY);
     let now='';
@@ -1446,6 +1538,56 @@ function renderTracking(){
   content.innerHTML=html;
 }
 
+
+/* v16 — linked events stack in one lane (Tom, 2026-09-25): "events that are for the
+   same person, especially rides home or to somewhere should sit in line with them."
+   Emily's 3:15–4:15 practice and her 4:30 ride home were drawn in different columns
+   at different widths, and "Drive home from gymnastics" landed nowhere near Sophie's
+   gymnastics.  Three changes, shared by Day and Week:
+   1. A LINK: an event follows the latest event that ended within an hour before it and
+      is for the same person — or, for a ride/drive/pick-up, one sharing a real word
+      with it ("gymnastics").  A linked event takes its predecessor's lane when free.
+   2. One width per overlap CLUSTER (Google's rule), so a chain lines up edge to edge.
+   3. An event widens to the right across lanes that are empty for its whole height. */
+const TRANSPORT_RE=/\b(ride|rides|drive|driving|pick\s*-?\s*up|pickup|carpool|train)\b/i;
+function linkedTo(a,b){
+  if(a.person===b.person&&a.person!=='F') return true;
+  if(!TRANSPORT_RE.test(b.title||'')) return false;
+  if(b.person!==a.person&&b.person!=='F') return false;       // Tommy's carpool never hangs off Emily's
+  const words=s=>new Set(String(s||'').toLowerCase().match(/[a-z]{5,}/g)||[]);
+  const wa=words(a.title); for(const w of words(b.title)) if(wa.has(w)&&!/^(tommy|emily|sophie|laura|family|drive|pickup|practice|home)$/.test(w)) return true;
+  return a.person===b.person;
+}
+function layoutLanes(evs){
+  const ov=(a,b)=>!(a.enD<=b.s||a.s>=b.enD);
+  for(const ev of evs){
+    let best=null;
+    for(const o of evs){
+      if(o===ev||o.s>=ev.s) continue;
+      // a ride may start before the thing it collects ends (Laura leaves 20 min early)
+      const gap=ev.s-o.en, tr=TRANSPORT_RE.test(ev.e.title||'');
+      if(gap>1||gap<(tr&&ev.s>=o.s+0.5?-0.5:-1e-6)) continue;
+      if(!linkedTo(o.e,ev.e)) continue;
+      if(!best||o.en>best.en||(o.en===best.en&&o.e.person===ev.e.person)) best=o;
+    }
+    ev.prev=best;
+  }
+  const lanes=[];
+  const free=(c,ev,skip)=>!(lanes[c]||[]).some(o=>o!==ev&&o!==skip&&ov(ev,o));
+  for(const ev of evs){
+    let c=-1;
+    // same lane as what it follows; a ride that overlaps that event's last minutes is drawn over its tail
+    const tail=ev.prev&&ev.s>=ev.prev.s+0.6;                 // starts below the predecessor's title
+    if(ev.prev&&ev.prev.col!=null&&free(ev.prev.col,ev,tail?ev.prev:null)) c=ev.prev.col;
+    if(c<0){ c=0; while(!free(c,ev)) c++; }
+    (lanes[c]=lanes[c]||[]).push(ev); ev.col=c;
+  }
+  // clusters: connected by drawn overlap
+  const par=evs.map((_,i)=>i), find=i=>par[i]===i?i:(par[i]=find(par[i]));
+  for(let i=0;i<evs.length;i++) for(let j=i+1;j<evs.length;j++) if(ov(evs[i],evs[j])) par[find(i)]=find(j);
+  const nc={}; evs.forEach((ev,i)=>{ const r=find(i); nc[r]=Math.max(nc[r]||0,ev.col+1); });
+  evs.forEach((ev,i)=>{ ev.ncol=nc[find(i)]; let sp=1; while(ev.col+sp<ev.ncol&&free(ev.col+sp,ev)) sp++; ev.span=sp; });
+}
 // ----- DAY VIEW -----
 // Default is one combined, full-width column merging everyone; the toggle switches
 // back to one column per person.
@@ -1516,16 +1658,15 @@ function renderDayCols(){
       // Collide on the DRAWN extent instead: they get their own columns, which is
       // the only way they are readable anyway.
     for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
-    for(const ev of evs){ let c=0; while(lanes[c]&&lanes[c].some(o=>!(ev.enD<=o.s||ev.s>=o.enD))) c++; if(!lanes[c])lanes[c]=[]; lanes[c].push(ev); ev.col=c; }
-    for(const ev of evs){ const overl=evs.filter(o=>!(ev.enD<=o.s||ev.s>=o.enD)); ev.ncol=Math.max(...overl.map(o=>o.col))+1; }
+    layoutLanes(evs);
     let colHtml='';
     for(const ev of evs){
-      const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), w=100/ev.ncol, l=ev.col*w;
+      const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), l=ev.col*100/ev.ncol, w=100*ev.span/ev.ncol;
       // title first — that's what Tom wants to read; the owner rides on the time line (colour already says who)
       const whoTag=combined&&needsWho(e)?` <span class="who">· ${esc(who(e.person))}</span>`:'';
       colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};">${blockBody(e,hh,whoTag,pre)}</div>`;
     }
-    html+=`<div class="tg-col" data-day="${fmtYMD(day)}">${lines}${colHtml}${now}</div>`;
+    html+=`<div class="tg-col" data-day="${fmtYMD(day)}"${p!=='*'?` data-person="${p}"`:''}>${lines}${colHtml}${now}</div>`;
   }
   html+=`</div></div></div></div>`;
   content.innerHTML=html;
@@ -1571,7 +1712,10 @@ function applyMove(e,dMin,dDay){
   } else {
     const i=userEvents.findIndex(x=>String(x.id)===String(e.id));
     if(i<0){ toast('This event can\'t be moved here — edit it at its source'); return false; }
-    userEvents[i]={...userEvents[i], ...fields, ts:now};
+    const before=withOverride(userEvents[i]);
+    recordOverride(before,{...before,...fields});
+    userEvents[i]={...userEvents[i], ...fields, ts:now, site_edit:now};
+    delete userEvents[i].rideAuto;              // a ride moved by hand stays where it was put
   }
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   pushSharedSoon(); rebuild();
@@ -1770,6 +1914,10 @@ function showEvent(id){
     const lbl=ck?`${CALS[ck].label} · ${CALS[ck].sub}`:feedLabel(e);
     html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(lbl)}</span></div>`;
   }
+  if(e.edited) html+=`<div class="ev-detail"><span class="ic">✏️</span><span class="edit-note">Changed on this site ${esc(new Date(e.edited).toLocaleDateString('en-US',{month:'short',day:'numeric'}))} — the calendar keeps this version; the feeds can't change it back.</span></div>`;
+  const isRide=/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id));
+  if(isRide) html+=rideBoxHtml(e);
+  if(e.train) html+=`<div id="trainLiveBox"></div>`;
   const noteSet=new Set(); let allNotes='';
   for(const m of fam){ const n=(m.notes||'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
   if(allNotes) html+=`<div class="ev-notes">${esc(allNotes)}</div>`;
@@ -1795,16 +1943,224 @@ function showEvent(id){
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=()=>$('evHide').onclick();
   $('evEdit').style.display = e.source==='user' ? '' : 'none';
+  if(isRide) wireRideBox(e);
+  if(e.train) showTrainLive(e);
   openOverlay($('evModal'));
 }
+
+/* ================= v16 — Tommy's ride home + the Needham Line ================= */
+function rideBoxHtml(e){
+  const cur=e.ride||'';
+  let h=`<div class="ride-box"><div class="lbl">🚗 Who's bringing Tommy home?${cur?' — '+esc(cur==='Train'?'Train':cur):''}</div><div class="ride-btns">`;
+  for(const o of RIDE_OPTS) h+=`<button class="btn${(cur===o||(o==='Other'&&cur&&!RIDE_OPTS.includes(cur)))?' on':''}" data-ride="${esc(o)}">${esc(o)}</button>`;
+  h+=`</div>`;
+  if(e.rideStale) h+=`<div class="train-alert bad">His finish time changed to ${fmtMin(toMin(e.rideStale))} — pick the train again.</div>`;
+  h+=`<div id="rideOther" style="display:none;margin-top:8px;"><input type="text" id="rideOtherName" placeholder="Who is driving?" style="width:60%;"> <button class="btn" id="rideOtherSave">Save</button></div>
+    <div id="trainBox"></div>
+    <div class="sub" style="color:var(--muted);font-size:12px;margin-top:8px;">Laura or Tom: 45 min, leaving 20 min before he finishes. Anyone else: 15 min at the finish. Train: ${WALK_MIN} min walk to West Roxbury, then the Needham Line to Needham Center.</div></div>`;
+  return h;
+}
+function wireRideBox(e){
+  document.querySelectorAll('#evBody [data-ride]').forEach(b=>b.onclick=()=>{
+    const who=b.dataset.ride;
+    if(who==='Other'){ $('rideOther').style.display='block'; $('rideOtherName').focus(); return; }
+    if(who==='Train'){ document.querySelectorAll('#evBody [data-ride]').forEach(x=>x.classList.toggle('on',x===b)); showTrainPicker(e); return; }
+    chooseRide(e,who,null);
+  });
+  const so=$('rideOtherSave'); if(so) so.onclick=()=>{ const n=$('rideOtherName').value.trim(); if(!n){ toast('Type who is driving'); return; } chooseRide(e,n,null); };
+  if(e.ride==='Train'||e.rideStale) showTrainPicker(e);
+}
+function chooseRide(e,who,train){
+  const d=e.rideDate||fmtYMD(e.start), endHM=e.rideEnd||mmStr(e.start.getHours()*60+e.start.getMinutes());
+  const id='ride-t-'+d, now=Date.now();
+  const old=userEvents.find(x=>x.id===id);
+  if(old&&old.pickupId){ userEvents=userEvents.filter(x=>x.id!==old.pickupId); deletedUser.add(old.pickupId); }
+  const row={id, ts:now, person:'T', type:'family', start:d, end:d, allDay:false, location:e.location||'', link:'',
+    rideFor:e.rideFor||(old&&old.rideFor)||'', rideDate:d, rideEnd:endHM, ride:who};
+  if(train){
+    const pid=id+'-pu-'+now;
+    Object.assign(row,{title:`Tommy's ride home - Train ${train.name} (${fmtMin(toMin(train.dep))} West Roxbury → ${fmtMin(toMin(train.arr))} Needham Center)`,
+      timeStart:endHM, timeEnd:train.arr, train, pickupId:pid, link:MBTA_TT,
+      notes:`Finishes ${fmtMin(toMin(endHM))}, ${WALK_MIN}-minute walk to West Roxbury station, train ${train.name} departs ${fmtMin(toMin(train.dep))}, due at Needham Center ${fmtMin(toMin(train.arr))}.`});
+    userEvents.push({id:pid, ts:now, title:'Pick Tommy up at Needham Center', person:'T', type:'family', start:d, end:d, allDay:false,
+      timeStart:train.arr, timeEnd:mmStr(toMin(train.arr)+15), location:'Needham Center station (MBTA Commuter Rail), Needham, MA', link:MBTA_TT,
+      notes:`Train ${train.name} from West Roxbury (${fmtMin(toMin(train.dep))}), due ${fmtMin(toMin(train.arr))}. Live delays show on this event on the day.`, train, rideFor:id});
+  } else {
+    const [a,b]=rideSpan(who,endHM);
+    Object.assign(row,{title:`Tommy's ride home - ${who}`, timeStart:mmStr(a), timeEnd:mmStr(b), rideAuto:true,
+      notes:(who==='Laura'||who==='Tom')?`${who} driving — leave 20 minutes before he finishes at ${fmtMin(toMin(endHM))}.`:`${who} is bringing Tommy home (finishes ${fmtMin(toMin(endHM))}).`});
+  }
+  userEvents=userEvents.filter(x=>x.id!==id); deletedUser.delete(id); userEvents.push(row);
+  localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
+  pushSharedSoon(); rebuild(); closeModals();
+  toast(train?`Train ${train.name} booked — pick-up at Needham Center ${fmtMin(toMin(train.arr))}`:`Ride home: ${who}`);
+}
+// ---- MBTA ----
+const _mbtaCache={};
+async function mbta(path,ttl){
+  const k=path, c=_mbtaCache[k];
+  if(c&&Date.now()-c.t<(ttl||60000)) return c.v;
+  const r=await fetch(MBTA+path); if(!r.ok) throw new Error('MBTA '+r.status);
+  const v=await r.json(); _mbtaCache[k]={t:Date.now(),v}; return v;
+}
+async function trainsFor(d){
+  try{
+    const j=await mbta(`/schedules?filter[route]=CR-Needham&filter[direction_id]=0&filter[date]=${d}&filter[stop]=${MBTA_WR},${MBTA_NC}&include=trip`,3600000);
+    const names={}; for(const t of (j.included||[])) names[t.id]=t.attributes.name;
+    const by={};
+    for(const x of j.data){
+      const tid=x.relationships.trip.data.id, sid=x.relationships.stop.data.id, a=x.attributes;
+      const t=(a.departure_time||a.arrival_time||'').slice(11,16);
+      (by[tid]=by[tid]||{trip:tid,name:names[tid]||''})[sid.startsWith('NB-0080')?'dep':'arr']=t;
+    }
+    const out=Object.values(by).filter(x=>x.dep&&x.arr&&x.dep>='04:00').sort((a,b)=>a.dep.localeCompare(b.dep));
+    if(out.length) return {list:out, live:true};
+  }catch(err){}
+  const dow=parseYMD(d).getDay(), tt=TRAIN_FALLBACK[dow===0?'sun':dow===6?'sat':'wk'];
+  return {list:tt.map(([dep,arr,name])=>({dep,arr,name,trip:''})), live:false};
+}
+const BAD_EFFECTS=/^(DELAY|SUSPENSION|SHUTTLE|CANCELLATION|NO_SERVICE|DETOUR|STOP_CLOSURE|STATION_CLOSURE|SCHEDULE_CHANGE|SERVICE_CHANGE|TRACK_CHANGE|SNOW_ROUTE|STOP_MOVE|STOP_MOVED|MODIFIED_SERVICE|EXTRA_SERVICE|SUMMARY|OTHER_EFFECT)$/;
+async function needhamAlerts(d){
+  try{
+    const j=await mbta('/alerts?filter[route]=CR-Needham',120000);
+    const day0=parseYMD(d).getTime(), day1=day0+DAY;
+    return j.data.map(x=>x.attributes).filter(a=>BAD_EFFECTS.test(a.effect||'')&&(a.active_period||[]).some(p=>{
+      const s=p.start?Date.parse(p.start):0, e=p.end?Date.parse(p.end):Infinity; return s<day1&&e>day0; }))
+      .map(a=>({effect:a.effect, txt:a.short_header||a.header, sev:a.severity||0}));
+  }catch(err){ return null; }
+}
+async function livePreds(){ // today's outbound predictions at West Roxbury and Needham Center, by trip id and by train number
+  const j=await mbta(`/predictions?filter[route]=CR-Needham&filter[direction_id]=0&filter[stop]=${MBTA_WR},${MBTA_NC}&include=trip,schedule`,45000);
+  const names={}, sch={};
+  for(const t of (j.included||[])){ if(t.type==='trip') names[t.id]=t.attributes.name; if(t.type==='schedule') sch[t.id]=t.attributes; }
+  const out={};
+  for(const x of j.data){
+    const a=x.attributes, tid=x.relationships.trip.data.id, sid=x.relationships.stop.data.id, isWR=sid.startsWith('NB-0080');
+    const sref=x.relationships.schedule&&x.relationships.schedule.data, s=sref?sch[sref.id]:null;
+    const pt=isWR?(a.departure_time||a.arrival_time):(a.arrival_time||a.departure_time);
+    const st=s?(isWR?(s.departure_time||s.arrival_time):(s.arrival_time||s.departure_time)):null;
+    const rec=out[tid]=out[tid]||{name:names[tid]||''};
+    const k=isWR?'dep':'arr';
+    rec[k]=pt?pt.slice(11,16):null;
+    if(pt&&st) rec[k+'Late']=Math.round((Date.parse(pt)-Date.parse(st))/60000);
+    if(a.schedule_relationship==='CANCELLED'||a.schedule_relationship==='SKIPPED') rec.cancelled=true;
+    if(a.status) rec.status=a.status;
+  }
+  for(const v of Object.values(out)) if(v.name) out['#'+v.name]=v;
+  return out;
+}
+function trainLine(t,tag,live,rec){
+  let st='';
+  if(live){
+    const L=live[t.trip]||live['#'+t.name];
+    if(L){ const late=Math.max(L.depLate||0,L.arrLate||0);
+      st = L.cancelled?`<div class="sub" style="color:#c5221f;font-weight:700;">⚠️ CANCELLED today</div>`
+         : late>=3?`<div class="sub" style="color:#b06000;font-weight:700;">⚠️ Running ${late} min late — departs ${fmtMin(toMin(L.dep||t.dep))}, due ${fmtMin(toMin(L.arr||t.arr))}</div>`
+         : `<div class="sub" style="color:#1e6b34;">On time${L.status?' · '+esc(L.status):''}</div>`; }
+  }
+  return `<div class="train-opt${rec?' rec':''}"><div class="tw">${tag?`<span class="sub">${tag}</span><br>`:''}<b>${fmtMin(toMin(t.dep))}</b> West Roxbury → <b>${fmtMin(toMin(t.arr))}</b> Needham Center <span class="sub">· train ${esc(t.name||'?')}</span>${st}</div>
+    <button class="btn${rec?' primary':''}" data-train='${esc(JSON.stringify(t))}'>Take this one</button></div>`;
+}
+async function showTrainPicker(e){
+  const box=$('trainBox'); if(!box) return;
+  const d=e.rideDate||fmtYMD(e.start), endHM=e.rideStale||e.rideEnd;
+  box.innerHTML=`<div class="sub" style="color:var(--muted);font-size:12px;margin-top:10px;">Checking the Needham Line…</div>`;
+  const [{list,live},alerts]=await Promise.all([trainsFor(d),needhamAlerts(d)]);
+  let preds=null; if(d===fmtYMD(TODAY)){ try{ preds=await livePreds(); }catch(_){} }
+  const ready=toMin(endHM)+WALK_MIN;
+  let i=list.findIndex(t=>toMin(t.dep)>=ready);
+  let h=`<div style="margin-top:10px;font-size:13px;">Finishes <b>${fmtMin(toMin(endHM))}</b> + ${WALK_MIN} min walk → at West Roxbury by <b>${fmtMin(ready)}</b>.</div>`;
+  if(i<0) h+=`<div class="train-alert bad">No outbound Needham Line train leaves West Roxbury after ${fmtMin(ready)} that day.</div>`;
+  else {
+    if(i>0) h+=trainLine(list[i-1],`One before — leaves ${ready-toMin(list[i-1].dep)} min before he could reach the platform`,preds,false);
+    h+=trainLine(list[i],`Recommended — ${toMin(list[i].dep)-ready} min wait on the platform`,preds,true);
+    if(list[i+1]) h+=trainLine(list[i+1],'One after',preds,false);
+  }
+  if(alerts&&alerts.length) h+=alerts.map(a=>`<div class="train-alert${/DELAY|SUSPENSION|SHUTTLE|CANCEL|NO_SERVICE/.test(a.effect)?' bad':''}">⚠️ ${esc(a.txt)}</div>`).join('');
+  else if(alerts) h+=`<div class="sub" style="color:#1e6b34;font-size:12px;margin-top:8px;">No Needham Line service alerts for that day.</div>`;
+  else h+=`<div class="train-alert">Couldn't reach the MBTA for service alerts — check before he leaves.</div>`;
+  if(!live) h+=`<div class="train-alert">Showing the printed timetable (the MBTA's live schedule didn't load). <a href="${MBTA_TT}" target="_blank" rel="noopener">Check the timetable</a></div>`;
+  box.innerHTML=h;
+  box.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>chooseRide(e,'Train',JSON.parse(b.dataset.train)));
+}
+async function showTrainLive(e){
+  const box=$('trainLiveBox'); if(!box||!e.train) return;
+  const d=fmtYMD(e.start);
+  const alerts=await needhamAlerts(d);
+  let h='';
+  if(d===fmtYMD(TODAY)){
+    try{ const p=await livePreds(); const L=p[e.train.trip]||p['#'+e.train.name];
+      if(!L) h+=`<div class="train-alert">No live data yet for train ${esc(e.train.name)} — the MBTA posts predictions shortly before it runs.</div>`;
+      else { const late=Math.max(L.depLate||0,L.arrLate||0);
+        h+= L.cancelled?`<div class="train-alert bad">⚠️ Train ${esc(e.train.name)} is CANCELLED today.</div>`
+          : late>=3?`<div class="train-alert bad">⚠️ Train ${esc(e.train.name)} is running ${late} min late — due at Needham Center ${fmtMin(toMin(L.arr||e.train.arr))}.</div>`
+          : `<div class="train-alert" style="background:#e6f4ea;color:#1e6b34;">Train ${esc(e.train.name)} is on time — due ${fmtMin(toMin(L.arr||e.train.arr))}.</div>`; }
+    }catch(_){ h+=`<div class="train-alert">Couldn't reach the MBTA for live times.</div>`; }
+  }
+  if(alerts&&alerts.length) h+=alerts.map(a=>`<div class="train-alert bad">⚠️ ${esc(a.txt)}</div>`).join('');
+  box.innerHTML=h;
+}
+// Calendar-side delay flag on today's train rows ("⚠️ 6 min late"), refreshed every 2 minutes.
+let trainLive={}, trainAlertsToday=null;
+function trainFlag(e){
+  if(!e||!e.train||!e.start||!sameDay(e.start,TODAY)) return null;
+  const L=trainLive[e.train.trip]||trainLive['#'+e.train.name];
+  if(L&&L.cancelled) return {txt:'train cancelled',bad:true};
+  const late=L?Math.max(L.depLate||0,L.arrLate||0):0;
+  if(late>=3) return {txt:`${late} min late`,bad:late>=10};
+  if(trainAlertsToday&&trainAlertsToday.some(a=>/DELAY|SUSPENSION|SHUTTLE|CANCEL|NO_SERVICE/.test(a.effect))) return {txt:'MBTA alert',bad:false};
+  return null;
+}
+async function refreshTrainLive(){
+  const today=fmtYMD(TODAY);
+  if(!userEvents.some(x=>x.train&&x.start===today)) return;
+  try{
+    const [p,a]=await Promise.all([livePreds(),needhamAlerts(today)]);
+    const sig=JSON.stringify([p,a]);
+    if(sig!==refreshTrainLive._sig){ refreshTrainLive._sig=sig; trainLive=p||{}; trainAlertsToday=a; rebuild(); }
+  }catch(_){}
+}
+setInterval(refreshTrainLive,120000); setTimeout(refreshTrainLive,4000);
 function fullDate(d){return `${DOW[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;}
 
+// v16: double-click (mouse) or double-tap (finger) on an empty part of the Day/Week
+// grid opens Add event at that time, ending 30 minutes later (Tom, 2026-09-25).
+function openNewAt(day,mins,person){
+  openForm(false);
+  const s=Math.max(0,Math.min(24*60-15,mins)), e=s+30;
+  $('fStart').value=day; $('fEnd').value=e>=1440?fmtYMD(addDays(parseYMD(day),1)):day;
+  $('fAllDay').checked=false; $('timeRow').style.display='flex';
+  $('fTimeStart').value=mmStr(s); $('fTimeEnd').value=mmStr(e%1440);
+  if(person&&PEOPLE[person]) $('fPerson').value=person;
+  formPrevStart=formStartMin();
+  setTimeout(()=>{ try{ $('fTitle').focus(); }catch(_){} },60);
+}
+// The end can never be before the start.  Moving the start carries the end with it
+// (same length); an end set before the start snaps to start + 30 minutes.
+let formPrevStart=null;
+function formStartMin(){ return $('fStart').value? parseYMD($('fStart').value).getTime()/60000+($('fAllDay').checked?0:toMin($('fTimeStart').value)) : null; }
+function formEndMin(){ const d=$('fEnd').value||$('fStart').value; return d? parseYMD(d).getTime()/60000+($('fAllDay').checked?0:toMin($('fTimeEnd').value)) : null; }
+function setFormEnd(m){ const d=new Date(m*60000); $('fEnd').value=fmtYMD(d); $('fTimeEnd').value=mmStr(d.getHours()*60+d.getMinutes()); }
+function onFormStartChange(){
+  const s=formStartMin(), e=formEndMin();
+  if(s==null) return;
+  if(formPrevStart!=null&&e!=null&&e>formPrevStart){ setFormEnd(e+(s-formPrevStart)); }
+  else if(e==null||e<s) { if($('fAllDay').checked) $('fEnd').value=$('fStart').value; else setFormEnd(s+30); }
+  formPrevStart=formStartMin();
+}
+function onFormEndChange(){
+  const s=formStartMin(), e=formEndMin();
+  if(s==null||e==null) return;
+  if($('fAllDay').checked){ if($('fEnd').value<$('fStart').value){ $('fEnd').value=$('fStart').value; toast("The end can't be before the start"); } return; }
+  if(e<=s){ setFormEnd(s+30); toast("The end can't be before the start — set to 30 minutes after it"); }
+}
 function openForm(edit){
   editingId = edit ? currentEv.id : null;
   $('formTitle').textContent = edit?'Edit event':'Add event';
   $('fDelete').style.display = edit?'':'none';
   if(edit){
-    const u=userEvents.find(x=>String(x.id)===String(currentEv.id));
+    const u=withOverride(userEvents.find(x=>String(x.id)===String(currentEv.id)));
     $('fTitle').value=u.title; $('fPerson').value=u.person||'F'; $('fType').value=u.type||'family';
     $('fStart').value=u.start; $('fEnd').value=u.end||u.start;
     $('fAllDay').checked=u.allDay!==false;
@@ -1816,11 +2172,14 @@ function openForm(edit){
     $('fAllDay').checked=true; $('fLoc').value=''; $('fLink').value=''; $('fNotes').value='';
   }
   $('timeRow').style.display=$('fAllDay').checked?'none':'flex';
+  formPrevStart=formStartMin();
   closeModals(); openOverlay($('formModal'));
 }
 function saveForm(){
   const title=$('fTitle').value.trim();
   if(!title){toast('Give the event a title');return;}
+  const s0=formStartMin(), e0=formEndMin();
+  if(s0!=null&&e0!=null&&($('fAllDay').checked? e0<s0 : e0<=s0)){ onFormEndChange(); toast("The end can't be before the start — check the times"); return; }
   const obj={
     id: editingId || 'u-'+Date.now(),
     ts: Date.now(),
@@ -1832,7 +2191,12 @@ function saveForm(){
   };
   if(editingId){
     const i=userEvents.findIndex(x=>String(x.id)===String(editingId));
-    if(i>=0) userEvents[i]=obj;
+    if(i>=0){
+      const before=withOverride(userEvents[i]);
+      recordOverride(before,obj);
+      userEvents[i]={...userEvents[i], ...obj, site_edit:obj.ts};   // keep feed-only fields (status, repeat, train…)
+      delete userEvents[i].rideAuto;
+    }
   } else userEvents.push(obj);
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   pushSharedSoon();
@@ -1996,6 +2360,7 @@ $('evHide').onclick=()=>{
   // or tomorrow's render brings the copy that was left behind back as its own event
   for(const m of dupFamily(currentEv)){
     if(m.source==='user'){
+      if(m.pickupId){ userEvents=userEvents.filter(x=>String(x.id)!==String(m.pickupId)); deletedUser.add(String(m.pickupId)); }
       userEvents=userEvents.filter(x=>String(x.id)!==String(m.id));
       deletedUser.add(String(m.id));
     } else {
@@ -2020,7 +2385,34 @@ document.addEventListener('click',e=>{
 let rsT=null; window.addEventListener('resize',()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{ if(view==='month'&&!searchQ) render(); },150); });
 $('fSave').onclick=saveForm;
 $('fDelete').onclick=()=>{ $('evHide').onclick(); };
-$('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; };
+$('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; formPrevStart=formStartMin(); };
+$('fStart').addEventListener('change',onFormStartChange);
+$('fTimeStart').addEventListener('change',onFormStartChange);
+$('fEnd').addEventListener('change',onFormEndChange);
+$('fTimeEnd').addEventListener('change',onFormEndChange);
+// ---- double-click / double-tap an empty slot -> new event there ----
+(function(){
+  let down=null, last=null;
+  const slotCol=t=>(t.closest&&!t.closest('.tg-ev'))?t.closest('.tg-col'):null;
+  content.addEventListener('pointerdown',ev=>{
+    const col=slotCol(ev.target);
+    down=col&&(ev.pointerType!=='mouse'||ev.button===0)?{x:ev.clientX,y:ev.clientY,t:performance.now(),day:col.dataset.day}:null;
+  },{passive:true});
+  content.addEventListener('pointercancel',()=>{ down=null; last=null; },{passive:true});
+  content.addEventListener('pointerup',ev=>{
+    const col=slotCol(ev.target), d=down; down=null;
+    if(!d||!col||window.__skedDrag||col.dataset.day!==d.day){ last=null; return; }
+    if(Math.hypot(ev.clientX-d.x,ev.clientY-d.y)>10||performance.now()-d.t>600){ last=null; return; }
+    const now=performance.now();
+    if(last&&now-last.t<450&&last.day===d.day&&Math.hypot(ev.clientX-last.x,ev.clientY-last.y)<32){
+      last=null;
+      const r=col.getBoundingClientRect();
+      const mins=Math.floor(((ev.clientY-r.top)/48*60)/15)*15;
+      if(ev.cancelable) ev.preventDefault();
+      openNewAt(col.dataset.day,mins,col.dataset.person||'');
+    } else last={t:now,x:ev.clientX,y:ev.clientY,day:d.day};
+  });
+})();
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeModals();
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return;
