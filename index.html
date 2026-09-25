@@ -436,7 +436,8 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v17 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v18 (Google-Calendar-style)
+   v18 (9/25): Tommy's ride home on every RL school day (time TBD at 4:30 until the practice posts).
    v17 (9/25): overlaps laid out like Google Calendar — side by side only when titles
    would collide, otherwise cascaded on top; no bare bars; opaque tints.
    v16 (9/25): site edits are ground truth (store `overrides`); double-click/tap an
@@ -866,6 +867,33 @@ function normAll(famCal,masselite,site){
     push({id, title:"Tommy's ride home - ?", person:'T', type:'family', start:atMin(d,endM), end:atMin(d,endM+15), allDay:false,
       location:src.location||'', link:'', notes:`${cxStrip(src.title)} ends ${fmtMin(endM)}.${away?' Away game — the end time is an estimate and he may come back to RL on the bus first; check before booking.':''} Open this and pick who is bringing Tommy home.`,
       source:'ride', rideFor:src.id, rideDate:d, rideEnd:src.timeEnd});
+  }
+  // 5c) ...and on EVERY RL school day (Tom, 2026-09-25): "Tommy needs a ride home for all
+  // days that school is in session."  Until RL posts that day's practice the time is TBD,
+  // drawn at 4:30pm.  The moment an rlsoc- practice/game lands for the date, 5b takes over
+  // with the real end time — and a driver already picked here follows it (rideAuto).
+  // School days = weekdays from "RL: Fall Term Begins" to "RL: Prize Day", minus every
+  // "RL: No School…" / "RL: … Break" static; a "RL: … Term Begins" day is always in session.
+  // A day that already has an rl-pm- carpool row (ride known) is skipped.
+  const rlS=(site.static_events||[]).filter(e=>/^RL:/.test(e.title||''));
+  const pick=re=>{ const x=rlS.find(e=>re.test(e.title)); return x?x.start:null; };
+  const termA=pick(/Fall Term Begins/), termZ=pick(/Prize Day/)||pick(/Final Exams End/);
+  if(termA&&termZ){
+    const off=new Set(), on=new Set(rlS.filter(e=>/Term Begins/.test(e.title)).map(e=>e.start));
+    for(const e of rlS){ if(!/No School|Break\b/i.test(e.title)) continue;
+      for(let x=parseYMD(e.start), z=parseYMD(e.end||e.start); x<=z; x=addDays(x,1)) off.add(fmtYMD(x)); }
+    const pm=new Set(userEvents.filter(x=>/^rl-pm-/.test(String(x.id))).map(x=>x.start));
+    let x=parseYMD(termA); if(x<TODAY) x=new Date(TODAY);
+    for(const z=parseYMD(termZ); x<=z; x=addDays(x,1)){
+      const d=fmtYMD(x), dow=x.getDay();
+      if(dow===0||dow===6||(off.has(d)&&!on.has(d))||rlEnd[d]||pm.has(d)) continue;
+      const id='ride-t-'+d;
+      if(rideRows[id]||hiddenIds.has(id)||deletedUser.has(id)) continue;
+      push({id, title:"Tommy's ride home - ? (time TBD)", person:'T', type:'family', start:atMin(d,16*60+30), end:atMin(d,16*60+45), allDay:false,
+        location:'The Roxbury Latin School, 101 St. Theresa Ave, West Roxbury, MA 02132', link:'',
+        notes:"RL school day. The practice schedule for this day isn't posted yet, so the time is a 4:30pm placeholder — it moves to his real finish time as soon as RL posts it. Pick who is bringing Tommy home any time.",
+        source:'ride', rideDate:d, rideEnd:'16:30', rideTBD:true});
+    }
   }
   return out;
 
