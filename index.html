@@ -158,7 +158,12 @@ button{font-family:inherit; cursor:pointer;}
 /* every line is clamped and clipped INSIDE the block. Before v14 the title had
    no clamp of its own here and spilled over neighbouring events whenever the
    block was shorter than the text — the wall of half-words on a busy day. */
-.tg-ev .tt{font-weight:600;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+.tg-ev .tt{font-weight:600;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;word-break:normal;overflow-wrap:normal;}
+/* v17 — Google Calendar's treatment: an event drawn over another gets a thin white
+   edge so the two read as separate cards; a narrow card is ONE line with an ellipsis
+   instead of a word broken across lines ("Tom / my"). */
+.tg-ev{box-shadow:0 0 0 1px #fff;}
+.tg-ev .tt.one{display:block;white-space:nowrap;text-overflow:ellipsis;}
 .tg-ev .tm{font-size:11px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tg-ev .tm.loc{opacity:.75;}
 .tg-ev.bare{padding:0;border-radius:4px;}
@@ -431,7 +436,9 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v16 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v17 (Google-Calendar-style)
+   v17 (9/25): overlaps laid out like Google Calendar — side by side only when titles
+   would collide, otherwise cascaded on top; no bare bars; opaque tints.
    v16 (9/25): site edits are ground truth (store `overrides`); double-click/tap an
    empty slot to add an event; linked events stack in one lane; Tommy's ride home
    after every RL practice/game, with a Needham Line train picker and live delays.
@@ -1133,13 +1140,17 @@ function chipStyle(e){
    unreadable. The tint keeps the colour coding, pays for a much higher contrast
    ratio, and lets several overlapping blocks sit next to each other without the
    screen turning into a wall of teal. */
+// opaque version of the pale tint — cascaded cards sit on top of each other, and a
+// see-through fill turned the overlap into mud (v17)
+function tint(hex,a){ const n=parseInt(String(hex).slice(1,7),16); if(isNaN(n)) return hex;
+  const m=v=>Math.round(255-(255-v)*a); return `rgb(${m(n>>16)},${m((n>>8)&255)},${m(n&255)})`; }
 function blockStyle(e){
   const c=evColor(e);
   if(cxKind(e)) return `background:#f1f3f4;color:#5f6368;border-left:3px solid ${c};`;
   if(e.type==='regcheck') return `background:#fce8e6;color:#c5221f;font-weight:600;border-left:3px solid #c5221f;`;
   if(e.type==='noschool') return `background:#f1f3f4;color:#5f6368;border-left:3px solid #9aa0a6;`;
   const dash=e.type==='potential'?`border:1px dashed ${c};`:'';
-  return `background:${c}1f;color:${shade(c)};border-left:3px solid ${c};${dash}`;
+  return `background:${tint(c,.16)};color:${shade(c)};border-left:3px solid ${c};${dash}`;
 }
 /* How much fits is a function of how tall the block actually is. A 22px sliver
    gets one clipped line and nothing else — the old code rendered a title AND a
@@ -1167,8 +1178,10 @@ function shortTitle(e,pre){
   const m=t.match(PRE_RE);
   return (m&&pre.has(m[1])) ? t.slice(m[0].length) : t;
 }
-function blockBody(e,hh,whoTag,pre){
-  const t=`<div class="tt" style="-webkit-line-clamp:${hh<34?1:hh<70?2:3}">${ttl(e,shortTitle(e,pre))}</div>`;
+function blockBody(e,hh,whoTag,pre,wpx){
+  const one=hh<34||(wpx&&wpx<72);
+  const t=one?`<div class="tt one">${ttl(e,shortTitle(e,pre))}</div>`
+             :`<div class="tt" style="-webkit-line-clamp:${hh<70?2:Math.max(2,Math.min(4,Math.floor((hh-18)/16)))}">${ttl(e,shortTitle(e,pre))}</div>`;
   if(hh<34) return t;                                    // title only
   let s=t+`<div class="tm">${fmtTime(e.start)} – ${fmtTime(e.end)}${whoTag}</div>`;
   if(hh>=76&&e.location) s+=`<div class="tm loc">${esc(e.location)}</div>`;
@@ -1367,18 +1380,15 @@ function renderTimeGrid(nDays){
       .sort((a,b)=>a.s-b.s||b.en-a.en);
     for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
     layoutLanes(evs);
+    const dayPx=Math.max(40,((content.clientWidth||1000)-52)/nDays);
     const preD=dayPrefixes(evs.map(x=>x.e));
     let colHtml='';
     for(const ev of evs){
       const e=ev.e;
       const top=ev.s*HOUR, h=Math.max(MINH,(ev.en-ev.s)*HOUR-2);
-      const l=ev.col*100/ev.ncol, w=100*ev.span/ev.ncol, narrow=ev.ncol/ev.span>=4;
-      // Week columns are already a seventh of the screen; split four ways there is
-      // no room for even one word, and a column of single clipped letters is worse
-      // than nothing. Draw a plain tinted bar instead — it still shows density and
-      // still opens on tap.
-      const body = narrow ? '' : blockBody(e,h,'',preD);
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${narrow?' bare':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};" title="${esc(e.title)}">${body}</div>`;
+      // v17: never a bare bar — every card carries its title (Google's rule)
+      const wpx=dayPx*ev.span/ev.ncol-5-ev.depth*8;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;${placeCss(ev,8,dayPx*ev.span/ev.ncol)}${blockStyle(e)}" title="${esc(e.title)}">${blockBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,'',preD,wpx)}</div>`;
     }
     const isToday=sameDay(d,TODAY);
     let now='';
@@ -1558,35 +1568,67 @@ function linkedTo(a,b){
   const wa=words(a.title); for(const w of words(b.title)) if(wa.has(w)&&!/^(tommy|emily|sophie|laura|family|drive|pickup|practice|home)$/.test(w)) return true;
   return a.person===b.person;
 }
+/* v17 — overlapping events are laid out the way Google Calendar does it (Tom, 9/25:
+   "look at how much better the Google cal renders text and overlapping events").
+   v16 split every overlap into equal columns; on a busy week day that meant five
+   slivers and — at four or more — bare bars with no title at all.  Google only puts
+   two events SIDE BY SIDE when their titles would collide, i.e. they start within
+   about half an hour of each other.  An event that starts later than that is drawn
+   ON TOP of the one already running, nudged right so the earlier card's colour edge
+   and title stay visible, and it takes the full remaining width.  Later-starting cards
+   sit above earlier ones, so every title is always readable.
+   Kept from v16: a ride home / linked event goes in the same column as what it follows. */
+const G_THRESH=0.4;            // hours (~20px): closer starts than this → side by side
 function layoutLanes(evs){
   const ov=(a,b)=>!(a.enD<=b.s||a.s>=b.enD);
+  const clash=(a,b)=>ov(a,b)&&Math.abs(a.s-b.s)<G_THRESH;   // titles would collide
   for(const ev of evs){
     let best=null;
     for(const o of evs){
       if(o===ev||o.s>=ev.s) continue;
-      // a ride may start before the thing it collects ends (Laura leaves 20 min early)
       const gap=ev.s-o.en, tr=TRANSPORT_RE.test(ev.e.title||'');
-      if(gap>1||gap<(tr&&ev.s>=o.s+0.5?-0.5:-1e-6)) continue;
+      if(gap>1||gap<(tr&&ev.s>=o.s+0.6?-0.5:-1e-6)) continue;
       if(!linkedTo(o.e,ev.e)) continue;
       if(!best||o.en>best.en||(o.en===best.en&&o.e.person===ev.e.person)) best=o;
     }
     ev.prev=best;
   }
-  const lanes=[];
-  const free=(c,ev,skip)=>!(lanes[c]||[]).some(o=>o!==ev&&o!==skip&&ov(ev,o));
+  const cols=[];
+  const fits=(c,ev)=>!(cols[c]||[]).some(o=>clash(ev,o));
   for(const ev of evs){
     let c=-1;
-    // same lane as what it follows; a ride that overlaps that event's last minutes is drawn over its tail
-    const tail=ev.prev&&ev.s>=ev.prev.s+0.6;                 // starts below the predecessor's title
-    if(ev.prev&&ev.prev.col!=null&&free(ev.prev.col,ev,tail?ev.prev:null)) c=ev.prev.col;
-    if(c<0){ c=0; while(!free(c,ev)) c++; }
-    (lanes[c]=lanes[c]||[]).push(ev); ev.col=c;
+    if(ev.prev&&ev.prev.col!=null&&fits(ev.prev.col,ev)) c=ev.prev.col;
+    if(c<0){ c=0; while(!fits(c,ev)) c++; }
+    (cols[c]=cols[c]||[]).push(ev); ev.col=c;
   }
-  // clusters: connected by drawn overlap
+  // clusters joined by title clashes decide how many columns share the width
   const par=evs.map((_,i)=>i), find=i=>par[i]===i?i:(par[i]=find(par[i]));
   for(let i=0;i<evs.length;i++) for(let j=i+1;j<evs.length;j++) if(ov(evs[i],evs[j])) par[find(i)]=find(j);
   const nc={}; evs.forEach((ev,i)=>{ const r=find(i); nc[r]=Math.max(nc[r]||0,ev.col+1); });
-  evs.forEach((ev,i)=>{ ev.ncol=nc[find(i)]; let sp=1; while(ev.col+sp<ev.ncol&&free(ev.col+sp,ev)) sp++; ev.span=sp; });
+  evs.forEach((ev,i)=>{
+    ev.ncol=nc[find(i)];
+    // widen right across every column holding nothing that clashes with it — cards that
+    // start later are painted on top, the way Google lays a long event under later ones
+    let sp=1;
+    while(ev.col+sp<ev.ncol&&!(cols[ev.col+sp]||[]).some(o=>clash(ev,o)||(o.s<ev.s&&ov(ev,o)))) sp++;
+    ev.span=sp;
+    // cascade depth: earlier cards in the same column that this one is drawn over
+    ev.depth=Math.min(3,(cols[ev.col]||[]).filter(o=>o!==ev&&o.s<ev.s&&ov(ev,o)).length);
+  });
+  // paint order: earlier first, so a later card (and its title) is always on top
+  evs.forEach((ev,i)=>{ ev.z=5+i; });
+  // text room: a card's words stop where the first card drawn over it begins, so
+  // nothing peeks out from under the card on top (Google clips the same way)
+  for(const ev of evs){
+    let lim=ev.enD;
+    for(const o of evs){ if(o.s>ev.s&&o.s<lim&&ov(ev,o)&&o.col<ev.col+ev.span&&o.col+o.span>ev.col) lim=o.s; }
+    ev.textH=lim<ev.enD?(lim-ev.s):null;
+  }
+}
+function placeCss(ev,ind,wpx){
+  // the cascade nudge never eats more than a fifth of a narrow card
+  const l=ev.col*100/ev.ncol, w=100*ev.span/ev.ncol, d=Math.round(Math.min(ev.depth*ind,(wpx||999)*0.2));
+  return `left:calc(${l}% + ${2+d}px);width:calc(${w}% - ${5+d}px);z-index:${ev.z};`;
 }
 // ----- DAY VIEW -----
 // Default is one combined, full-width column merging everyone; the toggle switches
@@ -1659,12 +1701,13 @@ function renderDayCols(){
       // the only way they are readable anyway.
     for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
     layoutLanes(evs);
+    const colPx=Math.max(60,((content.clientWidth||1000)-52)/n);
     let colHtml='';
     for(const ev of evs){
-      const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), l=ev.col*100/ev.ncol, w=100*ev.span/ev.ncol;
+      const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), wpx=colPx*ev.span/ev.ncol-5-ev.depth*12;
       // title first — that's what Tom wants to read; the owner rides on the time line (colour already says who)
       const whoTag=combined&&needsWho(e)?` <span class="who">· ${esc(who(e.person))}</span>`:'';
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;left:calc(${l}% + 2px);width:calc(${w}% - 5px);${blockStyle(e)};z-index:${5+ev.col};">${blockBody(e,hh,whoTag,pre)}</div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;${placeCss(ev,12,colPx*ev.span/ev.ncol)}${blockStyle(e)}">${blockBody(e,ev.textH!=null?Math.min(hh,ev.textH*HOUR-2):hh,whoTag,pre,wpx)}</div>`;
     }
     html+=`<div class="tg-col" data-day="${fmtYMD(day)}"${p!=='*'?` data-person="${p}"`:''}>${lines}${colHtml}${now}</div>`;
   }
