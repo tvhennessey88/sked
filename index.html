@@ -186,6 +186,20 @@ button{font-family:inherit; cursor:pointer;}
 .train-alert{margin-top:8px;padding:7px 9px;border-radius:6px;background:#fef7e0;color:#7a4f01;font-size:12.5px;line-height:1.35;}
 .train-alert.bad{background:#fce8e6;color:#a50e0e;}
 .edit-note{color:#1e6b34;font-size:12.5px;}
+/* v19 — jump straight to the call */
+.join-box{margin-top:12px;border:1px solid #b6d7ff;background:#f0f6ff;border-radius:10px;padding:10px 12px;}
+.join-box .join-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 14px;border-radius:8px;background:var(--T);color:#fff;font-weight:600;font-size:15px;text-decoration:none;}
+.join-box .join-btn:hover{filter:brightness(1.08);text-decoration:none;}
+.join-box .join-sub{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5;word-break:break-word;}
+.join-box .join-sub a{color:var(--T);text-decoration:none;}
+.join-box .join-sub b{color:var(--text);font-weight:600;}
+.guest{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;}
+.guest .gi{width:16px;text-align:center;font-size:12px;flex-shrink:0;}
+.guest .gn{font-weight:500;}
+.guest .ge{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.guest.declined .gn,.guest.declined .ge{text-decoration:line-through;opacity:.6;}
+.guest .gtag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:0 5px;}
+.tg-ev .cam{font-size:.9em;margin-right:3px;}
 .nowline{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:15;pointer-events:none;}
 .nowline::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 
@@ -436,7 +450,10 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v18 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v19 (Google-Calendar-style)
+   v19 (9/28): Tom's work events carry the call itself — a Join button (Meet / Zoom /
+   Teams), dial-in and codes, the guest list with who has accepted, and the agenda —
+   alongside the Google Calendar link, so he can jump straight to the call from here.
    v18 (9/25): Tommy's ride home on every RL school day (time TBD at 4:30 until the practice posts).
    v17 (9/25): overlaps laid out like Google Calendar — side by side only when titles
    would collide, otherwise cascaded on top; no bare bars; opaque tints.
@@ -801,7 +818,10 @@ function normAll(famCal,masselite,site){
       }
       push({id:inst.id, title:e.title||'(work)', person:'D', type:e.type||'family',
         start:s, end:en, allDay, location:e.location||'', link:e.link||'',
-        notes:e.notes||'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work'});
+        notes:e.notes||'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work',
+        // v19 — the call itself, not just a link to the calendar page
+        join:e.join||'', joinKind:e.joinKind||'', dial:e.dial||'', codes:e.codes||[],
+        guests:e.guests||[], organizer:e.organizer||'', agenda:e.agenda||''});
     }
   }
   // 4) tracking items → potential events when dates parseable
@@ -1238,7 +1258,8 @@ function ttl(e,t){
   if(t==null) t=e.title;
   const k=cxKind(e);
   const fl=trainFlag(e);
-  return (fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
+  const cam=(e.join||(e._dupes||[]).some(m=>m.join))?'<span class="cam" title="Has a video call">📹</span>':'';   // v19
+  return cam+(fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
 }
 
 function render(){
@@ -1969,8 +1990,26 @@ function showEvent(id){
     <div class="ev-meta">${dr}</div>
     <div class="ev-detail"><span class="ic">👤</span><span><span class="chip-person" style="background:${p.hex}">${p.name}</span>
       &nbsp;<span style="color:var(--muted);font-size:12px;">${TYPES[e.type]?.icon||''} ${TYPES[e.type]?.label||e.type}</span></span></div>`;
-  if(e.location) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
-  if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
+  // v19 — Tom's work events: the call first (a merged family copy may be the primary,
+  // so look across every copy for the one that came off the work calendar)
+  const wk=dupFamily(e).find(m=>m.join||(m.guests&&m.guests.length)||m.agenda)||null;
+  if(wk&&wk.join){
+    html+=`<div class="join-box"><a class="join-btn" href="${esc(wk.join)}" target="_blank" rel="noopener">📹 Join ${esc(wk.joinKind||'call')}</a>`;
+    const subs=[];
+    if(wk.dial){ const tel=wk.dial.replace(/\s*(PIN|ID)\s*(\d+)#?/i,',,$2#').replace(/[^\d+,#]/g,''); subs.push(`📞 <a href="tel:${esc(tel)}">${esc(wk.dial)}</a>`); }
+    for(const c of (wk.codes||[])) subs.push(`${esc(c.k)}: <b>${esc(c.v)}</b>`);
+    subs.push(`<a href="${esc(wk.join)}" target="_blank" rel="noopener">${esc(wk.join.replace(/^https?:\/\//,''))}</a>`);
+    html+=`<div class="join-sub">${subs.join('<br>')}</div></div>`;
+  }
+  if(e.location&&!/^(microsoft teams|zoom|google meet)/i.test(e.location)) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
+  if(wk&&wk.guests&&wk.guests.length){
+    const ic={accepted:'✅',declined:'❌',tentative:'❔',needsAction:'⚪'};
+    const acc=wk.guests.filter(g=>g.r==='accepted').length;
+    html+=`<div class="ev-detail"><span class="ic">👥</span><div style="flex:1;min-width:0;"><div style="color:var(--muted);font-size:12px;margin-bottom:2px;">${wk.guests.length} guest${wk.guests.length===1?'':'s'}${acc?` · ${acc} accepted`:''}${wk.organizer?` · organized by ${esc(wk.organizer)}`:''}</div>`+
+      wk.guests.map(g=>`<div class="guest${g.r==='declined'?' declined':''}"><span class="gi" title="${esc(g.r)}">${ic[g.r]||'⚪'}</span><span class="gn">${esc(g.n)}</span><span class="ge">${esc(g.e)}</span>${g.o?'<span class="gtag">host</span>':''}${g.opt?'<span class="gtag">optional</span>':''}</div>`).join('')+`</div></div>`;
+  }
+  if(wk&&wk.agenda) html+=`<div class="ev-detail"><span class="ic">📝</span><span style="white-space:pre-wrap;">${esc(wk.agenda)}</span></div>`;
+  if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${/google\.com\/calendar/.test(e.link)?'Open in Google Calendar':esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
   const fam=dupFamily(e);
   if(fam.length>1){
@@ -1990,7 +2029,7 @@ function showEvent(id){
   if(isRide) html+=rideBoxHtml(e);
   if(e.train) html+=`<div id="trainLiveBox"></div>`;
   const noteSet=new Set(); let allNotes='';
-  for(const m of fam){ const n=(m.notes||'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
+  for(const m of fam){ let n=(m.notes||'').trim(); if(m.join) n=n.replace(/\s*Join:\s*\S+/,'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
   if(allNotes) html+=`<div class="ev-notes">${esc(allNotes)}</div>`;
   html+=`<div style="margin-top:14px;">
     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;">📝 My note</label>
