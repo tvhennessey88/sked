@@ -154,7 +154,10 @@ button{font-family:inherit; cursor:pointer;}
   position:absolute;border-radius:6px;padding:3px 7px;font-size:12.5px;overflow:hidden;cursor:pointer;
   line-height:1.25;
 }
-.tg-ev:hover{box-shadow:var(--shadow);z-index:20 !important;}
+/* v22 — hover never reorders the stack. Raising a hovered card to z-index:20 meant a
+   big event stayed on top of the small one drawn inside it (the pointer never leaves the
+   big card's box), so the small one could not be clicked or dragged (Tom, 9/30). */
+.tg-ev:hover{box-shadow:var(--shadow);}
 /* every line is clamped and clipped INSIDE the block. Before v14 the title had
    no clamp of its own here and spilled over neighbouring events whenever the
    block was shorter than the text — the wall of half-words on a busy day. */
@@ -186,6 +189,7 @@ button{font-family:inherit; cursor:pointer;}
 .train-alert{margin-top:8px;padding:7px 9px;border-radius:6px;background:#fef7e0;color:#7a4f01;font-size:12.5px;line-height:1.35;}
 .train-alert.bad{background:#fce8e6;color:#a50e0e;}
 .edit-note{color:#1e6b34;font-size:12.5px;}
+.edit-note.bad{color:#a50e0e;}
 /* v19 — jump straight to the call */
 .join-box{margin-top:12px;border:1px solid #b6d7ff;background:#f0f6ff;border-radius:10px;padding:10px 12px;}
 .join-box .join-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 14px;border-radius:8px;background:var(--T);color:#fff;font-weight:600;font-size:15px;text-decoration:none;}
@@ -450,7 +454,15 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v19 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v22 (Google-Calendar-style)
+   v22 (9/30): a small event drawn inside a bigger one can be clicked and dragged again
+   (hover no longer re-stacks cards). EVERY event is editable and draggable on the
+   scheduler whatever feed it came from — the family's version is kept as an override
+   and, for the three Google calendars, written back to Google within the hour.
+   v21 (9/28): drag to reschedule, and the scheduler is the authority — a moved or
+   edited Google-sourced event (Tom's work cal, the family cal, Laura's cal) is queued
+   in store key `writeback` and the hourly sync rewrites the actual Google event.
+   Tom's work-cal meetings are draggable now too.
    v19 (9/28): Tom's work events carry the call itself — a Join button (Meet / Zoom /
    Teams), dial-in and codes, the guest list with who has accepted, and the agenda —
    alongside the Google Calendar link, so he can jump straight to the call from here.
@@ -533,7 +545,7 @@ let lastSharedJson='';
 // Keys this page owns.  Everything else in the store belongs to a scheduled
 // feed (gcal_state, intake_last_run, …) and must survive a browser push —
 // before this, any unknown key was silently wiped on every save.
-const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides']);
+const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides','writeback']);
 /* v16 — A CHANGE MADE ON THIS SITE IS THE GROUND TRUTH (Tom, 2026-09-25):
    "any event updated from the sked.coalition.ventures site is direct feedback from
    an authorized user - the event needs to treat that input as the ground truth -
@@ -552,11 +564,38 @@ const EDIT_FIELDS=['title','person','type','start','end','allDay','timeStart','t
 const siteOwned=id=>/^(u-|ride-)/.test(String(id));
 function withOverride(e){
   const o=e&&overrides[String(e.id)];
-  if(!o||!o.f) return e;
+  if(!o||!o.f||!Object.keys(o.f).length) return e;   // a cleared override (write-back applied, source re-pulled) is a no-op
   const r={...e,...o.f,_edited:o.ts||1};
   // a cancellation that arrives from the source AFTER the family's edit still shows
   if(e.status&&!('status' in o.f)){ r.status=e.status; if(!CX_RE.test(r.title||'')) r.title=(e.status==='postponed'?'POSTPONED: ':'CANCELLED: ')+r.title; }
   return r;
+}
+// v22 — lay an override over an already-normalized event (feed-only sources: the stale
+// Google export, Mass Elite, school statics, tracking chips). Same fields as withOverride,
+// but the row already carries Date objects rather than 'YYYY-MM-DD' + 'HH:MM'.
+function applyOvrNorm(o){
+  const ov=o&&overrides[String(o.id)]; if(!ov||!ov.f||!Object.keys(ov.f).length) return o;
+  const f=ov.f, r={...o, edited:ov.ts||1};
+  for(const k of ['title','person','type','location','link','notes']) if(f[k]!==undefined) r[k]=f[k];
+  const allDay=f.allDay!==undefined?f.allDay!==false:!!o.allDay;
+  const sD=f.start?parseYMD(f.start):startOfDay(o.start), eD=f.end?parseYMD(f.end):startOfDay(o.end);
+  if(allDay){ r.start=sD; r.end=eD<sD?sD:eD; }
+  else{
+    const ts=f.timeStart||(o.allDay?'09:00':mmStr(o.start.getHours()*60+o.start.getMinutes()));
+    const te=f.timeEnd||(o.allDay?'10:00':mmStr(o.end.getHours()*60+o.end.getMinutes()));
+    r.start=atMin(fmtYMD(sD),toMin(ts)); r.end=atMin(fmtYMD(eD),toMin(te));
+    if(r.end<=r.start) r.end=new Date(r.start.getTime()+1800000);
+  }
+  r.allDay=allDay;
+  if(o.status&&f.title!==undefined&&!CX_RE.test(r.title||'')) r.title=(o.status==='postponed'?'POSTPONED: ':'CANCELLED: ')+r.title;
+  return r;
+}
+// the store-shaped view of a normalized event — what recordOverride compares against
+function rawOf(e){
+  const ad=!!e.allDay;
+  return {id:e.id, link:e.link||'', title:e.title||'', person:e.person||'F', type:e.type||'family', location:e.location||'', notes:e.notes||'',
+    start:fmtYMD(startOfDay(e.start)), end:fmtYMD(startOfDay(e.end)), allDay:ad,
+    timeStart:ad?'':mmStr(e.start.getHours()*60+e.start.getMinutes()), timeEnd:ad?'':mmStr(e.end.getHours()*60+e.end.getMinutes())};
 }
 function recordOverride(before,after){
   if(!before||siteOwned(before.id)) return;
@@ -568,6 +607,54 @@ function recordOverride(before,after){
   if(!n) return;
   overrides[id]={f, ts:Date.now(), by:'site'};
   localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
+  queueWriteback(before,after);
+}
+/* v21 — THE SCHEDULER IS THE AUTHORITY AND REWRITES THE SOURCE (Tom, 2026-09-28):
+   "allow me to drag an event to reschedule it. this schedule then becomes the
+   authority and rewrites to the source."
+   v16 made a site edit win on the site.  v21 pushes it back to where the event came
+   from.  Every Google-sourced row (Tom's work cal `tw-`, the family cal `gcal-`,
+   Laura's cal `gcall-`) carries the Google Calendar page link, whose `eid` encodes
+   the Google event id — so the page can name the exact event to rewrite without any
+   feed change.  The move is queued in store key `writeback` and the hourly Work Cal
+   task applies it with the Google Calendar connector (claude/writeback.py), then
+   marks it done.  Feeds nobody can write to (TeamSnap, NCDS, the RL portal) are still
+   covered by the override — the site keeps the family's version, nothing is queued. */
+const WB_KEY='sked_writeback_v1';
+let writeback=JSON.parse(localStorage.getItem(WB_KEY)||'{}');
+const WB_CALS=[[/^tw-/,'tom@coalition.ventures'],[/^gcall-/,'lauraehennessey@gmail.com'],[/^gcal-/,'family17673346161804816786@group.calendar.google.com']];
+const WB_FIELDS=['start','end','timeStart','timeEnd','allDay','title','location'];
+function wbCal(id){ const s=String(id); for(const [re,c] of WB_CALS) if(re.test(s)) return c; return ''; }
+function gidFromLink(link){ // https://www.google.com/calendar/event?eid=<base64url("eventId calendarId")>
+  const m=/[?&]eid=([A-Za-z0-9_\-=%]+)/.exec(link||''); if(!m) return '';
+  try{ const b=decodeURIComponent(m[1]).replace(/-/g,'+').replace(/_/g,'/'); return atob(b).split(' ')[0]||''; }catch(_){ return ''; }
+}
+// Eastern wall time -> UTC "YYYYMMDDTHHMMSSZ", the suffix Google puts on a recurring instance's id
+function etToUtcStamp(dateStr,hm){
+  const d=parseYMD(dateStr); const [h,mi]=hm.split(':').map(Number);
+  let t=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,mi);
+  for(let k=0;k<3;k++){ const w=toEastern(new Date(t)); t+= Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,mi)-Date.UTC(w.getFullYear(),w.getMonth(),w.getDate(),w.getHours(),w.getMinutes()); }
+  return new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+}
+function queueWriteback(before,after){
+  const id=String(before.id), cal=wbCal(id); if(!cal) return;
+  const f={}; let n=0;
+  for(const k of WB_FIELDS){ if(after[k]===undefined) continue; if(JSON.stringify(after[k])!==JSON.stringify(before[k])){ f[k]=after[k]; n++; } }
+  if(!n) return;
+  // the whole new timing goes along, so the task never has to reconstruct it
+  for(const k of ['start','end','timeStart','timeEnd','allDay']) if(f[k]===undefined&&after[k]!==undefined) f[k]=after[k];
+  const root=id.split('@')[0], instDate=id.includes('@')?id.split('@')[1]:'';
+  let gid=gidFromLink(before.link||''), rootGid='';
+  if(gid&&instDate){ rootGid=gid.replace(/_\d{8}(T\d{6}Z)?$/,''); gid=before.timeStart?`${rootGid}_${etToUtcStamp(instDate,before.timeStart)}`:''; }
+  else if(gid&&/_\d{8}T\d{6}Z$/.test(gid)) rootGid=gid.replace(/_\d{8}T\d{6}Z$/,'');
+  const prev=writeback[id]||{};
+  writeback[id]={id, cal, gid, rootGid, origDate:instDate||before.start||'', origStart:before.timeStart||'', title:cxStrip(before.title||''), link:before.link||'',
+    f:{...(prev.status==='pending'?prev.f:{}),...f}, ts:Date.now(), status:'pending', by:'site'};
+  localStorage.setItem(WB_KEY,JSON.stringify(writeback));
+}
+function wbState(e){ // for the modal
+  for(const m of dupFamily(e)){ const w=writeback[String(m.id)]; if(w&&w.ts) return w; }
+  return null;
 }
 let foreignKeys={};
 function keepForeign(doc){
@@ -578,7 +665,7 @@ function keepForeign(doc){
 function localDoc(){
   return {...foreignKeys,
     v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
-    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides};
+    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides, writeback};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
   keepForeign(a); keepForeign(b);          // feed-owned keys pass straight through
@@ -602,11 +689,13 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   const user_events=Object.values(evMap).filter(e=>!deleted.includes(String(e.id)));
   const ovr={...(a.overrides||{})};
   for(const [k,v] of Object.entries(b.overrides||{})){ if(v&&(!ovr[k]||(v.ts||0)>=(ovr[k].ts||0))) ovr[k]=v; }
+  const wb={...(a.writeback||{})};
+  for(const [k,v] of Object.entries(b.writeback||{})){ if(v&&(!wb[k]||(v.ts||0)>=(wb[k].ts||0))) wb[k]=v; }
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
   return {...foreignKeys,
     v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
-    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr};
+    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr, writeback:wb};
 }
 function adoptDoc(doc){
   keepForeign(doc);
@@ -615,6 +704,8 @@ function adoptDoc(doc){
   tomWork=doc.tom_work||[];
   overrides=doc.overrides||{};
   localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
+  writeback=doc.writeback||{};
+  localStorage.setItem(WB_KEY,JSON.stringify(writeback));
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
   localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
@@ -807,17 +898,20 @@ function normAll(famCal,masselite,site){
     const e=tomWork[i];
     if(!e||!e.start) continue;
     const rid=e.id||('tw-'+e.start+'-'+i);
-    for(const inst of expandRepeat({...e,id:rid})){
-      const allDay = e.allDay!==false && !e.timeStart;
+    for(const inst0 of expandRepeat({...e,id:rid})){
+      // v21: a move made on the site (override keyed by the instance id) wins here too
+      const w=withOverride({...e, id:inst0.id, start:inst0.start, end:inst0.end||inst0.start});
+      const inst={id:inst0.id, start:w.start, end:w.end||w.start};
+      const allDay = w.allDay!==false && !w.timeStart;
       let s,en;
       if(allDay){ s=parseYMD(inst.start); en=parseYMD(inst.end||inst.start); }
       else{
-        s=parseYMD(inst.start); const [h1,m1]=(e.timeStart||'09:00').split(':'); s.setHours(+h1,+m1);
-        en=parseYMD(inst.end||inst.start); const [h2,m2]=(e.timeEnd||e.timeStart).split(':'); en.setHours(+h2,+m2);
+        s=parseYMD(inst.start); const [h1,m1]=(w.timeStart||'09:00').split(':'); s.setHours(+h1,+m1);
+        en=parseYMD(inst.end||inst.start); const [h2,m2]=(w.timeEnd||w.timeStart).split(':'); en.setHours(+h2,+m2);
         if(en<=s) en=new Date(s.getTime()+1800000);
       }
-      push({id:inst.id, title:e.title||'(work)', person:'D', type:e.type||'family',
-        start:s, end:en, allDay, location:e.location||'', link:e.link||'',
+      push({id:inst.id, title:w.title||'(work)', person:w.person||'D', type:w.type||e.type||'family',
+        start:s, end:en, allDay, location:w.location||'', link:e.link||'', edited:w._edited||0,
         notes:e.notes||'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work',
         // v19 — the call itself, not just a link to the calendar page
         join:e.join||'', joinKind:e.joinKind||'', dial:e.dial||'', codes:e.codes||[],
@@ -843,18 +937,22 @@ function normAll(famCal,masselite,site){
   for(const e0 of userEvents){
     const e=withOverride(e0);
     if(/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id))) rideRows[e.id]=e;
-    for(const inst of expandRepeat(e)){
-      const allDay=e.allDay!==false;
+    for(const inst0 of expandRepeat(e)){
+      // v21: one instance of a Google-sourced weekly series can be moved on its own —
+      // the override is keyed by the instance id and the write-back targets that instance
+      const w=inst0.recurRoot?withOverride({...e, id:inst0.id, start:inst0.start, end:inst0.end||inst0.start}):e;
+      const inst=inst0.recurRoot?{id:inst0.id, start:w.start, end:w.end||w.start, recurRoot:inst0.recurRoot}:inst0;
+      const allDay=w.allDay!==false;
       let s,en;
       if(allDay){s=parseYMD(inst.start);en=inst.end?parseYMD(inst.end):new Date(s);}
       else{
-        s=parseYMD(inst.start);const [h1,m1]=(e.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
-        en=parseYMD(inst.end||inst.start);const [h2,m2]=(e.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
+        s=parseYMD(inst.start);const [h1,m1]=(w.timeStart||'09:00').split(':');s.setHours(+h1,+m1);
+        en=parseYMD(inst.end||inst.start);const [h2,m2]=(w.timeEnd||'10:00').split(':');en.setHours(+h2,+m2);
       }
       if(!allDay&&en<=s) en=new Date(s.getTime()+1800000);
-      push({id:inst.id, title:e.title, person:e.person||'F', type:e.type||'family', start:s, end:en, allDay,
-        location:e.location||'', link:e.link||'', notes:e.notes||'', status:e.status||'',
-        source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||'', edited:e._edited||0,
+      push({id:inst.id, title:w.title, person:w.person||'F', type:w.type||'family', start:s, end:en, allDay,
+        location:w.location||'', link:w.link||'', notes:w.notes||'', status:e.status||'',
+        source:inst.recurRoot?'user-recur':'user', recurRoot:inst.recurRoot||'', edited:w._edited||0,
         train:e.train||null, ride:e.ride||'', rideFor:e.rideFor||'', rideDate:e.rideDate||'', rideEnd:e.rideEnd||'', pickupId:e.pickupId||''});
     }
   }
@@ -915,7 +1013,8 @@ function normAll(famCal,masselite,site){
         source:'ride', rideDate:d, rideEnd:'16:30', rideTBD:true});
     }
   }
-  return out;
+  // v22: the family's edits win on every source, not just rows in the store
+  return out.map(o=>(o.source==='user'||o.source==='user-recur'||o.source==='tom-work')?o:applyOvrNorm(o));
 
   function mk(e,start,end,allDay){
     return {id:e.id||e.title+e.start, title:e.title, person:detectPerson(e), type:detectType(e),
@@ -1772,7 +1871,7 @@ function renderDayCols(){
 // wins the merge), and one instance of a weekly `repeat` series is detached — the date goes into the
 // root's `except` list and a one-off copy is written at the new time. Feed-only rows (family_cal.json,
 // site_data statics, tracking chips, Tom's work cal) aren't draggable — colour/cursor says so.
-function canDrag(e){ return !!e && !e.allDay && (e.source==='user'||e.source==='user-recur'); }
+function canDrag(e){ return !!e && !e.allDay; }   // v22: every timed event, whatever feed it came from
 let keepScroll=null;
 function takeKeepScroll(dflt){ const v=keepScroll; keepScroll=null; return v==null?dflt:v; }
 /* Open the grid on the day's first event rather than a fixed 7am (or 2 hours
@@ -1794,14 +1893,29 @@ function applyMove(e,dMin,dDay){
   const startDate=addDays(day0,dDay), endDate=addDays(startDate,Math.floor(ne/1440));
   const fields={start:fmtYMD(startDate), end:fmtYMD(endDate), timeStart:mmStr(ns), timeEnd:mmStr(ne%1440), allDay:false};
   if(ne>0 && ne%1440===0){ fields.end=fmtYMD(addDays(startDate,ne/1440-1)); fields.timeEnd='23:59'; } // ends exactly at midnight → keep it on the same day
-  if(e.source==='user-recur'){
-    const root=userEvents.find(x=>String(x.id)===String(e.recurRoot));
-    if(!root){ toast('Could not find the weekly series to edit'); return false; }
-    const inst=fmtYMD(e.start);
-    root.repeat=root.repeat||{}; root.repeat.except=[...new Set([...(root.repeat.except||[]),inst])]; root.ts=now;
-    const copy={...root, id:'u-'+now, ts:now, ...fields, notes:((root.notes||'')+`\nMoved from the weekly series (was ${fmtTime(e.start)} on ${inst}).`).trim()};
-    delete copy.repeat; userEvents.push(copy);
-  } else {
+  const inStore=userEvents.some(x=>String(x.id)===String(e.id));
+  if(e.source==='ride'&&!inStore){
+    // an unchosen ride-home placeholder becomes a real row under its own id (the ride picker still works on it)
+    userEvents.push({id:e.id, ts:now, title:e.title, person:'T', type:'family', ...fields, location:e.location||'', link:'',
+      notes:e.notes||'', rideFor:e.rideFor||'', rideDate:e.rideDate||'', rideEnd:e.rideEnd||'', ride:e.ride||''});
+    localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+    pushSharedSoon(); rebuild();
+    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)} — syncing to the family`);
+    return true;
+  }
+  if(!inStore||e.source==='user-recur'){
+    // v22: anything not stored as its own row — Tom's work cal (replaced by the feed hourly),
+    // one instance of a weekly series, the stale Google export, school statics, Mass Elite,
+    // tracking chips — is moved as an override keyed by the event's id. The site keeps the
+    // family's version on every render; a Google-sourced one is also queued for write-back,
+    // so a series stays one series in both places (v21).
+    const before=rawOf(e);
+    recordOverride(before,{...before,...fields});
+    pushSharedSoon(); rebuild();
+    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dDay?` on ${DOW[startDate.getDay()]} ${MONTHS_S[startDate.getMonth()]} ${startDate.getDate()}`:''} — ${wbCal(e.recurRoot||e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`);
+    return true;
+  }
+  {
     const i=userEvents.findIndex(x=>String(x.id)===String(e.id));
     if(i<0){ toast('This event can\'t be moved here — edit it at its source'); return false; }
     const before=withOverride(userEvents[i]);
@@ -1812,7 +1926,7 @@ function applyMove(e,dMin,dDay){
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   pushSharedSoon(); rebuild();
   const dayLbl=dDay?` on ${DOW[startDate.getDay()]} ${MONTHS_S[startDate.getMonth()]} ${startDate.getDate()}`:'';
-  toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dayLbl} — syncing to the family`);
+  toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dayLbl} — ${wbCal(e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`);
   return true;
 }
 (function(){
@@ -2024,7 +2138,15 @@ function showEvent(id){
     const lbl=ck?`${CALS[ck].label} · ${CALS[ck].sub}`:feedLabel(e);
     html+=`<div class="ev-detail"><span class="ic">📥</span><span style="color:var(--muted)">Source: ${esc(lbl)}</span></div>`;
   }
-  if(e.edited) html+=`<div class="ev-detail"><span class="ic">✏️</span><span class="edit-note">Changed on this site ${esc(new Date(e.edited).toLocaleDateString('en-US',{month:'short',day:'numeric'}))} — the calendar keeps this version; the feeds can't change it back.</span></div>`;
+  if(e.edited){
+    const w=wbState(e);
+    const when=esc(new Date(e.edited).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+    let tail=" — the calendar keeps this version; the feeds can't change it back.";
+    if(w&&w.status==='pending') tail=` — Google Calendar (${esc(w.cal)}) will be rewritten to match within the hour.`;
+    else if(w&&w.status==='done') tail=` — Google Calendar was rewritten to match${w.doneAt?' '+esc(new Date(w.doneAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):''}.`;
+    else if(w&&w.status==='failed') tail=` — ⚠️ Google Calendar could NOT be rewritten (${esc(w.error||'unknown error')}); the scheduler still shows your version.`;
+    html+=`<div class="ev-detail"><span class="ic">✏️</span><span class="edit-note${w&&w.status==='failed'?' bad':''}">Changed on this site ${when}${tail}</span></div>`;
+  }
   const isRide=/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id));
   if(isRide) html+=rideBoxHtml(e);
   if(e.train) html+=`<div id="trainLiveBox"></div>`;
@@ -2052,7 +2174,7 @@ function showEvent(id){
   };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=()=>$('evHide').onclick();
-  $('evEdit').style.display = e.source==='user' ? '' : 'none';
+  $('evEdit').style.display = '';   // v22: every event is editable here
   if(isRide) wireRideBox(e);
   if(e.train) showTrainLive(e);
   openOverlay($('evModal'));
@@ -2270,7 +2392,8 @@ function openForm(edit){
   $('formTitle').textContent = edit?'Edit event':'Add event';
   $('fDelete').style.display = edit?'':'none';
   if(edit){
-    const u=withOverride(userEvents.find(x=>String(x.id)===String(currentEv.id)));
+    const ue=userEvents.find(x=>String(x.id)===String(currentEv.id));
+    const u=ue?withOverride(ue):rawOf(currentEv);   // v22: feed rows, work meetings, series instances
     $('fTitle').value=u.title; $('fPerson').value=u.person||'F'; $('fType').value=u.type||'family';
     $('fStart').value=u.start; $('fEnd').value=u.end||u.start;
     $('fAllDay').checked=u.allDay!==false;
@@ -2306,11 +2429,17 @@ function saveForm(){
       recordOverride(before,obj);
       userEvents[i]={...userEvents[i], ...obj, site_edit:obj.ts};   // keep feed-only fields (status, repeat, train…)
       delete userEvents[i].rideAuto;
+    } else if(currentEv&&siteOwned(editingId)){
+      // a ride-home placeholder becomes a real row under its own id
+      userEvents.push({...obj, rideFor:currentEv.rideFor||'', rideDate:currentEv.rideDate||'', rideEnd:currentEv.rideEnd||'', ride:currentEv.ride||''});
+    } else if(currentEv){
+      // v22: a row the site doesn't own (work meeting, series instance, feed row) — override + write-back
+      recordOverride(rawOf(currentEv),obj);
     }
   } else userEvents.push(obj);
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   pushSharedSoon();
-  rebuild(); closeModals(); toast('Saved — syncing to the family');
+  rebuild(); closeModals(); toast(editingId&&wbCal(String(editingId).split('@')[0])?'Saved — Google Calendar is rewritten within the hour':'Saved — syncing to the family');
 }
 function toast(msg){
   const t=$('toast'); t.textContent=msg; t.style.display='block';
