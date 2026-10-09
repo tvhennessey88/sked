@@ -515,6 +515,10 @@ const TYPES = {
 const CALS = {
   work:{label:"Tom's Work Cal", sub:'tom@coalition.ventures', hex:'#00838f',
         match:e=>e.source==='tom-work'},
+  // v23 (Tom, 2026-10-08): his Forge calendar, tom@cvforge.us — same treatment as the
+  // work calendar, its own switch, off by default. Store key `tom_forge`, ids `tf-…`.
+  forge:{label:"Tom's Forge Cal", sub:'tom@cvforge.us', hex:'#6d4c41',
+        match:e=>e.source==='tom-forge'},
 };
 const USER_KEY='sked_user_events_v1', HIDDEN_KEY='sked_hidden_ids_v3', CONFIRMED_KEY='sked_confirmed_ids_v1', FILTER_KEY='sked_filters_v4', VIEW_KEY='sked_view_v1', NOTES_KEY='sked_notes_v1';
 
@@ -541,6 +545,10 @@ const SYNC_URL='https://textdb.dev/api/data/hsked-1578268b-3ae8-4007-b940-9b27e5
 const DELETED_KEY='sked_deleted_user_v1', TOMWORK_KEY='sked_tomwork_cache_v1', TOMWORK_TS_KEY='sked_tomwork_updated';
 let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
+// v23: the Forge calendar is a feed-owned key the page only READS — it is not in
+// MANAGED_KEYS, so every browser push carries it through untouched as a foreign key.
+const TOMFORGE_KEY='sked_tomforge_cache_v1';
+let tomForge=JSON.parse(localStorage.getItem(TOMFORGE_KEY)||'[]');
 let lastSharedJson='';
 // Keys this page owns.  Everything else in the store belongs to a scheduled
 // feed (gcal_state, intake_last_run, …) and must survive a browser push —
@@ -622,7 +630,7 @@ function recordOverride(before,after){
    covered by the override — the site keeps the family's version, nothing is queued. */
 const WB_KEY='sked_writeback_v1';
 let writeback=JSON.parse(localStorage.getItem(WB_KEY)||'{}');
-const WB_CALS=[[/^tw-/,'tom@coalition.ventures'],[/^gcall-/,'lauraehennessey@gmail.com'],[/^gcal-/,'family17673346161804816786@group.calendar.google.com']];
+const WB_CALS=[[/^tw-/,'tom@coalition.ventures'],[/^tf-/,'tom@cvforge.us'],[/^gcall-/,'lauraehennessey@gmail.com'],[/^gcal-/,'family17673346161804816786@group.calendar.google.com']];
 const WB_FIELDS=['start','end','timeStart','timeEnd','allDay','title','location'];
 function wbCal(id){ const s=String(id); for(const [re,c] of WB_CALS) if(re.test(s)) return c; return ''; }
 function gidFromLink(link){ // https://www.google.com/calendar/event?eid=<base64url("eventId calendarId")>
@@ -702,6 +710,8 @@ function adoptDoc(doc){
   userNotes=doc.notes||{}; hiddenIds=new Set(doc.hidden||[]); confirmedIds=new Set(doc.confirmed||[]); sharedTracking=doc.tracking_items||[];
   userEvents=doc.user_events||[]; deletedUser=new Set((doc.deleted_user||[]).map(String));
   tomWork=doc.tom_work||[];
+  tomForge=doc.tom_forge||[];
+  localStorage.setItem(TOMFORGE_KEY,JSON.stringify(tomForge));
   overrides=doc.overrides||{};
   localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
   writeback=doc.writeback||{};
@@ -894,10 +904,12 @@ function normAll(famCal,masselite,site){
   // link, and a recurring meeting arrives as one `repeat` row rather than 91 of them.
   // Legacy rows (all-day travel, no id) still render — the feed replaces them on its
   // next run, and nothing should break in between.
-  for(let i=0;i<tomWork.length;i++){
-    const e=tomWork[i];
+  for(const [rows,src,pfx,deflt] of [[tomWork,'tom-work','tw-',"From Tom's work calendar (tom@coalition.ventures)"],
+                                     [tomForge,'tom-forge','tf-',"From Tom's Forge calendar (tom@cvforge.us)"]])
+  for(let i=0;i<rows.length;i++){
+    const e=rows[i];
     if(!e||!e.start) continue;
-    const rid=e.id||('tw-'+e.start+'-'+i);
+    const rid=e.id||(pfx+e.start+'-'+i);
     for(const inst0 of expandRepeat({...e,id:rid})){
       // v21: a move made on the site (override keyed by the instance id) wins here too
       const w=withOverride({...e, id:inst0.id, start:inst0.start, end:inst0.end||inst0.start});
@@ -912,7 +924,7 @@ function normAll(famCal,masselite,site){
       }
       push({id:inst.id, title:w.title||'(work)', person:w.person||'D', type:w.type||e.type||'family',
         start:s, end:en, allDay, location:w.location||'', link:e.link||'', edited:w._edited||0,
-        notes:e.notes||'From Tom\'s work calendar (tom@coalition.ventures)', source:'tom-work',
+        notes:e.notes||deflt, source:src,
         // v19 — the call itself, not just a link to the calendar page
         join:e.join||'', joinKind:e.joinKind||'', dial:e.dial||'', codes:e.codes||[],
         guests:e.guests||[], organizer:e.organizer||'', agenda:e.agenda||''});
@@ -1014,7 +1026,7 @@ function normAll(famCal,masselite,site){
     }
   }
   // v22: the family's edits win on every source, not just rows in the store
-  return out.map(o=>(o.source==='user'||o.source==='user-recur'||o.source==='tom-work')?o:applyOvrNorm(o));
+  return out.map(o=>(o.source==='user'||o.source==='user-recur'||o.source==='tom-work'||o.source==='tom-forge')?o:applyOvrNorm(o));
 
   function mk(e,start,end,allDay){
     return {id:e.id||e.title+e.start, title:e.title, person:detectPerson(e), type:detectType(e),
@@ -1094,7 +1106,7 @@ function parseTrackingDates(t){
    the two carpool slivers differ the same way.  Rule A ignores person on purpose —
    there the ids prove it is one event.  Time is compared exactly, so the optional
    Bando sessions (16:00 and 17:30) can never collapse into each other. */
-const DUP_FEEDS=['gcall-','gcal-','tw-'];      // longest prefix first — gcall- before gcal-
+const DUP_FEEDS=['gcall-','gcal-','tw-','tf-'];      // longest prefix first — gcall- before gcal-
 function dupHash(id){
   const s=String(id).split('@')[0];
   for(const p of DUP_FEEDS) if(s.startsWith(p)){
@@ -1125,7 +1137,7 @@ function dupClose(a,b){
 function dupRank(e){
   const id=String(e.id);
   if(e.source==='user'&&id.startsWith('u-')) return 0;
-  if(id.startsWith('tw-')) return 3;
+  if(id.startsWith('tw-')||id.startsWith('tf-')) return 3;
   if(id.startsWith('gcal-')||id.startsWith('gcall-')) return 2;
   return 1;
 }
@@ -1173,7 +1185,7 @@ function mergeDuplicates(list){
       // unrecognised title to her, so "LA demo Day" arrives as Laura's and the work
       // calendar is the one telling the truth. The primary stays a family row so the
       // event does not vanish when the Work Cal switch is off — only the owner moves.
-      if(primary.person!=='D' && g.some(e=>String(e.id).startsWith('tw-')&&e.person==='D')) primary.person='D';
+      if(primary.person!=='D' && g.some(e=>/^t[wf]-/.test(String(e.id))&&e.person==='D')) primary.person='D';
       if(!cxKind(primary)){ const cx=g.find(e=>cxKind(e)); if(cx) primary.status=cxKind(cx).toLowerCase(); }
       primary._dupes=g.filter(e=>e!==primary);
       for(const e of primary._dupes) foldedInto.set(e, primary);
@@ -1184,6 +1196,7 @@ function mergeDuplicates(list){
 // Every calendar an event can arrive from, for the "also on" list in the modal.
 const FEED_LABELS=[
   [/^tw-/,                     "Tom's Work Cal · tom@coalition.ventures"],
+  [/^tf-/,                     "Tom's Forge Cal · tom@cvforge.us"],
   [/^gcall-/,                  "Laura's Google Calendar"],
   [/^gcal-/,                   'Hennessey Family Google Calendar'],
   [/^wpc13-/,                  'TeamSnap · WPC U13 Girls FC'],
