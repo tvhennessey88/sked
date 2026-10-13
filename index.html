@@ -287,6 +287,13 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 .modal .mhead{display:flex;justify-content:flex-end;gap:4px;padding:8px 8px 0;}
 .modal .mhead button{background:none;border:none;border-radius:50%;width:32px;height:32px;font-size:15px;color:var(--muted);}
 .modal .mhead button:hover{background:var(--surface);}
+/* v25 — the event modal: ✏️ and 🗑 on the left, ✕ alone on the far right, so a thumb
+   aiming for Close can't land on Remove. Remove is two taps: the first turns it into a
+   red "Remove?" pill, the second removes; anything else resets it. */
+#evModal .mhead{justify-content:flex-start;gap:6px;padding:10px 10px 0;}
+#evModal .mhead .mclose{margin-left:auto;width:36px;height:36px;}
+#evModal .mhead #evEdit,#evModal .mhead #evHide{width:36px;height:36px;}
+#evModal .mhead #evHide.armed{width:auto;border-radius:18px;padding:0 14px;background:#fce8e6;color:#c5221f;font-weight:600;font-size:13px;}
 .modal .mbody{padding:0 22px 22px;}
 .ev-title{font-size:20px;font-weight:500;margin-bottom:4px;display:flex;align-items:flex-start;gap:10px;}
 .ev-title .swatch{width:16px;height:16px;border-radius:5px;flex-shrink:0;margin-top:4px;}
@@ -394,8 +401,10 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <div class="overlay" id="overlay"></div>
 
-<!-- event detail modal -->
+<!-- event detail modal (v25) -->
 <div class="modal" id="evModal">
+  <!-- v25: ✕ sits alone on the right; edit and remove live on the left, and remove
+       takes two taps (Tom, 2026-10-13: "the close X and delete button are too close") -->
   <div class="mhead">
     <button id="evEdit" title="Edit">✏️</button>
     <button id="evHide" title="Remove from calendar">🗑</button>
@@ -1304,12 +1313,23 @@ function chipStyle(e){
 // see-through fill turned the overlap into mud (v17)
 function tint(hex,a){ const n=parseInt(String(hex).slice(1,7),16); if(isNaN(n)) return hex;
   const m=v=>Math.round(255-(255-v)*a); return `rgb(${m(n>>16)},${m((n>>8)&255)},${m(n&255)})`; }
-function blockStyle(e){
+// v25 (Tom, 2026-10-13: "do better with transparency for overlapping events") — a card
+// drawn OVER another one is see-through. Its fill is the same 16–22% of its colour,
+// but as an alpha over whatever is beneath rather than baked onto white, so the
+// earlier card's tint shows through and you can see that it keeps running under the
+// one on top; same-colour overlaps read as a darker band. A solid rail, a hairline of
+// its own colour and a soft shadow keep the top card's edges crisp — the thing v17's
+// opaque fill was protecting against — and the text underneath is still clipped where
+// the top card begins, so nothing collides.
+function tintA(hex,a){ const n=parseInt(String(hex).slice(1,7),16); if(isNaN(n)) return hex;
+  return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; }
+function blockStyle(e,over){
   const c=evColor(e);
-  if(cxKind(e)) return `background:#f1f3f4;color:#5f6368;border-left:3px solid ${c};`;
+  if(cxKind(e)) return `background:${over?'rgba(241,243,244,.8)':'#f1f3f4'};color:#5f6368;border-left:3px solid ${c};`;
   if(e.type==='regcheck') return `background:#fce8e6;color:#c5221f;font-weight:600;border-left:3px solid #c5221f;`;
   if(e.type==='noschool') return `background:#f1f3f4;color:#5f6368;border-left:3px solid #9aa0a6;`;
   const dash=e.type==='potential'?`border:1px dashed ${c};`:'';
+  if(over) return `background:linear-gradient(${tintA(c,.2)},${tintA(c,.2)}),rgba(255,255,255,.58);color:${shade(c)};border-left:3px solid ${c};box-shadow:0 0 0 1px #fff,0 2px 6px rgba(0,0,0,.16);${dash}`;
   return `background:${tint(c,.16)};color:${shade(c)};border-left:3px solid ${c};${dash}`;
 }
 /* How much fits is a function of how tall the block actually is. A 22px sliver
@@ -1347,6 +1367,10 @@ function blockBody(e,hh,whoTag,pre,wpx){
   if(hh>=76&&e.location) s+=`<div class="tm loc">${esc(e.location)}</div>`;
   return s;
 }
+// v25 — the words of a card stop dead where the first card drawn over it begins. The
+// line-clamp alone judged that by height, and with a see-through card on top a covered
+// time line could ghost through; a hard clip can't.
+function clipBody(html,px){ return px>0?`<div class="tb" style="max-height:${Math.max(12,Math.round(px))}px;overflow:hidden;">${html}</div>`:html; }
 
 // ---------- rendering ----------
 const $=id=>document.getElementById(id);
@@ -1549,7 +1573,7 @@ function renderTimeGrid(nDays){
       const top=ev.s*HOUR, h=Math.max(MINH,(ev.en-ev.s)*HOUR-2);
       // v17: never a bare bar — every card carries its title (Google's rule)
       const wpx=dayPx*ev.span/ev.ncol-5-ev.depth*8;
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;${placeCss(ev,8,dayPx*ev.span/ev.ncol)}${blockStyle(e)}" title="${esc(e.title)}">${blockBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,'',preD,wpx)}</div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${ev.depth?' over':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;${placeCss(ev,12,dayPx*ev.span/ev.ncol)}${blockStyle(e,ev.depth)}" title="${esc(e.title)}">${clipBody(blockBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,'',preD,wpx),ev.textH!=null?ev.textH*HOUR-4:0)}</div>`;
     }
     const isToday=sameDay(d,TODAY);
     let now='';
@@ -1868,7 +1892,7 @@ function renderDayCols(){
       const e=ev.e, top=ev.s*HOUR, hh=Math.max(MINH,(ev.en-ev.s)*HOUR-2), wpx=colPx*ev.span/ev.ncol-5-ev.depth*12;
       // title first — that's what Tom wants to read; the owner rides on the time line (colour already says who)
       const whoTag=combined&&needsWho(e)?` <span class="who">· ${esc(who(e.person))}</span>`:'';
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;${placeCss(ev,12,colPx*ev.span/ev.ncol)}${blockStyle(e)}">${blockBody(e,ev.textH!=null?Math.min(hh,ev.textH*HOUR-2):hh,whoTag,pre,wpx)}</div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${ev.depth?' over':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(day)}" style="top:${top}px;height:${hh}px;${placeCss(ev,12,colPx*ev.span/ev.ncol)}${blockStyle(e,ev.depth)}">${clipBody(blockBody(e,ev.textH!=null?Math.min(hh,ev.textH*HOUR-2):hh,whoTag,pre,wpx),ev.textH!=null?ev.textH*HOUR-4:0)}</div>`;
     }
     html+=`<div class="tg-col" data-day="${fmtYMD(day)}"${p!=='*'?` data-person="${p}"`:''}>${lines}${colHtml}${now}</div>`;
   }
@@ -2103,12 +2127,29 @@ function openOverlay(m){ $('overlay').classList.add('show'); m.classList.add('sh
 function closeModals(){
   $('overlay').classList.remove('show');
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'));
+  if(typeof disarmRemove==='function') disarmRemove();
+}
+// v25 — Tom's Google links open in the right account (Tom, 2026-10-13: "when I click on
+// a google video link for a meeting it opens in the tom@coalition.ventures account").
+// Meet and Calendar both honour ?authuser=<email>, so a work or Forge event's call and
+// its "Open in Google Calendar" link land in tom@coalition.ventures instead of whichever
+// Google account the browser happens to hold in slot 0. Family-calendar links are left
+// alone; Zoom/Teams links have no such switch and pass through untouched.
+const WORK_ACCT='tom@coalition.ventures';
+const WORK_SRC=/^(tom-work|tom-forge)$/;
+function acctLink(url,e){
+  if(!url||!e) return url||'';
+  const work=WORK_SRC.test(e.source||'')||(typeof dupFamily==='function'&&dupFamily(e).some(m=>WORK_SRC.test(m.source||'')));
+  if(!work) return url;
+  if(!/^https?:\/\/(meet\.google\.com|calendar\.google\.com|www\.google\.com\/calendar)/i.test(url)) return url;
+  if(/[?&]authuser=/.test(url)) return url;
+  return url+(url.includes('?')?'&':'?')+'authuser='+encodeURIComponent(WORK_ACCT);
 }
 let currentEv=null;
 function showEvent(id){
   const e=events.find(x=>String(x.id)===String(id));
   if(!e) return;
-  currentEv=e;
+  currentEv=e; disarmRemove();
   const p=PEOPLE[e.person];
   const dr = e.allDay
     ? (sameDay(e.start,e.end)?fullDate(e.start):`${fullDate(e.start)} – ${fullDate(e.end)}`)
@@ -2121,11 +2162,11 @@ function showEvent(id){
   // so look across every copy for the one that came off the work calendar)
   const wk=dupFamily(e).find(m=>m.join||(m.guests&&m.guests.length)||m.agenda)||null;
   if(wk&&wk.join){
-    html+=`<div class="join-box"><a class="join-btn" href="${esc(wk.join)}" target="_blank" rel="noopener">📹 Join ${esc(wk.joinKind||'call')}</a>`;
+    html+=`<div class="join-box"><a class="join-btn" href="${esc(acctLink(wk.join,wk))}" target="_blank" rel="noopener">📹 Join ${esc(wk.joinKind||'call')}</a>`;
     const subs=[];
     if(wk.dial){ const tel=wk.dial.replace(/\s*(PIN|ID)\s*(\d+)#?/i,',,$2#').replace(/[^\d+,#]/g,''); subs.push(`📞 <a href="tel:${esc(tel)}">${esc(wk.dial)}</a>`); }
     for(const c of (wk.codes||[])) subs.push(`${esc(c.k)}: <b>${esc(c.v)}</b>`);
-    subs.push(`<a href="${esc(wk.join)}" target="_blank" rel="noopener">${esc(wk.join.replace(/^https?:\/\//,''))}</a>`);
+    subs.push(`<a href="${esc(acctLink(wk.join,wk))}" target="_blank" rel="noopener">${esc(wk.join.replace(/^https?:\/\//,''))}</a>`);
     html+=`<div class="join-sub">${subs.join('<br>')}</div></div>`;
   }
   if(e.location&&!/^(microsoft teams|zoom|google meet)/i.test(e.location)) html+=`<div class="ev-detail"><span class="ic">📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">${esc(e.location)}</a></div>`;
@@ -2136,7 +2177,7 @@ function showEvent(id){
       wk.guests.map(g=>`<div class="guest${g.r==='declined'?' declined':''}"><span class="gi" title="${esc(g.r)}">${ic[g.r]||'⚪'}</span><span class="gn">${esc(g.n)}</span><span class="ge">${esc(g.e)}</span>${g.o?'<span class="gtag">host</span>':''}${g.opt?'<span class="gtag">optional</span>':''}</div>`).join('')+`</div></div>`;
   }
   if(wk&&wk.agenda) html+=`<div class="ev-detail"><span class="ic">📝</span><span style="white-space:pre-wrap;">${esc(wk.agenda)}</span></div>`;
-  if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(e.link)}" target="_blank" rel="noopener">${/google\.com\/calendar/.test(e.link)?'Open in Google Calendar':esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
+  if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(acctLink(e.link,e))}" target="_blank" rel="noopener">${/google\.com\/calendar/.test(e.link)?'Open in Google Calendar':esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
   const fam=dupFamily(e);
   if(fam.length>1){
@@ -2186,7 +2227,7 @@ function showEvent(id){
     pushSharedSoon(); rebuild(); closeModals(); toast('Series removed for the whole family');
   };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
-  const sb=$('evSkip'); if(sb) sb.onclick=()=>$('evHide').onclick();
+  const sb=$('evSkip'); if(sb) sb.onclick=removeCurrent;
   $('evEdit').style.display = '';   // v22: every event is editable here
   if(isRide) wireRideBox(e);
   if(e.train) showTrainLive(e);
@@ -2606,8 +2647,16 @@ $('burger').onclick=()=>{
 $('searchBox').addEventListener('input',e=>{ searchQ=e.target.value.trim(); render(); });
 $('addBtn').onclick=()=>openForm(false);
 $('evEdit').onclick=()=>openForm(true);
+function disarmRemove(){ const b=$('evHide'); if(b&&b.classList.contains('armed')){ b.classList.remove('armed'); b.textContent='🗑'; b.title='Remove from calendar'; } }
 $('evHide').onclick=()=>{
   if(!currentEv) return;
+  const b=$('evHide');
+  if(!b.classList.contains('armed')){ b.classList.add('armed'); b.textContent='Remove? 🗑'; b.title='Tap again to remove for the whole family'; return; }
+  removeCurrent();
+};
+function removeCurrent(){
+  if(!currentEv) return;
+  disarmRemove();
   // a merged event is several rows wearing one chip — remove every one of them,
   // or tomorrow's render brings the copy that was left behind back as its own event
   for(const m of dupFamily(currentEv)){
@@ -2636,7 +2685,7 @@ document.addEventListener('click',e=>{
 });
 let rsT=null; window.addEventListener('resize',()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{ if(view==='month'&&!searchQ) render(); },150); });
 $('fSave').onclick=saveForm;
-$('fDelete').onclick=()=>{ $('evHide').onclick(); };
+$('fDelete').onclick=removeCurrent;
 $('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; formPrevStart=formStartMin(); };
 $('fStart').addEventListener('change',onFormStartChange);
 $('fTimeStart').addEventListener('change',onFormStartChange);
