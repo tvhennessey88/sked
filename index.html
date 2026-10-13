@@ -266,7 +266,24 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 .tag.notyet{background:#fef7e0;color:#b06000;}
 .tag.past{background:#eceff1;color:#78909c;}
 .track-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start;}
-@media(max-width:1000px){.track-grid{grid-template-columns:1fr;}}
+@media(max-width:1000px){.track-grid{grid-template-columns:1fr;gap:10px;}}
+/* v26 — a tracked item is a card: the name owns the whole width (the status tag and
+   the buttons used to sit beside it and squeeze a long name into one word per line),
+   then the details, then one row of actions with the family note. */
+.trow{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:0 0 8px;background:#fff;}
+.trow.past{opacity:.6;}
+.trow .th{display:flex;align-items:flex-start;gap:8px;}
+.trow .th .t{flex:1;min-width:0;font-size:14px;font-weight:600;line-height:1.3;}
+.trow .th{flex-wrap:wrap;}
+.trow .sub .tag{display:inline-block;margin-right:2px;vertical-align:1px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.trow .sub a{white-space:nowrap;}
+.trow .sub{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.trow .ta{display:flex;gap:6px;align-items:flex-start;margin-top:8px;flex-wrap:wrap;}
+.trow .ta .note{flex:1;min-width:160px;display:flex;gap:6px;}
+.trow .ta textarea{flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;}
+.trow .ta .btn{padding:6px 11px;font-size:12.5px;}
+.trow .ta .btn.ok{background:#1e8e3e;color:#fff;border-color:#1e8e3e;}
+@media(max-width:700px){.plan{padding:12px 12px;} .trow .ta .note{flex-basis:100%;} }
 .track-col>h3{font-size:14px;font-weight:700;padding-bottom:7px;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
 .track-sub{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:12px 0 2px;font-weight:700;}
 .tag.reg{background:#fce8e6;color:#c5221f;}
@@ -328,19 +345,29 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 }
 
 /* ============ RESPONSIVE ============ */
+/* v26 (Tom, 2026-10-13): "the day and date are cut off at the top right ... make the top
+   of the app more intuitive and waste less space." On a phone the top bar is two rows:
+   row 1 = ☰ · ‹ Today › · a SHORT range label · 🔍; row 2 = the view switch stretched
+   edge to edge. The search box only appears when 🔍 is tapped. In Day view the label
+   is dropped entirely — the day bar under it already says the date. */
+.sbtn{display:none;}
 @media(max-width:900px){
-  .topbar{flex-wrap:wrap;row-gap:6px;padding:8px 10px;}
-  .logo .name{display:none;}
-  .rangelabel{font-size:15px;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;}
+  .topbar{flex-wrap:wrap;row-gap:6px;padding:6px 8px 8px;gap:4px;}
+  .logo{display:none;}
+  .rangelabel{font-size:16px;font-weight:500;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;margin:0 4px;}
+  body.v-day .rangelabel{visibility:hidden;}
   .spacer{display:none;}
-  .search{flex:1;min-width:130px;height:34px;}
+  .sbtn{display:block;padding:0;width:40px;height:40px;border-radius:50%;border:none;background:none;font-size:17px;}
+  .search{display:none;flex-basis:100%;height:36px;order:3;}
+  .search.open{display:flex;}
   .search input{width:100%;}
-  .viewswitch{margin-left:auto;}
-  .viewswitch button{padding:7px 9px;font-size:12px;}
+  .viewswitch{flex-basis:100%;order:2;margin:0;}
+  .viewswitch button{flex:1;padding:8px 0;font-size:12.5px;text-align:center;}
+  #todayBtn{padding:7px 11px;font-size:13px;}
   .mon-body{grid-auto-rows:minmax(96px,1fr);overflow-y:auto;}
   .btn{padding:7px 10px;font-size:13px;}
   .burger{width:34px;height:34px;}
-  .sidebar{position:fixed;left:0;top:57px;bottom:0;z-index:80;box-shadow:var(--shadow);margin-left:-280px;}
+  .sidebar{position:fixed;left:0;top:var(--tbh,57px);bottom:0;z-index:80;box-shadow:var(--shadow);margin-left:-280px;}
   .sidebar.open{margin-left:0;}
   .tg-gutter,.tg-times,.tg-allday .lbl{width:40px;}
   .ev-chip{font-size:10.5px;}
@@ -376,6 +403,7 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
   </div>
   <div class="rangelabel" id="rangeLabel"></div>
   <div class="spacer"></div>
+  <button class="btn sbtn" id="searchBtn" title="Search">🔍</button>
   <div class="search">🔍<input id="searchBox" placeholder="Search events" autocomplete="off"></div>
   <div class="viewswitch" id="viewSwitch">
     <button data-v="day">Day</button>
@@ -1398,12 +1426,18 @@ function ttl(e,t){
   return cam+(fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
 }
 
+// v26 — a phone shows three days where a desktop shows seven (Google Calendar's own
+// "3 days" view): seven columns at 390px were single letters and bare bars.
+function isPhone(){ return window.innerWidth<=700; }
+function weekSpan(){ return isPhone()?3:7; }
 function render(){
   document.querySelectorAll('#viewSwitch button').forEach(b=>b.classList.toggle('active',b.dataset.v===view));
+  document.body.className=document.body.className.replace(/\bv-\w+/g,'').trim()+' v-'+view;
   localStorage.setItem(VIEW_KEY,view);
+  const tb=document.querySelector('.topbar'); if(tb) document.documentElement.style.setProperty('--tbh',tb.offsetHeight+'px');
   if(searchQ){renderAgenda();return;}
   if(view==='month') renderMonth();
-  else if(view==='week') renderTimeGrid(7);
+  else if(view==='week') renderTimeGrid(weekSpan());
   else if(view==='day') renderDayCols();
   else if(view==='year') renderYear();
   else if(view==='track') renderTracking();
@@ -1500,6 +1534,11 @@ function renderTimeGrid(nDays){
     $('rangeLabel').textContent = start.getMonth()===e2.getMonth()
       ? `${MONTHS[start.getMonth()]} ${start.getFullYear()}`
       : `${MONTHS_S[start.getMonth()]} – ${MONTHS_S[e2.getMonth()]} ${e2.getFullYear()}`;
+  } else if(nDays>1){
+    const e2=addDays(start,nDays-1);
+    $('rangeLabel').textContent = start.getMonth()===e2.getMonth()
+      ? `${MONTHS_S[start.getMonth()]} ${start.getDate()} – ${e2.getDate()}`
+      : `${MONTHS_S[start.getMonth()]} ${start.getDate()} – ${MONTHS_S[e2.getMonth()]} ${e2.getDate()}`;
   } else {
     $('rangeLabel').textContent=`${MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
   }
@@ -1697,22 +1736,17 @@ function renderTracking(){
     else if(conf && !st.past) st={label:'Confirmed ✓',cls:'open',past:false};
     const note=noteText(id);
     const canAct=!removed && !st.past && !t.eventId;
-    const acts=canAct?`<div style="display:flex;gap:6px;margin-left:8px;">
-        ${conf?'':`<button class="btn" data-confirm="${id}" title="Mark as registered / going" style="padding:4px 10px;font-size:12px;background:#1e8e3e;color:#fff;border-color:#1e8e3e;">✓ Confirm</button>`}
-        <button class="btn" data-remove="${id}" title="Not doing this — remove from calendar" style="padding:4px 10px;font-size:12px;">🗑</button></div>`:'';
-    return `<div class="prow" style="cursor:default;flex-wrap:wrap;${st.past?'opacity:.55;':''}">
-      <div class="body" style="flex:1;min-width:0;">
-        <div class="t">${esc(t.name)}</div>
-        <div class="sub">${esc([t.dates||'TBD',t.location,t.ages&&('Ages '+t.ages)].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">page ↗</a>`:''}</div>
-      </div>
-      <span class="tag ${st.cls}">${esc(st.label)}</span>${acts}
-      <div style="flex-basis:100%;display:flex;gap:6px;margin-top:6px;">
-        <textarea data-note="${id}" rows="1" placeholder="📝 Add a family note…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;resize:vertical;">${esc(note)}</textarea>
-        <button class="btn" data-notesave="${id}" style="padding:5px 12px;font-size:12px;align-self:flex-start;">Save</button>
-      </div></div>`;
+    const acts=canAct?`${conf?'':`<button class="btn ok" data-confirm="${id}" title="Mark as registered / going">✓ Confirm</button>`}
+        <button class="btn" data-remove="${id}" title="Not doing this — remove from calendar">🗑</button>`:'';
+    const ages=t.ages?String(t.ages).replace(/^Classes of\s*/i,'Classes ').replace(/\s*\(Tommy is \d{4}\)/,''):'';
+    return `<div class="trow${st.past?' past':''}">
+      <div class="th"><div class="t">${esc(t.name)}</div></div>
+      <div class="sub"><span class="tag ${st.cls}">${esc(st.label)}</span> ${esc([t.dates||'TBD',t.location,ages].filter(Boolean).join(' · '))}${t.url?` · <a href="${esc(t.url)}" target="_blank" rel="noopener" style="color:var(--T);">page ↗</a>`:''}</div>
+      <div class="ta">${acts}<div class="note"><textarea data-note="${id}" rows="1" placeholder="📝 Add a family note…">${esc(note)}</textarea><button class="btn" data-notesave="${id}">Save</button></div></div>
+    </div>`;
   };
   let html=`<div class="plan" style="max-width:none;"><h2>Events being tracked</h2>
-    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;">Registrations, tryouts and potential events being watched. <b>✓ Confirm</b> once registered (the calendar entry turns solid); <b>🗑</b> if we're skipping it. Notes sync to the whole family.</p>
+    <p style="color:var(--muted);font-size:13px;margin:-6px 0 16px;"><b>✓ Confirm</b> once registered · <b>🗑</b> if we're skipping it · notes sync to the whole family.</p>
     <div class="track-grid">`;
   for(const k of KIDS){
     const items=byKid[k];
@@ -2503,7 +2537,7 @@ function toast(msg){
 // ---------- navigation ----------
 function nav(dir){
   if(view==='month') cursor=new Date(cursor.getFullYear(),cursor.getMonth()+dir,1);
-  else if(view==='week') cursor=addDays(cursor,7*dir);
+  else if(view==='week') cursor=addDays(cursor,weekSpan()*dir);
   else if(view==='day') cursor=addDays(cursor,dir);
   else if(view==='year') cursor=new Date(cursor.getFullYear()+dir,cursor.getMonth(),1);
   miniCursor=new Date(cursor);
@@ -2645,6 +2679,7 @@ $('burger').onclick=()=>{
   else sb.classList.toggle('hidden');
 };
 $('searchBox').addEventListener('input',e=>{ searchQ=e.target.value.trim(); render(); });
+$('searchBtn').onclick=()=>{ const sx=document.querySelector('.search'); sx.classList.toggle('open'); if(sx.classList.contains('open')) $('searchBox').focus(); else if(searchQ){ $('searchBox').value=''; searchQ=''; render(); } else render(); };
 $('addBtn').onclick=()=>openForm(false);
 $('evEdit').onclick=()=>openForm(true);
 function disarmRemove(){ const b=$('evHide'); if(b&&b.classList.contains('armed')){ b.classList.remove('armed'); b.textContent='🗑'; b.title='Remove from calendar'; } }
@@ -2683,7 +2718,7 @@ document.addEventListener('click',e=>{
   const c=e.target.closest('[data-confirm]'); if(c){ confirmTracked(c.dataset.confirm); return; }
   const r=e.target.closest('[data-remove]'); if(r){ hiddenIds.add(r.dataset.remove); localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds])); pushSharedSoon(); rebuild(); toast('Removed for the whole family'); }
 });
-let rsT=null; window.addEventListener('resize',()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{ if(view==='month'&&!searchQ) render(); },150); });
+let rsT=null; window.addEventListener('resize',()=>{ clearTimeout(rsT); rsT=setTimeout(()=>{ if((view==='month'||view==='week')&&!searchQ) render(); else { const tb=document.querySelector('.topbar'); if(tb) document.documentElement.style.setProperty('--tbh',tb.offsetHeight+'px'); } },150); });
 $('fSave').onclick=saveForm;
 $('fDelete').onclick=removeCurrent;
 $('fAllDay').onchange=e=>{ $('timeRow').style.display=e.target.checked?'none':'flex'; formPrevStart=formStartMin(); };
