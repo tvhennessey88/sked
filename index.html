@@ -681,6 +681,39 @@ function etToUtcStamp(dateStr,hm){
   for(let k=0;k<3;k++){ const w=toEastern(new Date(t)); t+= Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,mi)-Date.UTC(w.getFullYear(),w.getMonth(),w.getDate(),w.getHours(),w.getMinutes()); }
   return new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
 }
+function wbGid(row){ // the Google event id (and series root) a store row points at
+  const id=String(row.id), instDate=id.includes('@')?id.split('@')[1]:'';
+  let gid=gidFromLink(row.link||''), rootGid='';
+  if(gid&&instDate){ rootGid=gid.replace(/_\d{8}(T\d{6}Z)?$/,''); gid=row.timeStart?`${rootGid}_${etToUtcStamp(instDate,row.timeStart)}`:''; }
+  else if(gid&&/_\d{8}T\d{6}Z$/.test(gid)) rootGid=gid.replace(/_\d{8}T\d{6}Z$/,'');
+  return {gid,rootGid,instDate};
+}
+/* v27 — "Share with Laura" (Tom, 2026-10-14: "i want to be able to add her to an event,
+   and have no one else see ... that way the out of normal hours events I can selectively
+   add to her").  One tap on a work event queues an attendee-add write-back; the hourly
+   Work Cal task adds her as a guest on the Google event.  Google then puts it on her own
+   calendar, the gcall- pull imports it, and v13 folds the two copies into one chip that is
+   visible with the Work Cal switch OFF — exactly how "MXO Spark Tank - Chicago" already
+   reaches the family.  Nothing else on the work calendar is exposed. */
+const LAURA_EMAIL='lauraehennessey@gmail.com';
+function queueShare(row,email){
+  const id=String(row.id), cal=wbCal(id); if(!cal) return false;
+  const {gid,rootGid,instDate}=wbGid(row); if(!gid&&!rootGid) return false;
+  const prev=writeback[id]||{};
+  const f={...(prev.status==='pending'?prev.f:{})};
+  f.addGuests=[...new Set([...(f.addGuests||[]),email])];
+  writeback[id]={id, cal, gid, rootGid, origDate:instDate||row.start||'', origStart:row.timeStart||'', title:cxStrip(row.title||''), link:row.link||'',
+    f, ts:Date.now(), status:'pending', by:'site'};
+  localStorage.setItem(WB_KEY,JSON.stringify(writeback));
+  return true;
+}
+function shareState(wk){ // 'on' = already a guest, 'queued' = write-back pending/done, '' = offer the button
+  if(!wk) return '';
+  if((wk.guests||[]).some(g=>(g.e||'').toLowerCase()===LAURA_EMAIL)) return 'on';
+  const w=writeback[String(wk.id)];
+  if(w&&w.f&&(w.f.addGuests||[]).includes(LAURA_EMAIL)&&w.status!=='failed') return 'queued';
+  return '';
+}
 function queueWriteback(before,after){
   const id=String(before.id), cal=wbCal(id); if(!cal) return;
   const f={}; let n=0;
@@ -688,10 +721,7 @@ function queueWriteback(before,after){
   if(!n) return;
   // the whole new timing goes along, so the task never has to reconstruct it
   for(const k of ['start','end','timeStart','timeEnd','allDay']) if(f[k]===undefined&&after[k]!==undefined) f[k]=after[k];
-  const root=id.split('@')[0], instDate=id.includes('@')?id.split('@')[1]:'';
-  let gid=gidFromLink(before.link||''), rootGid='';
-  if(gid&&instDate){ rootGid=gid.replace(/_\d{8}(T\d{6}Z)?$/,''); gid=before.timeStart?`${rootGid}_${etToUtcStamp(instDate,before.timeStart)}`:''; }
-  else if(gid&&/_\d{8}T\d{6}Z$/.test(gid)) rootGid=gid.replace(/_\d{8}T\d{6}Z$/,'');
+  const {gid,rootGid,instDate}=wbGid(before);
   const prev=writeback[id]||{};
   writeback[id]={id, cal, gid, rootGid, origDate:instDate||before.start||'', origStart:before.timeStart||'', title:cxStrip(before.title||''), link:before.link||'',
     f:{...(prev.status==='pending'?prev.f:{}),...f}, ts:Date.now(), status:'pending', by:'site'};
@@ -2215,6 +2245,11 @@ function showEvent(id){
       wk.guests.map(g=>`<div class="guest${g.r==='declined'?' declined':''}"><span class="gi" title="${esc(g.r)}">${ic[g.r]||'⚪'}</span><span class="gn">${esc(g.n)}</span><span class="ge">${esc(g.e)}</span>${g.o?'<span class="gtag">host</span>':''}${g.opt?'<span class="gtag">optional</span>':''}</div>`).join('')+`</div></div>`;
   }
   if(wk&&wk.agenda) html+=`<div class="ev-detail"><span class="ic">📝</span><span style="white-space:pre-wrap;">${esc(wk.agenda)}</span></div>`;
+  const wkRow=dupFamily(e).find(m=>WORK_SRC.test(m.source||''))||null;
+  const shSt=shareState(wkRow);
+  if(wkRow&&shSt==='on') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Laura is on this event — it shows on her calendar and here with the Work Cal off.</span></div>`;
+  else if(wkRow&&shSt==='queued') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Invite to Laura queued — on her Google calendar within the hour, on the family view at the next calendar pull.</span></div>`;
+  else if(wkRow) html+=`<div class="ev-detail"><span class="ic">👩</span><span><button class="btn" id="evShareLaura" style="padding:3px 10px;font-size:12px;">Share with Laura</button> <span style="color:var(--muted);font-size:12px;">adds her as a guest on the Google event; the rest of the work calendar stays hidden</span></span></div>`;
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(acctLink(e.link,e))}" target="_blank" rel="noopener">${/google\.com\/calendar/.test(e.link)?'Open in Google Calendar':esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
   const fam=dupFamily(e);
@@ -2264,6 +2299,7 @@ function showEvent(id){
     localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
     pushSharedSoon(); rebuild(); closeModals(); toast('Series removed for the whole family');
   };
+  const shb=$('evShareLaura'); if(shb) shb.onclick=()=>{ if(queueShare(wkRow,LAURA_EMAIL)){ pushSharedSoon(); toast('Laura will be added to this event within the hour'); showEvent(e.id); } else toast('Could not find the Google event for this row'); };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=removeCurrent;
   $('evEdit').style.display = '';   // v22: every event is editable here
