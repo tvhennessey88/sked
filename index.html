@@ -832,6 +832,8 @@ function parseWhen(s){ // ISO string → Date in Eastern wall time
 }
 const startOfDay=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x;};
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+// whole calendar days from `a` to `b` (both local), immune to the DST hour: round instead of floor
+const dayIdx=(a,b)=>Math.round((startOfDay(b)-startOfDay(a))/DAY);
 const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
 const startOfWeek=d=>{const x=startOfDay(d);x.setDate(x.getDate()-x.getDay());return x;}; // Sunday
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1470,7 +1472,9 @@ function renderMonth(){
       const multiOrAllday=e.allDay||((en-s)>DAY);
       const from=Math.max(s.getTime(),wkStart.getTime()), to=Math.min((e.allDay?addDays(startOfDay(e.end),1):new Date(Math.max(e.end.getTime(),e.start.getTime()+1))).getTime(),wkEnd.getTime());
       if(from>=to) continue;
-      const c0=Math.floor((from-wkStart.getTime())/DAY), c1=Math.ceil((to-wkStart.getTime())/DAY)-1;
+      // v27: calendar-day arithmetic, not ms/24h — a DST week is 7 days ± 1 hour and floor/ceil
+      // pushed every all-day event after the change into the next column (Nov 1 2026 week)
+      const c0=dayIdx(wkStart,from), c1=dayIdx(wkStart,to-1);
       segs.push({e,c0,c1:Math.min(c1,6),multi:multiOrAllday,sort:(e.allDay?0:1)});
     }
     segs.sort((a,b)=>a.sort-b.sort||(b.c1-b.c0)-(a.c1-a.c0)||a.e.start-b.e.start);
@@ -1559,7 +1563,7 @@ function renderTimeGrid(nDays){
   const asegs=[];
   for(const e of allday){
     const s=startOfDay(e.start), en=addDays(startOfDay(e.end),1);
-    const c0=Math.max(0,Math.floor((s-start)/DAY)), c1=Math.min(nDays-1,Math.floor((en-start)/DAY-0.001));
+    const c0=Math.max(0,dayIdx(start,s)), c1=Math.min(nDays-1,dayIdx(start,en-1));   // v27: DST-safe
     asegs.push({e,c0,c1});
   }
   asegs.sort((a,b)=>(b.c1-b.c0)-(a.c1-a.c0));
