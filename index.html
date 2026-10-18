@@ -386,6 +386,13 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
   /* the arrows were a 36px target — too small on a phone (Tom, 8/31) */
   .navarrows button{width:44px;height:44px;font-size:23px;}
 }
+/* v28 — seven-day week on a phone: small type that wraps inside the card */
+.tgrid.narrow .tg-head .dow{font-size:10px;letter-spacing:.2px;}
+.tgrid.narrow .tg-head .dnum{font-size:16px;width:28px;height:28px;line-height:28px;margin:1px auto;}
+.tgrid.narrow .tg-allday .ev-chip{font-size:10px;padding:0 3px;}
+.tgrid.narrow .tg-ev{padding:2px 2px 2px 3px;font-size:10px;line-height:12px;border-radius:4px;border-left-width:2px !important;}
+.tgrid.narrow .tg-ev .tt{font-weight:600;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;}
+.tgrid.narrow .tg-ev .cam,.tgrid.narrow .tg-ev .cx-tag{display:none;}
 /* swipe-to-navigate: let the browser own vertical scrolling, we take horizontal */
 .content{touch-action:pan-y;}
 .content.swiping{will-change:transform;}
@@ -1427,6 +1434,12 @@ function blockBody(e,hh,whoTag,pre,wpx){
   if(hh>=76&&e.location) s+=`<div class="tm loc">${esc(e.location)}</div>`;
   return s;
 }
+// v28 — a card in a ~50px phone week column: title only, small type, wrapped onto as
+// many lines as the card is tall (the block's position already says the time).
+function narrowBody(e,hh,pre){
+  const lines=Math.max(1,Math.floor((hh-4)/12));
+  return `<div class="tt" style="-webkit-line-clamp:${lines}">${ttl(e,shortTitle(e,pre))}</div>`;
+}
 // v25 — the words of a card stop dead where the first card drawn over it begins. The
 // line-clamp alone judged that by height, and with a see-through card on top a covered
 // time line could ghost through; a hard clip can't.
@@ -1458,10 +1471,13 @@ function ttl(e,t){
   return cam+(fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
 }
 
-// v26 — a phone shows three days where a desktop shows seven (Google Calendar's own
-// "3 days" view): seven columns at 390px were single letters and bare bars.
+// v28 (Tom, 2026-10-18): "make the mobile view show all seven days in the week view".
+// v26 had cut the phone week to 3 days; it is a full Sun–Sat week again everywhere.
+// What made 7 columns unreadable in v26 was desktop-sized text forced onto one line
+// in a ~50px column — on a phone the week grid now uses small type that WRAPS inside
+// the card (Google Calendar's own 7-day phone view), see the .tgrid.narrow rules.
 function isPhone(){ return window.innerWidth<=700; }
-function weekSpan(){ return isPhone()?3:7; }
+function weekSpan(){ return 7; }
 function render(){
   document.querySelectorAll('#viewSwitch button').forEach(b=>b.classList.toggle('active',b.dataset.v===view));
   document.body.className=document.body.className.replace(/\bv-\w+/g,'').trim()+' v-'+view;
@@ -1577,7 +1593,8 @@ function renderTimeGrid(nDays){
     $('rangeLabel').textContent=`${MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
   }
   const list=visible();
-  const HOUR=48, DSTART=6, DEND=23, MINH=26; // 6am–11pm visible, scroll for rest
+  const narrow=nDays===7&&isPhone();   // v28: seven columns on a phone
+  const HOUR=48, DSTART=6, DEND=23, MINH=narrow?22:26; // 6am–11pm visible, scroll for rest
   // MINH: no block is drawn shorter than this, so overlap is judged on the drawn
   // extent (see the Day view's note) — otherwise short back-to-back events share
   // a column and are painted on top of one another.
@@ -1603,7 +1620,7 @@ function renderTimeGrid(nDays){
     while(true){ if(!alanes[l])alanes[l]=[]; if(!alanes[l].some(([a,b])=>!(sg.c1<a||sg.c0>b))) break; l++; }
     alanes[l].push([sg.c0,sg.c1]); sg.lane=l;
   }
-  let html=`<div class="tgrid">
+  let html=`<div class="tgrid${narrow?' narrow':''}">
     <div class="tg-head"><div class="tg-gutter"></div>${days.map(d=>`
       <div class="col"><div class="dow">${DOW[d.getDay()]}</div>
       <div class="dnum${sameDay(d,TODAY)?' today':''}" data-goday="${fmtYMD(d)}">${d.getDate()}</div></div>`).join('')}
@@ -1646,7 +1663,7 @@ function renderTimeGrid(nDays){
       const top=ev.s*HOUR, h=Math.max(MINH,(ev.en-ev.s)*HOUR-2);
       // v17: never a bare bar — every card carries its title (Google's rule)
       const wpx=dayPx*ev.span/ev.ncol-5-ev.depth*8;
-      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${ev.depth?' over':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;${placeCss(ev,12,dayPx*ev.span/ev.ncol)}${blockStyle(e,ev.depth)}" title="${esc(e.title)}">${clipBody(blockBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,'',preD,wpx),ev.textH!=null?ev.textH*HOUR-4:0)}</div>`;
+      colHtml+=`<div class="tg-ev${canDrag(e)?' draggable':''}${ev.depth?' over':''}" data-ev="${esc(String(e.id))}" data-day="${fmtYMD(d)}" style="top:${top}px;height:${h}px;${placeCss(ev,12,dayPx*ev.span/ev.ncol)}${blockStyle(e,ev.depth)}" title="${esc(e.title)}">${clipBody(narrow?narrowBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,preD):blockBody(e,ev.textH!=null?Math.min(h,ev.textH*HOUR-2):h,'',preD,wpx),ev.textH!=null?ev.textH*HOUR-4:0)}</div>`;
     }
     const isToday=sameDay(d,TODAY);
     let now='';
