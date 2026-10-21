@@ -342,7 +342,13 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 .toast{
   position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;
   padding:11px 20px;border-radius:8px;font-size:13.5px;z-index:200;box-shadow:var(--shadow);display:none;
+  max-width:min(92vw,560px);line-height:1.35;
 }
+/* v29 — an undo button inside the toast ("Revert", Tom 2026-10-21) */
+.toast .toast-act{display:inline-block;margin-left:14px;padding:4px 12px;border-radius:6px;border:1px solid #fff;background:#fff;color:#323232;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;}
+.toast .toast-act:hover{background:#e8e8e8;}
+.revert-btn{display:inline-block;margin-left:8px;padding:2px 10px;font-size:11.5px;border-radius:6px;border:1px solid #1e6b34;background:#fff;color:#1e6b34;font-weight:700;cursor:pointer;font-family:inherit;}
+.revert-btn:hover{background:#eaf5ec;}
 
 /* ============ RESPONSIVE ============ */
 /* v26 (Tom, 2026-10-13): "the day and date are cut off at the top right ... make the top
@@ -597,7 +603,7 @@ let lastSharedJson='';
 // Keys this page owns.  Everything else in the store belongs to a scheduled
 // feed (gcal_state, intake_last_run, …) and must survive a browser push —
 // before this, any unknown key was silently wiped on every save.
-const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides','writeback']);
+const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides','writeback','move_log']);
 /* v16 — A CHANGE MADE ON THIS SITE IS THE GROUND TRUTH (Tom, 2026-09-25):
    "any event updated from the sked.coalition.ventures site is direct feedback from
    an authorized user - the event needs to treat that input as the ground truth -
@@ -738,6 +744,61 @@ function wbState(e){ // for the modal
   for(const m of dupFamily(e)){ const w=writeback[String(m.id)]; if(w&&w.ts) return w; }
   return null;
 }
+/* v29 — REVERT A DRAG (Tom, 2026-10-21): "I sometimes drag an event and reschedule it
+   inadvertently — have a 'revert' or 'restore' button that brings it back to the original."
+   Every drag records, BEFORE anything is mutated, where the event was and what the row /
+   override looked like, keyed by the event id in store key `move_log` (per-id latest wins,
+   shared family-wide so a move made on the phone can be undone from the laptop).  Two ways
+   back: the toast after a drop grows an "Undo" button, and the event popup shows
+   "↩ Revert to original time" for as long as the log remembers the move.  A revert puts the
+   row/override back exactly, and — for a Google-sourced event — queues a second write-back
+   carrying the original timing, so Google ends up where it started even if the first
+   write-back already ran.  Entries older than 60 days are dropped. */
+const MV_KEY='sked_movelog_v1';
+let moveLog=JSON.parse(localStorage.getItem(MV_KEY)||'{}');
+const MV_FIELDS=['start','end','timeStart','timeEnd','allDay'];
+function saveMoveLog(){
+  const cutoff=Date.now()-60*86400000;
+  for(const [k,v] of Object.entries(moveLog)) if(!v||(v.ts||0)<cutoff) delete moveLog[k];
+  localStorage.setItem(MV_KEY,JSON.stringify(moveLog));
+}
+function recordMove(e,kind,before,prevRow){
+  const id=String(e.id), orig={}; for(const k of MV_FIELDS) orig[k]=before[k];
+  moveLog[id]={id, ts:Date.now(), kind, orig, title:cxStrip(e.title||''),
+    prevOvr:overrides[id]?JSON.parse(JSON.stringify(overrides[id])):null,
+    prevRow:prevRow?{...prevRow}:null};
+  saveMoveLog();
+}
+function moveLabel(m){ // "Tue Oct 21, 3:30pm – 5:00pm"
+  const d=parseYMD(m.orig.start); const when=`${DOW[d.getDay()]} ${MONTHS_S[d.getMonth()]} ${d.getDate()}`;
+  return m.orig.allDay||!m.orig.timeStart?`${when} (all day)`:`${when}, ${fmtMin(toMin(m.orig.timeStart))} – ${fmtMin(toMin(m.orig.timeEnd||m.orig.timeStart))}`;
+}
+function revertMove(id){
+  id=String(id); const m=moveLog[id];
+  if(!m){ toast('Nothing to revert — no recent move of this event on record'); return false; }
+  const cur=events.find(x=>String(x.id)===id);
+  const now=Date.now();
+  if(m.kind==='user'||m.kind==='ride'){
+    const i=userEvents.findIndex(x=>String(x.id)===id);
+    if(i<0){ toast('This event is no longer on the calendar, so there is nothing to put back'); delete moveLog[id]; saveMoveLog(); return false; }
+    if(cur&&wbCal(id)) queueWriteback(rawOf(cur),{...rawOf(cur),...m.orig});
+    const row={...userEvents[i], ...m.orig, ts:now, site_edit:now};
+    if(m.kind==='ride'){ row.rideAuto=true; delete row.site_edit; }   // the placeholder follows the practice again
+    else if(m.prevRow&&m.prevRow.rideAuto) row.rideAuto=m.prevRow.rideAuto;
+    userEvents[i]=row;
+    localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
+  } else {
+    if(cur&&wbCal(e_root(id))) queueWriteback(rawOf(cur),{...rawOf(cur),...m.orig});
+  }
+  if(m.prevOvr) overrides[id]={...m.prevOvr, ts:now}; else delete overrides[id];
+  localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
+  const lbl=moveLabel(m);
+  delete moveLog[id]; saveMoveLog();
+  pushSharedSoon(); rebuild(); closeModals();
+  toast(`Put back to ${lbl} — ${wbCal(e_root(id))?'Google Calendar is rewritten within the hour':'syncing to the family'}`);
+  return true;
+}
+const e_root=id=>String(id).split('@')[0];
 let foreignKeys={};
 function keepForeign(doc){
   if(!doc||typeof doc!=='object') return doc;
@@ -747,7 +808,7 @@ function keepForeign(doc){
 function localDoc(){
   return {...foreignKeys,
     v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
-    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides, writeback};
+    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides, writeback, move_log:moveLog};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
   keepForeign(a); keepForeign(b);          // feed-owned keys pass straight through
@@ -773,11 +834,13 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   for(const [k,v] of Object.entries(b.overrides||{})){ if(v&&(!ovr[k]||(v.ts||0)>=(ovr[k].ts||0))) ovr[k]=v; }
   const wb={...(a.writeback||{})};
   for(const [k,v] of Object.entries(b.writeback||{})){ if(v&&(!wb[k]||(v.ts||0)>=(wb[k].ts||0))) wb[k]=v; }
+  const mv={...(a.move_log||{})};
+  for(const [k,v] of Object.entries(b.move_log||{})){ if(v&&(!mv[k]||(v.ts||0)>=(mv[k].ts||0))) mv[k]=v; }
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
   return {...foreignKeys,
     v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
-    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr, writeback:wb};
+    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr, writeback:wb, move_log:mv};
 }
 function adoptDoc(doc){
   keepForeign(doc);
@@ -790,6 +853,7 @@ function adoptDoc(doc){
   localStorage.setItem(OVR_KEY,JSON.stringify(overrides));
   writeback=doc.writeback||{};
   localStorage.setItem(WB_KEY,JSON.stringify(writeback));
+  moveLog=doc.move_log||{}; saveMoveLog();
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
   localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
@@ -2018,11 +2082,12 @@ function applyMove(e,dMin,dDay){
   const inStore=userEvents.some(x=>String(x.id)===String(e.id));
   if(e.source==='ride'&&!inStore){
     // an unchosen ride-home placeholder becomes a real row under its own id (the ride picker still works on it)
+    recordMove(e,'ride',rawOf(e),null);
     userEvents.push({id:e.id, ts:now, title:e.title, person:'T', type:'family', ...fields, location:e.location||'', link:'',
       notes:e.notes||'', rideFor:e.rideFor||'', rideDate:e.rideDate||'', rideEnd:e.rideEnd||'', ride:e.ride||''});
     localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
     pushSharedSoon(); rebuild();
-    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)} — syncing to the family`);
+    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)} — syncing to the family`,{label:'Undo',fn:()=>revertMove(e.id)});
     return true;
   }
   if(!inStore||e.source==='user-recur'){
@@ -2032,15 +2097,17 @@ function applyMove(e,dMin,dDay){
     // family's version on every render; a Google-sourced one is also queued for write-back,
     // so a series stays one series in both places (v21).
     const before=rawOf(e);
+    recordMove(e,'ovr',before,null);
     recordOverride(before,{...before,...fields});
     pushSharedSoon(); rebuild();
-    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dDay?` on ${DOW[startDate.getDay()]} ${MONTHS_S[startDate.getMonth()]} ${startDate.getDate()}`:''} — ${wbCal(e.recurRoot||e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`);
+    toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dDay?` on ${DOW[startDate.getDay()]} ${MONTHS_S[startDate.getMonth()]} ${startDate.getDate()}`:''} — ${wbCal(e.recurRoot||e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`,{label:'Undo',fn:()=>revertMove(e.id)});
     return true;
   }
   {
     const i=userEvents.findIndex(x=>String(x.id)===String(e.id));
     if(i<0){ toast('This event can\'t be moved here — edit it at its source'); return false; }
     const before=withOverride(userEvents[i]);
+    recordMove(e,'user',before,userEvents[i]);
     recordOverride(before,{...before,...fields});
     userEvents[i]={...userEvents[i], ...fields, ts:now, site_edit:now};
     delete userEvents[i].rideAuto;              // a ride moved by hand stays where it was put
@@ -2048,7 +2115,7 @@ function applyMove(e,dMin,dDay){
   localStorage.setItem(USER_KEY,JSON.stringify(userEvents));
   pushSharedSoon(); rebuild();
   const dayLbl=dDay?` on ${DOW[startDate.getDay()]} ${MONTHS_S[startDate.getMonth()]} ${startDate.getDate()}`:'';
-  toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dayLbl} — ${wbCal(e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`);
+  toast(`Moved to ${fmtMin(ns)} – ${fmtMin(ne%1440)}${dayLbl} — ${wbCal(e.id)?'Google Calendar is rewritten within the hour':'syncing to the family'}`,{label:'Undo',fn:()=>revertMove(e.id)});
   return true;
 }
 (function(){
@@ -2290,6 +2357,10 @@ function showEvent(id){
     else if(w&&w.status==='done') tail=` — Google Calendar was rewritten to match${w.doneAt?' '+esc(new Date(w.doneAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):''}.`;
     else if(w&&w.status==='failed') tail=` — ⚠️ Google Calendar could NOT be rewritten (${esc(w.error||'unknown error')}); the scheduler still shows your version.`;
     html+=`<div class="ev-detail"><span class="ic">✏️</span><span class="edit-note${w&&w.status==='failed'?' bad':''}">Changed on this site ${when}${tail}</span></div>`;
+  }
+  { // v29 — a drag can be undone for as long as the move log remembers it
+    const mv=moveLog[String(e.id)];
+    if(mv&&mv.orig&&mv.orig.start) html+=`<div class="ev-detail"><span class="ic">↩</span><span style="color:var(--muted)">Moved by drag — was ${esc(moveLabel(mv))}<button class="revert-btn" data-revert="${esc(String(e.id))}">↩ Revert to original time</button></span></div>`;
   }
   const isRide=/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id));
   if(isRide) html+=rideBoxHtml(e);
@@ -2586,9 +2657,10 @@ function saveForm(){
   pushSharedSoon();
   rebuild(); closeModals(); toast(editingId&&wbCal(String(editingId).split('@')[0])?'Saved — Google Calendar is rewritten within the hour':'Saved — syncing to the family');
 }
-function toast(msg){
+function toast(msg,action){
   const t=$('toast'); t.textContent=msg; t.style.display='block';
-  clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',3200);
+  if(action){ const b=document.createElement('button'); b.className='toast-act'; b.textContent=action.label; b.onclick=()=>{ t.style.display='none'; action.fn(); }; t.appendChild(b); }
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',action?9000:3200);
 }
 
 // ---------- navigation ----------
@@ -2607,6 +2679,8 @@ document.addEventListener('click',ev=>{
   const ns=t.closest('[data-notesave]');
   if(ns){ const id=ns.dataset.notesave; const ta=document.querySelector(`textarea[data-note="${id}"]`); if(ta){ saveNote(id,ta.value); toast('Note saved — syncing to the family'); } return; }
   if(t.closest('textarea')) return;
+  const rv=t.closest('[data-revert]');
+  if(rv){ revertMove(rv.dataset.revert); return; }
   const evEl=t.closest('[data-ev]');
   if(evEl){ if(performance.now()-dragEndedAt<500) return; showEvent(evEl.dataset.ev); return; } // a drop is not a tap
   const more=t.closest('.ev-more');
