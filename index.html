@@ -91,6 +91,32 @@ button{font-family:inherit; cursor:pointer;}
 .frow.on .cb{border-color:transparent;}
 .frow .lbl{font-size:13.5px;}
 .frow .cnt{margin-left:auto;font-size:11px;color:var(--muted);}
+/* v30 — Series: one row per recurring activity, grouped under its person (Tom, 2026-10-22) */
+.sgrp{margin:2px 0 4px;}
+.shead{display:flex;align-items:center;gap:6px;padding:5px 4px;border-radius:6px;cursor:pointer;user-select:none;font-size:13px;font-weight:600;}
+.shead:hover{background:var(--surface);}
+.shead .chev{font-size:10px;color:var(--muted);width:12px;display:inline-block;transition:transform .15s;}
+.sgrp.open .shead .chev{transform:rotate(90deg);}
+.shead .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.shead .cnt{margin-left:auto;font-size:11px;color:var(--muted);font-weight:400;}
+.shead .mini-act{font-size:11px;color:var(--muted);font-weight:400;padding:0 3px;border-radius:4px;}
+.shead .mini-act:hover{background:var(--border);color:var(--text);}
+.sgrp .srows{display:none;padding-left:6px;}
+.sgrp.open .srows{display:block;}
+.srow{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 6px;border-radius:6px;cursor:pointer;user-select:none;}
+.srow:hover{background:var(--surface);}
+.srow .cb{width:14px;height:14px;border-radius:3px;border:2px solid var(--muted);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;}
+.srow.on .cb{border-color:transparent;}
+.srow .lbl{font-size:12.5px;line-height:1.25;min-width:0;flex:1;overflow-wrap:anywhere;}
+.srow.off .lbl{color:var(--muted);}
+.srow .cnt{margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0;}
+.srow .only{font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 4px;flex-shrink:0;opacity:0;}
+.srow:hover .only{opacity:1;}
+.srow .only:hover{background:var(--border);color:var(--text);}
+@media (hover:none){.srow .only{opacity:1;}}
+.sreset{font-size:12px;color:var(--T);cursor:pointer;padding:2px 4px;display:inline-block;}
+.sreset:hover{text-decoration:underline;}
+.fgroup h4 .hint{font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px;}
 .src-list a{display:block;font-size:12.5px;color:var(--T);text-decoration:none;padding:3px 4px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .src-list a:hover{background:var(--surface);text-decoration:underline;}
 
@@ -434,6 +460,7 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
     <div class="mini" id="miniCal"></div>
     <div class="fgroup" id="calFilters"><h4>Calendars</h4></div>
     <div class="fgroup" id="peopleFilters"><h4>People</h4></div>
+    <div class="fgroup" id="seriesFilters"><h4>Series</h4></div>
     <div class="fgroup" id="typeFilters"><h4>Event types</h4></div>
     <div class="fgroup"><h4>Data sources</h4><div class="src-list" id="srcList"></div></div>
   </div>
@@ -907,6 +934,7 @@ let filters=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')||{
 for(const k of Object.keys(PEOPLE)) if(filters.people[k]===undefined) filters.people[k]=true;
 for(const k of Object.keys(TYPES)) if(filters.types[k]===undefined) filters.types[k]=true;
 if(!filters.cals) filters.cals={};
+if(!filters.series) filters.series={}; // v30: series key → false when switched off; absent = on
 for(const k of Object.keys(CALS)) if(filters.cals[k]===undefined) filters.cals[k]=false; // a subscribed calendar starts off
 let view=localStorage.getItem(VIEW_KEY)||'month';
 let cursor=new Date(); cursor.setHours(0,0,0,0);
@@ -1367,6 +1395,50 @@ function feedLabel(e){
 function dupFamily(e){ return [e,...(e._dupes||[])]; }
 
 // ---------- filtering ----------
+/* ---------- v30 — Series (Tom, 2026-10-22) ----------
+   "I should be able to select a box to just see a particular type of event — Mass Elite
+   2032 practices, AchieveLax 2034 games — and deselect everything else to see how one
+   series looks on the cal." A series is derived, not stored: the same person + the same
+   event type + the same title stem once the owner prefix, CANCELLED/OPTIONAL tags,
+   opponents (vs …/@ …), parentheticals and trailing times are stripped. So
+   "Emily — Mass Elite Chrome vs ME Gold" and "… vs Bullets 32 Silver" are one series,
+   "WPC U13: Game vs X" and "WPC U13: Practice (Elm Bank)" are two. Anything that
+   occurs only once is pooled under that person's "One-off events". Keys are
+   recomputed on every rebuild so a feed renaming a title just moves the row. */
+const SERIES_OWNER=/^(?:(?:Tommy|Emily|Sophie|Laura|Tom|Family|Hennesseys|T|E|S|L|D|F)(?:\s*(?:&|and|,)\s*(?:Tommy|Emily|Sophie|Laura|Tom|Family))?)\s*[—–:-]\s+/i;
+function seriesStem(title){
+  let t=String(title||'').trim();
+  for(let i=0;i<3;i++){
+    t=t.replace(/^(?:CANCELLED|OPTIONAL|HOLD|TO DO)\s*:\s*/i,'');
+    t=t.replace(SERIES_OWNER,'');
+  }
+  t=t.replace(/\s*\([^)]*\)?/g,'');                 // parentheticals (also an unclosed one at the end)
+  t=t.replace(/\s+(?:vs\.?|@)\s+.*$/i,'');            // opponent / venue tail
+  t=t.replace(/\s+[—–-]\s+(?:date|night|session)\s*\d.*$/i,''); // "— date 1 of 2", "(night 2)" leftovers
+  t=t.replace(/\s+[—–-]\s+[^—–-]{1,14}$/,'');          // short dash tail: "ride home - Tom", "- ?"
+  t=t.replace(/\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?$/i,''); // trailing clock time
+  t=t.replace(/[\s:—–\-·,]+$/,'').replace(/\s+/g,' ').trim();
+  return t;
+}
+function seriesKey(e){ return e._series||''; }
+function assignSeries(list){
+  const stems=new Map();
+  for(const e of list){
+    if(!TYPES[e.type]) e.type=/sport|game|practice|training/i.test(e.type)?'practice':'family'; // a feed wrote type "sport" (amy-rl-prac-*) — unknown types were silently invisible
+    if(Object.keys(CALS).some(k=>CALS[k].match(e))){ e._series=''; e._stem=''; continue; } // subscribed calendars have their own switch
+    const stem=seriesStem(e.title);
+    e._stem=stem;
+    const k=e.person+'|'+e.type+'|'+stem.toLowerCase();
+    stems.set(k,(stems.get(k)||0)+1);
+  }
+  for(const e of list){
+    if(!e._stem&&e._series==='') continue;
+    const k=e.person+'|'+e.type+'|'+e._stem.toLowerCase();
+    e._series=(stems.get(k)||0)>=2?k:e.person+'|other';
+  }
+  return list;
+}
+function seriesOn(e){ const k=seriesKey(e); return !k||filters.series[k]!==false; }
 function passesOwner(e){
   // a subscribed calendar is governed by its own switch, not by the people filter —
   // one control, so "Work Cal on" can never be quietly overruled by "Tom off"
@@ -1380,6 +1452,7 @@ function visible(){
     // a merged event survives if ANY of the calendars it sits on is switched on
     if(!dupFamily(e).some(passesOwner)) return false;
     if(!filters.types[e.type]) return false;
+    if(!seriesOn(e)) return false; // the surviving copy decides; merged copies carry no series
     if(searchQ){
       const q=searchQ.toLowerCase();
       if(!((e.title||'').toLowerCase().includes(q)||(e.location||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q)||noteText(e.id).toLowerCase().includes(q))) return false;
@@ -2263,6 +2336,7 @@ function renderFilters(){
       <span class="lbl">${p.name}</span><span class="cnt">${counts.people[k]||0}</span></div>`;
   }
   $('peopleFilters').innerHTML=ph;
+  renderSeriesFilters();
   let th='<h4>Event types</h4>';
   for(const [k,t] of Object.entries(TYPES)){
     const on=filters.types[k];
@@ -2272,6 +2346,66 @@ function renderFilters(){
   }
   $('typeFilters').innerHTML=th;
   $('srcList').innerHTML=siteData.sources.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">↗ ${esc(s.label)}</a>`).join('');
+}
+
+// v30 — the Series group: one collapsible block per person, one row per series
+const SERIES_OPEN_KEY='sked_series_open_v1';
+let seriesOpen=JSON.parse(localStorage.getItem(SERIES_OPEN_KEY)||'{}');
+function renderSeriesFilters(){
+  const byP={}; // person → key → {label,type,n}
+  for(const e of events){
+    const k=seriesKey(e); if(!k) continue;
+    const m=byP[e.person]||(byP[e.person]={});
+    const r=m[k]||(m[k]={label:'',type:e.type,n:0,other:k.endsWith('|other')});
+    r.n++;
+    if(!r.label&&!r.other) r.label=e._stem;
+  }
+  const anyOff=Object.values(filters.series).some(v=>v===false);
+  let h=`<h4>Series${anyOff?' <span class="hint">· some hidden</span>':''}</h4>`;
+  if(anyOff) h+=`<div class="sreset" data-fsreset="1">Show all series</div>`;
+  for(const [p,P] of Object.entries(PEOPLE)){
+    const m=byP[p]; if(!m) continue;
+    const rows=Object.entries(m).map(([k,r])=>({k,...r}))
+      .sort((a,b)=>(a.other-b.other)||(b.n-a.n)||a.label.localeCompare(b.label));
+    const total=rows.reduce((s,r)=>s+r.n,0), nOff=rows.filter(r=>filters.series[r.k]===false).length;
+    const open=!!seriesOpen[p];
+    h+=`<div class="sgrp${open?' open':''}" data-sgrp="${p}">
+      <div class="shead" data-fsp="${p}"><span class="chev">▶</span><span class="dot" style="background:${P.hex}"></span>
+        <span>${P.name}</span>
+        <span class="mini-act" data-fsall="${p}" title="turn every ${P.name} series on">all</span><span class="mini-act" data-fsnone="${p}" title="turn every ${P.name} series off">none</span>
+        <span class="cnt">${rows.length} series${nOff?` · ${nOff} off`:''}</span></div>
+      <div class="srows">`;
+    for(const r of rows){
+      const on=filters.series[r.k]!==false;
+      const lbl=r.other?`One-off events`:r.label;
+      const ic=TYPES[r.type]?.icon||'';
+      h+=`<div class="srow${on?' on':' off'}" data-fs="${esc(r.k)}" title="${esc(lbl)}">
+        <span class="cb" style="${on?`background:${P.hex}`:''}">${on?'✓':''}</span>
+        <span class="lbl">${esc(lbl)}${r.other||r.type==='family'?'':` <span style="color:var(--muted);font-size:11px;">${ic}</span>`}</span>
+        <span class="only" data-fso="${esc(r.k)}" title="show only this series">only</span>
+        <span class="cnt">${r.n}</span></div>`;
+    }
+    h+=`</div></div>`;
+  }
+  $('seriesFilters').innerHTML=h;
+}
+// "only": this series alone — every other series off, and the row's person and
+// type switched on so the result is actually visible (a dead "only" would be worse
+// than none). People and types otherwise stay exactly as they were.
+function seriesOnly(k){
+  const all=new Set(events.map(seriesKey).filter(Boolean));
+  filters.series={}; for(const x of all) if(x!==k) filters.series[x]=false;
+  const [p]=k.split('|'); filters.people[p]=true;
+  const t=k.split('|')[1]; if(t&&t!=='other') filters.types[t]=true;
+  else if(t==='other') for(const ty of Object.keys(TYPES)) filters.types[ty]=true;
+  persistFilters();
+  const row=events.find(e=>seriesKey(e)===k);
+  toast(`Only ${row&&row._stem?row._stem:'this series'} (${PEOPLE[p]?.name||p})`);
+}
+function seriesSetPerson(p,on){
+  for(const e of events){ const k=seriesKey(e); if(k&&k.startsWith(p+'|')){ if(on) delete filters.series[k]; else filters.series[k]=false; } }
+  if(on) filters.people[p]=true;
+  persistFilters();
 }
 
 // ---------- modals ----------
@@ -2693,6 +2827,18 @@ document.addEventListener('click',ev=>{
   if(cell && !t.closest('.ev-chip')){ cursor=parseYMD(cell.dataset.day); view='day'; miniCursor=new Date(cursor); render(); return; }
   const dm=t.closest('[data-daymode]');
   if(dm){ dayMode=dm.dataset.daymode; localStorage.setItem(DAYMODE_KEY,dayMode); render(); return; }
+  const fso=t.closest('[data-fso]');
+  if(fso){ seriesOnly(fso.dataset.fso); return; }
+  const fsall=t.closest('[data-fsall]');
+  if(fsall){ seriesSetPerson(fsall.dataset.fsall,true); return; }
+  const fsnone=t.closest('[data-fsnone]');
+  if(fsnone){ seriesSetPerson(fsnone.dataset.fsnone,false); return; }
+  const fsreset=t.closest('[data-fsreset]');
+  if(fsreset){ filters.series={}; persistFilters(); return; }
+  const fs=t.closest('[data-fs]');
+  if(fs){ const k=fs.dataset.fs; if(filters.series[k]===false) delete filters.series[k]; else filters.series[k]=false; persistFilters(); return; }
+  const fsp=t.closest('[data-fsp]');
+  if(fsp){ const p=fsp.dataset.fsp; seriesOpen[p]=!seriesOpen[p]; localStorage.setItem(SERIES_OPEN_KEY,JSON.stringify(seriesOpen)); renderSeriesFilters(); return; }
   const fp=t.closest('[data-fp]');
   if(fp){ filters.people[fp.dataset.fp]=!filters.people[fp.dataset.fp]; persistFilters(); return; }
   const ft=t.closest('[data-ft]');
@@ -2897,7 +3043,7 @@ document.addEventListener('keydown',e=>{
 function rebuild(){
   // a re-render of the same Day/Week grid (a drop, a sync poll) keeps the scroll position
   const sc=$('tgScroll'); if(sc&&keepScroll==null) keepScroll=sc.scrollTop;
-  events=mergeDuplicates(normAll(window._fam||[],window._mass||[],siteData));
+  events=assignSeries(mergeDuplicates(normAll(window._fam||[],window._mass||[],siteData)));
   renderFilters(); render();
 }
 Promise.all([
