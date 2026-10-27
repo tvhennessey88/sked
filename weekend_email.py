@@ -115,6 +115,7 @@ async def harvest(date):
               endDay:ymd(e.end), location:e.location||'', link:e.link||'', notes:e.notes||'',
               cancelled:cx==='cancelled', postponed:cx==='postponed',
               optional:/^OPTIONAL:/i.test(e.title||''), source:e.source||'',
+              drive:(typeof driveOf==='function'&&driveOf(e))||null,   // v33: who is driving (to / home)
               cals:(typeof dupFamily==='function'?dupFamily(e):[e]).map(m=>typeof feedLabel==='function'?feedLabel(m):'')});
           }
           return out; }""", [fri.isoformat(), sun.isoformat()])
@@ -232,10 +233,13 @@ def card(e):
                   f'⚠️ Overlaps: {esc("; ".join(e["overlaps"]))}</div>')
     # one useful line from the notes: uniform / bring / pack
     tip = ""
+    drv = drive_line(e)
+    if drv:
+        tip += f'<div style="margin-top:6px;font-size:12.5px;font-weight:700;color:#202124;">{esc(drv)}</div>'
     m = re.search(r"(uniform[^.]*\.|bring[^.]*\.|pack[^.]*\.|no team tent[^.]*\.)", e["notes"], re.I)
     if m and not practice and (e["person"], e["day"], m.group(1)) not in SEEN_TIPS:
         SEEN_TIPS.add((e["person"], e["day"], m.group(1)))
-        tip = f'<div style="margin-top:6px;font-size:12.5px;color:#5f6368;">{esc(m.group(1).strip())}</div>'
+        tip += f'<div style="margin-top:6px;font-size:12.5px;color:#5f6368;">{esc(m.group(1).strip())}</div>'
     return f"""
 <tr><td style="padding:0 0 10px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-left:5px solid {bcol};background:{"#f8f9fa" if practice else light};border-radius:10px;opacity:{op};">
@@ -282,6 +286,15 @@ def render_html(fri, sat, sun, day_lists, counts, pr, evs):
 </table></td></tr></table></body></html>"""
 
 
+def drive_line(e):
+    """v33 — 'Drive there: Mary · Drive home: Tom Jr' from the scheduler's Drive To / Drive Home fields."""
+    d = e.get("drive") or {}
+    parts = []
+    if d.get("to"): parts.append(f"🚗 Drive there: {d['to']}")
+    if d.get("home"): parts.append(f"🏠 Drive home: {d['home']}")
+    return " · ".join(parts)
+
+
 def render_text(sat, sun, day_lists):
     out = [f"HENNESSEY WEEKEND — Sat {sat:%b %-d} & Sun {sun:%b %-d}", ""]
     for d, lbl, lst in day_lists:
@@ -291,7 +304,7 @@ def render_text(sat, sun, day_lists):
             name = KIDS[e["person"]][0]
             t = "all day" if e["allDay"] else (f"arrive {fmt_t(e['arrive'])}, starts {fmt_t(e['timeStart'])}" if e["arrive"] and e["arrive"] != e["timeStart"] else f"{fmt_t(e['timeStart'])}–{fmt_t(e['timeEnd'])}")
             tag = "CANCELLED " if e["cancelled"] else ("(practice) " if e["kind"] == "practice" else "")
-            out.append(f"  {name}: {tag}{e['ctitle']} — {t}" + (f" — {e['location']}" if e["location"] else ""))
+            out.append(f"  {name}: {tag}{e['ctitle']} — {t}" + (f" — {e['location']}" if e["location"] else "") + (f" — {drive_line(e)}" if drive_line(e) else ""))
         out.append("")
     out.append("Arrive = be there; Starts = kickoff. Scheduler: https://sked.coalition.ventures")
     return "\n".join(out)
