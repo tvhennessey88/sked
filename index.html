@@ -115,6 +115,9 @@ button{font-family:inherit; cursor:pointer;}
 .srow .only:hover{background:var(--border);color:var(--text);}
 @media (hover:none){.srow .only{opacity:1;}}
 .sreset{font-size:12px;color:var(--T);cursor:pointer;padding:2px 4px;display:inline-block;}
+/* v31 — All on / All off for the whole sidebar (Tom, 2026-10-24) */
+.allbtns{display:flex;gap:6px;margin:0 0 12px;}
+.allbtns .btn{flex:1;padding:6px 0;font-size:12.5px;border-radius:16px;}
 .sreset:hover{text-decoration:underline;}
 .fgroup h4 .hint{font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px;}
 .src-list a{display:block;font-size:12.5px;color:var(--T);text-decoration:none;padding:3px 4px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -203,6 +206,32 @@ button{font-family:inherit; cursor:pointer;}
 .tr-flag{font-weight:700;color:#b06000;white-space:nowrap;}
 .tr-flag.bad{color:#c5221f;}
 .ride-box{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fafbfc;}
+/* v33 — Drive to / Drive home (Tom, 2026-10-27) */
+.drive-box{margin-top:14px;border:1px solid #cfe3ff;border-radius:8px;padding:10px 12px;background:#f3f8ff;}
+.drive-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;}
+.drow{display:flex;align-items:flex-start;gap:8px;margin-top:6px;}
+.drow .dl{width:78px;flex-shrink:0;font-size:13px;font-weight:600;padding-top:7px;}
+.drow .ride-btns{flex:1;}
+.drow .ride-btns .btn{padding:5px 10px;font-size:12.5px;}
+.drow .ride-btns .btn.none{color:var(--muted);}
+.drv{display:inline-block;font-size:.84em;font-weight:700;opacity:.9;white-space:nowrap;margin-left:4px;}
+.tgrid.narrow .drv,.ev-chip .drv{display:none;}
+.ev-chip.timed .drv{display:inline;margin-left:2px;}
+.agrp{margin:4px 0 10px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:#fafbfc;}
+.ahead{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;}
+.ahead .cnt{font-size:11px;color:var(--muted);font-weight:400;}
+.ahead .btn{margin-left:auto;padding:3px 9px;font-size:11.5px;border-radius:12px;white-space:nowrap;}
+.ahead .btn.pri{background:var(--T);border-color:var(--T);color:#fff;}
+.astat{font-size:11px;color:var(--muted);margin:2px 0 4px;}
+.astat.bad{color:#c5221f;font-weight:600;}
+.arow{display:flex;gap:6px;align-items:flex-start;padding:4px 2px;border-radius:5px;cursor:pointer;font-size:12px;line-height:1.3;border-top:1px solid #eef0f2;}
+.arow:hover{background:#fff;}
+.arow .adt{width:66px;flex-shrink:0;color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px;padding-top:1px;}
+.arow .aleg{flex-shrink:0;width:16px;text-align:center;}
+.arow .at{flex:1;min-width:0;}
+.arow .at .atm{color:var(--muted);}
+.arow .rail{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0;}
+.anone{font-size:12px;color:var(--muted);padding:4px 2px;}
 .ride-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;}
 .ride-btns{display:flex;flex-wrap:wrap;gap:6px;}
 .ride-btns .btn{padding:6px 11px;font-size:13px;}
@@ -458,6 +487,8 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
   <div class="sidebar" id="sidebar">
     <button class="btn primary" id="addBtn" style="width:100%;padding:11px;margin-bottom:16px;border-radius:22px;font-size:14px;">＋ &nbsp;Add event</button>
     <div class="mini" id="miniCal"></div>
+    <div class="fgroup" id="assignBox"><h4>Assignments</h4></div>
+    <div class="allbtns"><button class="btn" data-allon="1" title="Every person, series and event type on">All on</button><button class="btn" data-alloff="1" title="Blank the calendar — then tick just the series you want to see">All off</button></div>
     <div class="fgroup" id="calFilters"><h4>Calendars</h4></div>
     <div class="fgroup" id="peopleFilters"><h4>People</h4></div>
     <div class="fgroup" id="seriesFilters"><h4>Series</h4></div>
@@ -531,7 +562,14 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v22 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v33 (Google-Calendar-style)
+   v33 (10/27): Drive To / Drive Home on every kid event (Tom, Laura, Mary, Tom Jr, Nadine or
+   anyone typed in), an Assignments section in the sidebar listing each driver's upcoming
+   legs (past days drop off by themselves), and an Email Assignments button that composes a
+   styled email of that person's legs — queued in the store and sent by the hourly task to
+   Mary / Tom Jr with Tom and Laura cc'd. Store keys `drives`, `drive_mail`.
+   v32 (10/25): timed blocks are placed by clock time, so a DST day (Nov 1, Mar 14) no longer
+   draws every event an hour off. v31 (10/24): All on / All off sidebar buttons.
    v22 (9/30): a small event drawn inside a bigger one can be clicked and dragged again
    (hover no longer re-stacks cards). EVERY event is editable and draggable on the
    scheduler whatever feed it came from — the family's version is kept as an override
@@ -630,7 +668,7 @@ let lastSharedJson='';
 // Keys this page owns.  Everything else in the store belongs to a scheduled
 // feed (gcal_state, intake_last_run, …) and must survive a browser push —
 // before this, any unknown key was silently wiped on every save.
-const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides','writeback','move_log']);
+const MANAGED_KEYS=new Set(['v','notes','hidden','confirmed','tracking_items','user_events','deleted_user','tom_work','tom_work_updated','overrides','writeback','move_log','drives','drive_mail']);
 /* v16 — A CHANGE MADE ON THIS SITE IS THE GROUND TRUTH (Tom, 2026-09-25):
    "any event updated from the sked.coalition.ventures site is direct feedback from
    an authorized user - the event needs to treat that input as the ground truth -
@@ -826,6 +864,158 @@ function revertMove(id){
   return true;
 }
 const e_root=id=>String(id).split('@')[0];
+/* v33 — DRIVE TO / DRIVE HOME (Tom, 2026-10-27): "For all kid events in the calendar, add
+   'Drive To' and 'Drive Home' fields. Options are Tom, Laura, Mary, Tom Jr, Nadine and free
+   form. For Mary and Tom Jr, a section on the left tool bar — Assignments — listing their
+   upcoming events or legs (nothing historical). Each person gets an Email Assignments button
+   that stylizes their assignments, with event details and notes."
+   Store key `drives` = {eventId: {to, home, date, title, person, ts}} — per-id latest wins,
+   shared family-wide, keyed by the id the popup shows (a weekly instance keeps its own
+   `root@date` id, so one Tuesday can differ from the next). Entries whose day has passed are
+   pruned on every merge, which is what keeps the Assignments list to what is still ahead.
+   The email: the page composes the styled HTML itself from the same events the family sees,
+   and queues it in store key `drive_mail`; the hourly "Sked: drive assignment emails" task
+   sends it from tom@coalition.ventures to the driver with Tom and Laura cc'd and marks it
+   sent. An "Open in Mail" fallback on the toast puts a plain-text copy in the mail app now. */
+const DRIVERS=['Tom','Laura','Mary','Tom Jr','Nadine'];
+const DRIVER_EMAIL={'Mary':'marydhennessey@gmail.com','Tom Jr':'tomhjr@gmail.com'};
+const ASSIGN_CC=['tvhennessey@gmail.com','lauraehennessey@gmail.com'];
+const ASSIGN_ALWAYS=['Mary','Tom Jr'];      // always have a section, even when empty
+const DRV_KEY='sked_drives_v1', DM_KEY='sked_drivemail_v1';
+let drives=JSON.parse(localStorage.getItem(DRV_KEY)||'{}');
+let driveMail=JSON.parse(localStorage.getItem(DM_KEY)||'{}');
+const isKidEvent=e=>!!e&&['T','E','S'].includes(e.person)&&e.type!=='regcheck';
+function pruneDrives(o){ const cut=fmtYMD(addDays(TODAY,-1)), old=Date.now()-120*86400000;
+  for(const [k,v] of Object.entries(o)) if(!v||(v.date&&v.date<cut)||(!v.date&&(v.ts||0)<old)) delete o[k]; return o; }
+function pruneMail(o){ const cut=Date.now()-7*86400000; for(const [k,v] of Object.entries(o)) if(!v||(v.ts||0)<cut) delete o[k]; return o; }
+function driveOf(e){ for(const m of dupFamily(e)){ const d=drives[String(m.id)]; if(d&&(d.to||d.home)) return d; } return null; }
+function setDrive(e,leg,who){
+  const id=String(e.id), cur={...(drives[id]||{})};
+  who=(who||'').trim();
+  if(who) cur[leg]=who; else delete cur[leg];
+  cur.date=fmtYMD(e.start); cur.title=cxStrip(e.title||''); cur.person=e.person; cur.ts=Date.now();
+  drives[id]=cur;     // an entry with neither leg is a tombstone that beats the old value on merge
+  localStorage.setItem(DRV_KEY,JSON.stringify(drives));
+  pushSharedSoon(); rebuild();
+  toast(who?`${leg==='to'?'Drive to':'Drive home'}: ${who}`:`${leg==='to'?'Drive to':'Drive home'} cleared`);
+  showEvent(id);
+}
+function drvTag(e){ const d=driveOf(e); if(!d) return '';
+  const parts=[]; if(d.to) parts.push('🚗 '+esc(d.to)); if(d.home) parts.push('🏠 '+esc(d.home));
+  return `<span class="drv" title="${d.to?'Drive to: '+esc(d.to):''}${d.to&&d.home?' · ':''}${d.home?'Drive home: '+esc(d.home):''}">${parts.join(' · ')}</span>`; }
+function driveBoxHtml(e){
+  const d=drives[String(e.id)]||driveOf(e)||{};
+  const row=(leg,lbl)=>{
+    const cur=d[leg]||'';
+    let h=`<div class="drow"><span class="dl">${lbl}</span><div class="ride-btns">`;
+    const opts=[...DRIVERS]; if(cur&&!opts.includes(cur)) opts.push(cur);
+    for(const o of opts) h+=`<button class="btn${cur===o?' on':''}" data-drv="${leg}" data-who="${esc(o)}">${esc(o)}</button>`;
+    h+=`<button class="btn" data-drv="${leg}" data-who="*">Other…</button>`;
+    if(cur) h+=`<button class="btn none" data-drv="${leg}" data-who="" title="Clear">✕</button>`;
+    return h+`</div></div>`;
+  };
+  return `<div class="drive-box"><div class="lbl">🚗 Who's driving ${esc(PEOPLE[e.person]?.name||'')}?</div>${row('to','Drive to')}${row('home','Drive home')}
+    <div id="drvOther" style="display:none;margin-top:8px;"><input type="text" id="drvOtherName" placeholder="Who is driving?" style="width:60%;"> <button class="btn" id="drvOtherSave">Save</button></div></div>`;
+}
+function wireDriveBox(e){
+  document.querySelectorAll('#evBody [data-drv]').forEach(b=>b.onclick=()=>{
+    const leg=b.dataset.drv, who=b.dataset.who;
+    if(who==='*'){ const o=$('drvOther'); o.style.display='block'; o.dataset.leg=leg; $('drvOtherName').focus(); return; }
+    setDrive(e,leg,who);
+  });
+  const sv=$('drvOtherSave'); if(sv) sv.onclick=()=>{ const n=$('drvOtherName').value.trim(); if(!n){ toast('Type who is driving'); return; } setDrive(e,$('drvOther').dataset.leg||'to',n); };
+}
+// every upcoming leg for one driver, soonest first — judged on the events the page already
+// built (overrides, repeats, hides and v13 de-duplication all applied), never on the raw store
+function assignmentsFor(who){
+  const out=[];
+  for(const e of events){
+    if(!isKidEvent(e)) continue;
+    if(hiddenIds.has(e.id)||(e.trackRoot&&hiddenIds.has(e.trackRoot))||(e.recurRoot&&hiddenIds.has(e.recurRoot))) continue;
+    if(startOfDay(e.start)<TODAY) continue;
+    const d=driveOf(e); if(!d) continue;
+    if(d.to===who) out.push({e,leg:'to'});
+    if(d.home===who) out.push({e,leg:'home'});
+  }
+  out.sort((a,b)=>a.e.start-b.e.start||(a.leg==='to'?-1:1));
+  return out;
+}
+function assignDrivers(){
+  const set=new Set(ASSIGN_ALWAYS), cut=fmtYMD(TODAY);
+  for(const v of Object.values(drives)){ if(!v||(v.date&&v.date<cut)) continue; if(v.to) set.add(v.to); if(v.home) set.add(v.home); }
+  return [...set];
+}
+const legTime=(e,leg)=>e.allDay?'all day':(leg==='to'?`${fmtTime(e.start)} start`:`${fmtTime(e.end)} finish`);
+function lastMailFor(who){ let best=null; for(const v of Object.values(driveMail)) if(v&&v.who===who&&(!best||(v.ts||0)>(best.ts||0))) best=v; return best; }
+function renderAssignments(){
+  const box=$('assignBox'); if(!box) return;
+  let h='<h4>Assignments <span class="hint">· who is driving</span></h4>';
+  for(const who of assignDrivers()){
+    const legs=assignmentsFor(who), email=DRIVER_EMAIL[who]||'';
+    h+=`<div class="agrp"><div class="ahead"><span>🚗 ${esc(who)}</span><span class="cnt">${legs.length} leg${legs.length===1?'':'s'}</span>`;
+    if(email) h+=`<button class="btn${legs.length?' pri':''}" data-mail="${esc(who)}" title="Email ${esc(who)}'s assignments to ${esc(email)} (cc Tom & Laura)">✉️ Email</button>`;
+    h+=`</div>`;
+    const lm=lastMailFor(who);
+    if(lm){ const when=new Date(lm.sentAt||lm.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      h+=`<div class="astat${lm.status==='failed'?' bad':''}">${lm.status==='sent'?`Emailed ${when}`:lm.status==='pending'?`Email queued ${when} — goes out within the hour`:lm.status==='failed'?`⚠️ Email failed ${when}${lm.error?' — '+esc(lm.error):''}`:''}</div>`; }
+    if(!legs.length) h+=`<div class="anone">Nothing assigned yet — open a kid's event and tap a name under Drive to / Drive home.</div>`;
+    for(const {e,leg} of legs){
+      h+=`<div class="arow" data-ev="${esc(String(e.id))}"><span class="rail" style="background:${evColor(e)}"></span><span class="adt">${DOW[e.start.getDay()]} ${MONTHS_S[e.start.getMonth()]} ${e.start.getDate()}</span><span class="aleg" title="${leg==='to'?'Drive to':'Drive home'}">${leg==='to'?'🚗':'🏠'}</span><span class="at">${esc(cxStrip(e.title))}<br><span class="atm">${esc(legTime(e,leg))}${e.location?' · '+esc(e.location.split(',')[0]):''}</span></span></div>`;
+    }
+    h+=`</div>`;
+  }
+  box.innerHTML=h;
+}
+// ---- the email: composed here from what the family sees, sent by the hourly task ----
+function buildAssignEmail(who){
+  const legs=assignmentsFor(who);
+  const byDay={}; for(const l of legs){ const k=fmtYMD(l.e.start); (byDay[k]=byDay[k]||[]).push(l); }
+  const today=`${DOW[TODAY.getDay()]}, ${MONTHS_S[TODAY.getMonth()]} ${TODAY.getDate()}`;
+  const maps=loc=>`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`;
+  let html=`<div style="background:#f3f4f6;padding:18px 10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202124;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e3e5e8;">
+<tr><td style="padding:22px 24px 8px;">
+<div style="font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#70757a;font-weight:700;">Hennessey Family Scheduler</div>
+<div style="font-size:24px;font-weight:700;margin-top:4px;">Driving assignments for ${esc(who)}</div>
+<div style="font-size:14px;color:#5f6368;margin-top:6px;">${legs.length?`${legs.length} leg${legs.length===1?'':'s'} coming up, as of ${esc(today)}. 🚗 = drive there &nbsp;·&nbsp; 🏠 = drive home.`:`Nothing assigned to you right now (as of ${esc(today)}).`}</div>
+</td></tr>`;
+  let text=`Driving assignments for ${who} — as of ${today}\n${legs.length?`${legs.length} leg(s) coming up. [TO] = drive there, [HOME] = drive home.`:'Nothing assigned to you right now.'}\n`;
+  for(const k of Object.keys(byDay).sort()){
+    const d=parseYMD(k), dl=`${DOW_L[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+    html+=`<tr><td style="padding:14px 24px 2px;"><div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#70757a;border-bottom:2px solid #e3e5e8;padding-bottom:5px;">${esc(dl)}</div></td></tr>`;
+    text+=`\n${dl.toUpperCase()}\n`;
+    for(const {e,leg} of byDay[k]){
+      const kid=PEOPLE[e.person]?.name||'', c=evColor(e), note=famNote(e), notes=(e.notes||'').trim();
+      const when=e.allDay?'All day':`${fmtTime(e.start)} – ${fmtTime(e.end)}`;
+      const legLbl=leg==='to'?`🚗 Drive ${esc(kid)} there`:`🏠 Drive ${esc(kid)} home`;
+      const legWhen=e.allDay?'':(leg==='to'?`Starts ${fmtTime(e.start)}`:`Finishes ${fmtTime(e.end)}`);
+      html+=`<tr><td style="padding:8px 24px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-left:4px solid ${c};background:${c}14;border-radius:8px;"><tr><td style="padding:10px 12px;">
+<div style="font-size:12px;font-weight:700;color:${shade(c)};">${legLbl}${legWhen?` <span style="font-weight:400;color:#5f6368;">· ${esc(legWhen)}</span>`:''}</div>
+<div style="font-size:16px;font-weight:600;margin-top:3px;">${esc(cxStrip(e.title))}</div>
+<div style="font-size:13px;color:#3c4043;margin-top:3px;">${esc(when)}</div>
+${e.location?`<div style="font-size:13px;margin-top:4px;">📍 <a href="${esc(maps(e.location))}" style="color:#1a73e8;text-decoration:none;">${esc(e.location)}</a></div>`:''}
+${notes?`<div style="font-size:12.5px;color:#5f6368;margin-top:6px;white-space:pre-wrap;">${esc(notes)}</div>`:''}
+${note?`<div style="font-size:12.5px;color:#3c4043;margin-top:6px;background:#fff;border-radius:6px;padding:6px 8px;">📝 ${esc(note)}</div>`:''}
+</td></tr></table></td></tr>`;
+      text+=`- [${leg==='to'?'TO':'HOME'}] ${cxStrip(e.title)} (${kid}) — ${when}${legWhen?` — ${legWhen}`:''}${e.location?`\n    ${e.location}`:''}${notes?`\n    ${notes.replace(/\s*\n\s*/g,' ')}`:''}${note?`\n    Note: ${note}`:''}\n`;
+    }
+  }
+  html+=`<tr><td style="padding:18px 24px 22px;font-size:12px;color:#70757a;">Sent from the Hennessey Family Scheduler. Tom and Laura are cc'd. If something here is wrong, reply to this email and they'll fix it.</td></tr></table></div>`;
+  text+=`\nSent from the Hennessey Family Scheduler — Tom and Laura are cc'd; reply if anything is wrong.\n`;
+  const subject=`${who} — driving assignments${legs.length?` (${legs.length} leg${legs.length===1?'':'s'})`:''} · ${MONTHS_S[TODAY.getMonth()]} ${TODAY.getDate()}`;
+  return {subject,html,text,n:legs.length};
+}
+function queueAssignEmail(who){
+  const to=DRIVER_EMAIL[who]; if(!to){ toast(`No email on file for ${who}`); return; }
+  const m=buildAssignEmail(who), now=Date.now();
+  for(const v of Object.values(driveMail)) if(v&&v.who===who&&v.status==='pending'){ v.status='superseded'; v.ts=now; }
+  const id='dm-'+who.replace(/\W+/g,'').toLowerCase()+'-'+now;
+  driveMail[id]={id, who, to:[to], cc:ASSIGN_CC, subject:m.subject, html:m.html, text:m.text, n:m.n, ts:now, status:'pending', by:'site'};
+  localStorage.setItem(DM_KEY,JSON.stringify(driveMail));
+  pushSharedSoon(); renderAssignments();
+  const mailto=`mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(ASSIGN_CC.join(','))}&subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text.slice(0,1800))}`;
+  toast(`Email to ${who} queued — goes out from the scheduler within the hour (cc Tom & Laura)`,{label:'Open in Mail now',fn:()=>{ window.location.href=mailto; }});
+}
 let foreignKeys={};
 function keepForeign(doc){
   if(!doc||typeof doc!=='object') return doc;
@@ -835,7 +1025,8 @@ function keepForeign(doc){
 function localDoc(){
   return {...foreignKeys,
     v:Date.now(), notes:userNotes, hidden:[...hiddenIds], confirmed:[...confirmedIds], tracking_items:sharedTracking, user_events:userEvents,
-    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides, writeback, move_log:moveLog};
+    deleted_user:[...deletedUser], tom_work:tomWork, tom_work_updated:localStorage.getItem(TOMWORK_TS_KEY)||'', overrides, writeback, move_log:moveLog,
+    drives:pruneDrives(drives), drive_mail:pruneMail(driveMail)};
 }
 function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/events; b wins ties
   keepForeign(a); keepForeign(b);          // feed-owned keys pass straight through
@@ -861,13 +1052,18 @@ function mergeDocs(a,b){ // union sets; per-key latest-timestamp wins on notes/e
   for(const [k,v] of Object.entries(b.overrides||{})){ if(v&&(!ovr[k]||(v.ts||0)>=(ovr[k].ts||0))) ovr[k]=v; }
   const wb={...(a.writeback||{})};
   for(const [k,v] of Object.entries(b.writeback||{})){ if(v&&(!wb[k]||(v.ts||0)>=(wb[k].ts||0))) wb[k]=v; }
+  const dr={...(a.drives||{})};
+  for(const [k,v] of Object.entries(b.drives||{})){ if(v&&(!dr[k]||(v.ts||0)>=(dr[k].ts||0))) dr[k]=v; }
+  const dm={...(a.drive_mail||{})};
+  for(const [k,v] of Object.entries(b.drive_mail||{})){ if(v&&(!dm[k]||(v.ts||0)>=(dm[k].ts||0))) dm[k]=v; }
   const mv={...(a.move_log||{})};
   for(const [k,v] of Object.entries(b.move_log||{})){ if(v&&(!mv[k]||(v.ts||0)>=(mv[k].ts||0))) mv[k]=v; }
   const tuA=a.tom_work_updated||'', tuB=b.tom_work_updated||'';
   const useB=tuB>=tuA;
   return {...foreignKeys,
     v:Date.now(), notes, hidden, confirmed, tracking_items, user_events, deleted_user:deleted,
-    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr, writeback:wb, move_log:mv};
+    tom_work:(useB?(b.tom_work||[]):(a.tom_work||[])), tom_work_updated:useB?tuB:tuA, overrides:ovr, writeback:wb, move_log:mv,
+    drives:pruneDrives(dr), drive_mail:pruneMail(dm)};
 }
 function adoptDoc(doc){
   keepForeign(doc);
@@ -881,6 +1077,8 @@ function adoptDoc(doc){
   writeback=doc.writeback||{};
   localStorage.setItem(WB_KEY,JSON.stringify(writeback));
   moveLog=doc.move_log||{}; saveMoveLog();
+  drives=pruneDrives(doc.drives||{}); localStorage.setItem(DRV_KEY,JSON.stringify(drives));
+  driveMail=pruneMail(doc.drive_mail||{}); localStorage.setItem(DM_KEY,JSON.stringify(driveMail));
   localStorage.setItem(NOTES_KEY,JSON.stringify(userNotes));
   localStorage.setItem(HIDDEN_KEY,JSON.stringify([...hiddenIds]));
   localStorage.setItem(CONFIRMED_KEY,JSON.stringify([...confirmedIds]));
@@ -963,6 +1161,11 @@ const startOfDay=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x;};
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
 // whole calendar days from `a` to `b` (both local), immune to the DST hour: round instead of floor
 const dayIdx=(a,b)=>Math.round((startOfDay(b)-startOfDay(a))/DAY);
+// v32 — a DST day is 23 or 25 hours long, so a block placed at (t - midnight)/3600000 sat an
+// hour off on Nov 1 / Mar 14. Everything that draws or moves a timed block uses CLOCK time:
+const wallMin=d=>d.getHours()*60+d.getMinutes();                       // minutes on the clock
+function hourIn(t,day){ const d0=startOfDay(day); if(t<=d0) return 0; if(t>=addDays(d0,1)) return 24; return wallMin(t)/60; } // clock hours into `day`, clamped
+const wallDur=(s,e)=>dayIdx(s,e)*1440+wallMin(e)-wallMin(s);            // clock-based duration in minutes
 const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
 const startOfWeek=d=>{const x=startOfDay(d);x.setDate(x.getDate()-x.getDay());return x;}; // Sunday
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1211,7 +1414,7 @@ function normAll(famCal,masselite,site){
 const RECUR_MAX=520;
 /* ---------- Tommy's ride home (v16, Tom 2026-09-25) ---------- */
 const toMin=t=>{ const [a,b]=String(t||'0:0').split(':'); return (+a)*60+(+b||0); };
-function atMin(d,m){ const x=parseYMD(d); x.setHours(0,0,0,0); return new Date(x.getTime()+m*60000); }
+function atMin(d,m){ const x=parseYMD(d); x.setHours(Math.floor(m/60),m%60,0,0); return x; }   // v32: setHours, not midnight + ms (DST-safe)
 const RIDE_OPTS=['Laura','Tom','Rose','Collier','Ameen','Mary/Tom','Train','Other'];
 // Laura or Tom driving: 45 minutes, leaving 20 minutes before he finishes.  Anyone else: a 15-minute marker at the end time.
 function rideSpan(who,endHM){ const e=toMin(endHM); return (who==='Laura'||who==='Tom')?[e-20,e+25]:[e,e+15]; }
@@ -1461,10 +1664,10 @@ function visible(){
   });
 }
 function eventsOnDay(list,day){
-  const d0=startOfDay(day).getTime(), d1=d0+DAY;
+  const d0=startOfDay(day).getTime(), d1=addDays(startOfDay(day),1).getTime();   // v32: calendar day, not +24h
   return list.filter(e=>{
     const s=e.allDay?startOfDay(e.start).getTime():e.start.getTime();
-    const en=e.allDay?startOfDay(e.end).getTime()+DAY:e.end.getTime();
+    const en=e.allDay?addDays(startOfDay(e.end),1).getTime():e.end.getTime();
     return s<d1 && en>d0;
   });
 }
@@ -1600,12 +1803,13 @@ function cxKind(e){
   return m ? (/^post/i.test(m[1])?'POSTPONED':'CANCELLED') : '';
 }
 function cxStrip(t){ return (t||'').replace(CX_RE,''); }
-function ttl(e,t){
+function ttl(e,t,noDrv){
   if(t==null) t=e.title;
   const k=cxKind(e);
+  const drv=noDrv?'':drvTag(e);   // v33
   const fl=trainFlag(e);
   const cam=(e.join||(e._dupes||[]).some(m=>m.join))?'<span class="cam" title="Has a video call">📹</span>':'';   // v19
-  return cam+(fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t));
+  return cam+(fl?`<span class="tr-flag${fl.bad?' bad':''}">⚠️ ${esc(fl.txt)}</span> `:'')+(k ? `<span class="cx-tag">${k}</span> <span class="cx-t">${esc(cxStrip(t))}</span>` : esc(t))+drv;
 }
 
 // v28 (Tom, 2026-10-18): "make the mobile view show all seven days in the week view".
@@ -1652,7 +1856,7 @@ function renderMonth(){
     for(const e of list){
       const s=e.allDay?startOfDay(e.start):startOfDay(e.start);
       const en=e.allDay?addDays(startOfDay(e.end),1):(e.end.getHours()||e.end.getMinutes()?addDays(startOfDay(e.end),1):startOfDay(e.end));
-      const multiOrAllday=e.allDay||((en-s)>DAY);
+      const multiOrAllday=e.allDay||(dayIdx(s,en)>1);   // v32: calendar days
       const from=Math.max(s.getTime(),wkStart.getTime()), to=Math.min((e.allDay?addDays(startOfDay(e.end),1):new Date(Math.max(e.end.getTime(),e.start.getTime()+1))).getTime(),wkEnd.getTime());
       if(from>=to) continue;
       // v27: calendar-day arithmetic, not ms/24h — a DST week is 7 days ± 1 hour and floor/ceil
@@ -1788,7 +1992,7 @@ function renderTimeGrid(nDays){
     const d=days[i];
     // collect timed events for this day, cluster overlaps
     const evs=timed.filter(e=>e.start<addDays(d,1)&&e.end>d)
-      .map(e=>({e, s:Math.max(0,(Math.max(e.start,d)-d)/3600000), en:Math.min(24,(Math.min(e.end,addDays(d,1))-d)/3600000)}))
+      .map(e=>({e, s:hourIn(e.start,d), en:Math.max(hourIn(e.end,d),hourIn(e.start,d)+1/60)}))   // v32: clock hours
       .sort((a,b)=>a.s-b.s||b.en-a.en);
     for(const ev of evs) ev.enD=Math.max(ev.en, ev.s+MINH/HOUR);
     layoutLanes(evs);
@@ -1823,7 +2027,7 @@ function renderYear(){
   $('rangeLabel').textContent=String(y);
   const list=visible().filter(e=>{
     if(e.type==='tournament'||e.type==='potential') return true;
-    const multi=(startOfDay(e.end)-startOfDay(e.start))>=DAY;
+    const multi=dayIdx(e.start,e.end)>=1;   // v32
     return multi && !['practice','regcheck'].includes(e.type);
   });
   const byM=Array.from({length:12},()=>[]);
@@ -1856,7 +2060,7 @@ function renderYear(){
 // ----- PLANNING -----
 function renderPlan(){
   $('rangeLabel').textContent='Planning';
-  const list=visible().filter(e=>['tournament','regcheck','potential','noschool'].includes(e.type)||((e.end-e.start)>=2*DAY&&e.allDay));
+  const list=visible().filter(e=>['tournament','regcheck','potential','noschool'].includes(e.type)||(dayIdx(e.start,e.end)>=2&&e.allDay));
   list.sort((a,b)=>a.start-b.start);
   const from=addDays(TODAY,-14);
   const groups={};
@@ -2096,7 +2300,7 @@ function renderDayCols(){
   let now=''; if(isToday){ const mins=new Date().getHours()*60+new Date().getMinutes(); now=`<div class="nowline" style="top:${mins/60*HOUR}px;"></div>`; }
   for(const p of cols){
     const evs=byP[p].timed
-      .map(e=>({e, s:Math.max(0,(Math.max(e.start,day)-day)/3600000), en:Math.min(24,(Math.min(e.end,addDays(day,1))-day)/3600000)}))
+      .map(e=>({e, s:hourIn(e.start,day), en:Math.max(hourIn(e.end,day),hourIn(e.start,day)+1/60)}))   // v32: clock hours
       .sort((a,b)=>a.s-b.s||b.en-a.en);
     const lanes=[];
       // A block is never drawn shorter than MINH px, so a 15-minute event occupies
@@ -2147,8 +2351,8 @@ const fmtMin=m=>fmtTime(new Date(2000,0,1,Math.floor(m/60),m%60));
 let dragEndedAt=0;
 function applyMove(e,dMin,dDay){
   const now=Date.now();
-  const day0=startOfDay(e.start), dur=Math.round((e.end-e.start)/60000);
-  const ns=Math.round((e.start-day0)/60000)+dMin, ne=ns+dur;
+  const day0=startOfDay(e.start), dur=wallDur(e.start,e.end);   // v32: clock minutes
+  const ns=wallMin(e.start)+dMin, ne=ns+dur;
   const startDate=addDays(day0,dDay), endDate=addDays(startDate,Math.floor(ne/1440));
   const fields={start:fmtYMD(startDate), end:fmtYMD(endDate), timeStart:mmStr(ns), timeEnd:mmStr(ne%1440), allDay:false};
   if(ne>0 && ne%1440===0){ fields.end=fmtYMD(addDays(startDate,ne/1440-1)); fields.timeEnd='23:59'; } // ends exactly at midnight → keep it on the same day
@@ -2199,7 +2403,7 @@ function applyMove(e,dMin,dDay){
     const cols=[...content.querySelectorAll('.tg-col')], colEl=el.closest('.tg-col'), sc=$('tgScroll');
     const d=parseYMD(el.dataset.day||fmtYMD(e.start));
     st={el,e,x0:x,y0:y,x:x,y:y,cols,colEl,dayIdx:cols.indexOf(colEl),colW:colEl.getBoundingClientRect().width,sc,scroll0:sc?sc.scrollTop:0,
-        min0:Math.max(0,Math.round((e.start-d)/60000)), dur:Math.round((e.end-e.start)/60000), dMin:0, dDay:0};
+        min0:Math.max(0,wallMin(e.start)+dayIdx(d,e.start)*1440), dur:wallDur(e.start,e.end), dMin:0, dDay:0};   // v32
     el.classList.remove('armed'); el.classList.add('dragging'); document.body.classList.add('sked-dragging');
     window.__skedDrag=true;
     raf=requestAnimationFrame(tick);
@@ -2346,6 +2550,7 @@ function renderFilters(){
   }
   $('typeFilters').innerHTML=th;
   $('srcList').innerHTML=siteData.sources.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">↗ ${esc(s.label)}</a>`).join('');
+  renderAssignments();   // v33
 }
 
 // v30 — the Series group: one collapsible block per person, one row per series
@@ -2402,6 +2607,23 @@ function seriesOnly(k){
   const row=events.find(e=>seriesKey(e)===k);
   toast(`Only ${row&&row._stem?row._stem:'this series'} (${PEOPLE[p]?.name||p})`);
 }
+// v31 — All off blanks the calendar (every series and every subscribed calendar off,
+// people/types untouched so a single tick shows straight away) and opens every person's
+// group ready for ticking; All on clears series and switches every person and type on.
+// Calendars (Work Cal etc.) are left alone by All on — they have their own switch.
+function seriesAllOff(){
+  for(const e of events){ const k=seriesKey(e); if(k) filters.series[k]=false; }
+  for(const c of Object.keys(CALS)) filters.cals[c]=false;
+  for(const p of Object.keys(PEOPLE)) seriesOpen[p]=true;
+  localStorage.setItem(SERIES_OPEN_KEY,JSON.stringify(seriesOpen));
+  persistFilters(); toast('Everything off — tick a series to see where it falls');
+}
+function seriesAllOn(){
+  filters.series={};
+  for(const p of Object.keys(PEOPLE)) filters.people[p]=true;
+  for(const t of Object.keys(TYPES)) filters.types[t]=true;
+  persistFilters(); toast('Everything on');
+}
 function seriesSetPerson(p,on){
   for(const e of events){ const k=seriesKey(e); if(k&&k.startsWith(p+'|')){ if(on) delete filters.series[k]; else filters.series[k]=false; } }
   if(on) filters.people[p]=true;
@@ -2440,7 +2662,7 @@ function showEvent(id){
   const dr = e.allDay
     ? (sameDay(e.start,e.end)?fullDate(e.start):`${fullDate(e.start)} – ${fullDate(e.end)}`)
     : `${fullDate(e.start)} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
-  let html=`<div class="ev-title"><span class="swatch" style="background:${evColor(e)}"></span><span>${ttl(e)}</span></div>
+  let html=`<div class="ev-title"><span class="swatch" style="background:${evColor(e)}"></span><span>${ttl(e,null,true)}</span></div>
     <div class="ev-meta">${dr}</div>
     <div class="ev-detail"><span class="ic">👤</span><span><span class="chip-person" style="background:${p.hex}">${p.name}</span>
       &nbsp;<span style="color:var(--muted);font-size:12px;">${TYPES[e.type]?.icon||''} ${TYPES[e.type]?.label||e.type}</span></span></div>`;
@@ -2498,6 +2720,7 @@ function showEvent(id){
   }
   const isRide=/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id));
   if(isRide) html+=rideBoxHtml(e);
+  if(isKidEvent(e)&&!isRide) html+=driveBoxHtml(e);   // v33
   if(e.train) html+=`<div id="trainLiveBox"></div>`;
   const noteSet=new Set(); let allNotes='';
   for(const m of fam){ let n=(m.notes||'').trim(); if(m.join) n=n.replace(/\s*Join:\s*\S+/,'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
@@ -2526,6 +2749,7 @@ function showEvent(id){
   const sb=$('evSkip'); if(sb) sb.onclick=removeCurrent;
   $('evEdit').style.display = '';   // v22: every event is editable here
   if(isRide) wireRideBox(e);
+  if(isKidEvent(e)&&!isRide) wireDriveBox(e);   // v33
   if(e.train) showTrainLive(e);
   openOverlay($('evModal'));
 }
@@ -2606,7 +2830,7 @@ const BAD_EFFECTS=/^(DELAY|SUSPENSION|SHUTTLE|CANCELLATION|NO_SERVICE|DETOUR|STO
 async function needhamAlerts(d){
   try{
     const j=await mbta('/alerts?filter[route]=CR-Needham',120000);
-    const day0=parseYMD(d).getTime(), day1=day0+DAY;
+    const day0=parseYMD(d).getTime(), day1=addDays(parseYMD(d),1).getTime();   // v32
     return j.data.map(x=>x.attributes).filter(a=>BAD_EFFECTS.test(a.effect||'')&&(a.active_period||[]).some(p=>{
       const s=p.start?Date.parse(p.start):0, e=p.end?Date.parse(p.end):Infinity; return s<day1&&e>day0; }))
       .map(a=>({effect:a.effect, txt:a.short_header||a.header, sev:a.severity||0}));
@@ -2815,6 +3039,8 @@ document.addEventListener('click',ev=>{
   if(t.closest('textarea')) return;
   const rv=t.closest('[data-revert]');
   if(rv){ revertMove(rv.dataset.revert); return; }
+  const dmb=t.closest('[data-mail]');
+  if(dmb){ queueAssignEmail(dmb.dataset.mail); return; }   // v33
   const evEl=t.closest('[data-ev]');
   if(evEl){ if(performance.now()-dragEndedAt<500) return; showEvent(evEl.dataset.ev); return; } // a drop is not a tap
   const more=t.closest('.ev-more');
@@ -2833,10 +3059,12 @@ document.addEventListener('click',ev=>{
   if(fsall){ seriesSetPerson(fsall.dataset.fsall,true); return; }
   const fsnone=t.closest('[data-fsnone]');
   if(fsnone){ seriesSetPerson(fsnone.dataset.fsnone,false); return; }
+  if(t.closest('[data-allon]')){ seriesAllOn(); return; }
+  if(t.closest('[data-alloff]')){ seriesAllOff(); return; }
   const fsreset=t.closest('[data-fsreset]');
   if(fsreset){ filters.series={}; persistFilters(); return; }
   const fs=t.closest('[data-fs]');
-  if(fs){ const k=fs.dataset.fs; if(filters.series[k]===false) delete filters.series[k]; else filters.series[k]=false; persistFilters(); return; }
+  if(fs){ const k=fs.dataset.fs; if(filters.series[k]===false){ delete filters.series[k]; const [p,ty]=k.split('|'); filters.people[p]=true; if(ty&&ty!=='other') filters.types[ty]=true; else if(ty==='other') for(const x of Object.keys(TYPES)) filters.types[x]=true; } else filters.series[k]=false; persistFilters(); return; }
   const fsp=t.closest('[data-fsp]');
   if(fsp){ const p=fsp.dataset.fsp; seriesOpen[p]=!seriesOpen[p]; localStorage.setItem(SERIES_OPEN_KEY,JSON.stringify(seriesOpen)); renderSeriesFilters(); return; }
   const fp=t.closest('[data-fp]');
