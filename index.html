@@ -206,7 +206,7 @@ button{font-family:inherit; cursor:pointer;}
 .tr-flag{font-weight:700;color:#b06000;white-space:nowrap;}
 .tr-flag.bad{color:#c5221f;}
 .ride-box{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fafbfc;}
-/* v33 — Drive to / Drive home (Tom, 2026-10-27) */
+/* v33 — Drive to / Drive home (Tom, 2026-10-27); v34 — both grandparents + restyled email */
 .drive-box{margin-top:14px;border:1px solid #cfe3ff;border-radius:8px;padding:10px 12px;background:#f3f8ff;}
 .drive-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;}
 .drow{display:flex;align-items:flex-start;gap:8px;margin-top:6px;}
@@ -562,7 +562,10 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v33 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v34 (Google-Calendar-style)
+   v34 (10/27): assignment emails go to BOTH grandparents (Mary's legs also to Tom Jr, Tom Jr's
+   also to Mary), and the email is restyled: a summary line up top, big day headers, one card
+   per leg with the time to be there in large type, a map button, notes set apart.
    v33 (10/27): Drive To / Drive Home on every kid event (Tom, Laura, Mary, Tom Jr, Nadine or
    anyone typed in), an Assignments section in the sidebar listing each driver's upcoming
    legs (past days drop off by themselves), and an Email Assignments button that composes a
@@ -878,7 +881,9 @@ const e_root=id=>String(id).split('@')[0];
    sends it from tom@coalition.ventures to the driver with Tom and Laura cc'd and marks it
    sent. An "Open in Mail" fallback on the toast puts a plain-text copy in the mail app now. */
 const DRIVERS=['Tom','Laura','Mary','Tom Jr','Nadine'];
+// v34 (Tom, 10/27): each grandparent's email also goes to the other one, so both always see both lists
 const DRIVER_EMAIL={'Mary':'marydhennessey@gmail.com','Tom Jr':'tomhjr@gmail.com'};
+const DRIVER_TO={'Mary':['marydhennessey@gmail.com','tomhjr@gmail.com'],'Tom Jr':['tomhjr@gmail.com','marydhennessey@gmail.com']};
 const ASSIGN_CC=['tvhennessey@gmail.com','lauraehennessey@gmail.com'];
 const ASSIGN_ALWAYS=['Mary','Tom Jr'];      // always have a section, even when empty
 const DRV_KEY='sked_drives_v1', DM_KEY='sked_drivemail_v1';
@@ -953,7 +958,7 @@ function renderAssignments(){
   for(const who of assignDrivers()){
     const legs=assignmentsFor(who), email=DRIVER_EMAIL[who]||'';
     h+=`<div class="agrp"><div class="ahead"><span>🚗 ${esc(who)}</span><span class="cnt">${legs.length} leg${legs.length===1?'':'s'}</span>`;
-    if(email) h+=`<button class="btn${legs.length?' pri':''}" data-mail="${esc(who)}" title="Email ${esc(who)}'s assignments to ${esc(email)} (cc Tom & Laura)">✉️ Email</button>`;
+    if(email) h+=`<button class="btn${legs.length?' pri':''}" data-mail="${esc(who)}" title="Email ${esc(who)}'s assignments to ${esc((DRIVER_TO[who]||[email]).join(', '))} (cc Tom & Laura)">✉️ Email</button>`;
     h+=`</div>`;
     const lm=lastMailFor(who);
     if(lm){ const when=new Date(lm.sentAt||lm.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
@@ -972,48 +977,68 @@ function buildAssignEmail(who){
   const byDay={}; for(const l of legs){ const k=fmtYMD(l.e.start); (byDay[k]=byDay[k]||[]).push(l); }
   const today=`${DOW[TODAY.getDay()]}, ${MONTHS_S[TODAY.getMonth()]} ${TODAY.getDate()}`;
   const maps=loc=>`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(loc)}`;
-  let html=`<div style="background:#f3f4f6;padding:18px 10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202124;">
-<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e3e5e8;">
-<tr><td style="padding:22px 24px 8px;">
-<div style="font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#70757a;font-weight:700;">Hennessey Family Scheduler</div>
-<div style="font-size:24px;font-weight:700;margin-top:4px;">Driving assignments for ${esc(who)}</div>
-<div style="font-size:14px;color:#5f6368;margin-top:6px;">${legs.length?`${legs.length} leg${legs.length===1?'':'s'} coming up, as of ${esc(today)}. 🚗 = drive there &nbsp;·&nbsp; 🏠 = drive home.`:`Nothing assigned to you right now (as of ${esc(today)}).`}</div>
-</td></tr>`;
-  let text=`Driving assignments for ${who} — as of ${today}\n${legs.length?`${legs.length} leg(s) coming up. [TO] = drive there, [HOME] = drive home.`:'Nothing assigned to you right now.'}\n`;
-  for(const k of Object.keys(byDay).sort()){
+  // v34 layout: summary up top, a big header per day, one card per leg with the time that
+  // matters (be there by / pick up at) in large type, a map button, and notes set apart.
+  const F=`font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;`;
+  const nTo=legs.filter(l=>l.leg==='to').length, nHome=legs.length-nTo;
+  const days=Object.keys(byDay).sort();
+  const summary=legs.length
+    ?`<b>${legs.length} leg${legs.length===1?'':'s'}</b> over <b>${days.length} day${days.length===1?'':'s'}</b> — ${nTo} drive-there, ${nHome} drive-home. Next up: <b>${esc(`${DOW[legs[0].e.start.getDay()]} ${MONTHS_S[legs[0].e.start.getMonth()]} ${legs[0].e.start.getDate()}`)}</b>.`
+    :`Nothing assigned to you right now.`;
+  let html=`<div style="background:#eef1f5;padding:20px 10px;${F}color:#202124;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dfe3e8;">
+<tr><td style="background:#1f3a5f;padding:22px 24px;color:#ffffff;">
+<div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:.75;font-weight:700;">Hennessey Family Scheduler</div>
+<div style="font-size:26px;font-weight:800;margin-top:4px;line-height:1.2;">🚗 ${esc(who)}'s driving</div>
+<div style="font-size:14px;margin-top:6px;opacity:.9;">As of ${esc(today)}</div>
+</td></tr>
+<tr><td style="padding:16px 24px 4px;font-size:15px;line-height:1.5;color:#3c4043;">${summary}</td></tr>`;
+  let text=`${who.toUpperCase()}'S DRIVING — as of ${today}\n${legs.length?`${legs.length} leg(s) over ${days.length} day(s): ${nTo} drive-there, ${nHome} drive-home.`:'Nothing assigned to you right now.'}\n`;
+  for(const k of days){
     const d=parseYMD(k), dl=`${DOW_L[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
-    html+=`<tr><td style="padding:14px 24px 2px;"><div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#70757a;border-bottom:2px solid #e3e5e8;padding-bottom:5px;">${esc(dl)}</div></td></tr>`;
-    text+=`\n${dl.toUpperCase()}\n`;
+    const rel=k===fmtYMD(TODAY)?'Today':k===fmtYMD(addDays(TODAY,1))?'Tomorrow':'';
+    html+=`<tr><td style="padding:18px 24px 4px;"><div style="font-size:18px;font-weight:800;color:#1f3a5f;">${esc(dl)}${rel?` <span style="font-size:12px;font-weight:700;color:#ffffff;background:#d93025;border-radius:10px;padding:2px 8px;vertical-align:middle;margin-left:6px;">${rel}</span>`:''}</div><div style="height:3px;background:#1f3a5f;border-radius:2px;margin-top:6px;"></div></td></tr>`;
+    text+=`\n${dl.toUpperCase()}${rel?` (${rel})`:''}\n`;
     for(const {e,leg} of byDay[k]){
       const kid=PEOPLE[e.person]?.name||'', c=evColor(e), note=famNote(e), notes=(e.notes||'').trim();
       const when=e.allDay?'All day':`${fmtTime(e.start)} – ${fmtTime(e.end)}`;
-      const legLbl=leg==='to'?`🚗 Drive ${esc(kid)} there`:`🏠 Drive ${esc(kid)} home`;
-      const legWhen=e.allDay?'':(leg==='to'?`Starts ${fmtTime(e.start)}`:`Finishes ${fmtTime(e.end)}`);
-      html+=`<tr><td style="padding:8px 24px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-left:4px solid ${c};background:${c}14;border-radius:8px;"><tr><td style="padding:10px 12px;">
-<div style="font-size:12px;font-weight:700;color:${shade(c)};">${legLbl}${legWhen?` <span style="font-weight:400;color:#5f6368;">· ${esc(legWhen)}</span>`:''}</div>
-<div style="font-size:16px;font-weight:600;margin-top:3px;">${esc(cxStrip(e.title))}</div>
-<div style="font-size:13px;color:#3c4043;margin-top:3px;">${esc(when)}</div>
-${e.location?`<div style="font-size:13px;margin-top:4px;">📍 <a href="${esc(maps(e.location))}" style="color:#1a73e8;text-decoration:none;">${esc(e.location)}</a></div>`:''}
-${notes?`<div style="font-size:12.5px;color:#5f6368;margin-top:6px;white-space:pre-wrap;">${esc(notes)}</div>`:''}
-${note?`<div style="font-size:12.5px;color:#3c4043;margin-top:6px;background:#fff;border-radius:6px;padding:6px 8px;">📝 ${esc(note)}</div>`:''}
+      const isTo=leg==='to';
+      const bigTime=e.allDay?'All day':(isTo?fmtTime(e.start):fmtTime(e.end));
+      const bigLbl=isTo?'BE THERE BY':'PICK UP AT';
+      const action=isTo?`Drive ${esc(kid)} there`:`Bring ${esc(kid)} home`;
+      const place=e.location?e.location.split(',')[0]:'';
+      html+=`<tr><td style="padding:8px 24px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #dfe3e8;border-left:6px solid ${c};border-radius:10px;background:#ffffff;"><tr>
+<td width="96" valign="top" style="padding:12px 8px 12px 14px;border-right:1px solid #eef1f5;text-align:center;">
+<div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:${shade(c)};">${bigLbl}</div>
+<div style="font-size:22px;font-weight:800;color:#202124;line-height:1.15;margin-top:2px;">${esc(bigTime)}</div>
+<div style="font-size:18px;margin-top:4px;">${isTo?'🚗':'🏠'}</div>
+</td>
+<td valign="top" style="padding:12px 14px;">
+<div style="font-size:13px;font-weight:800;color:${shade(c)};text-transform:uppercase;letter-spacing:.4px;">${action}</div>
+<div style="font-size:17px;font-weight:700;margin-top:3px;line-height:1.25;">${esc(cxStrip(e.title))}</div>
+<div style="font-size:13px;color:#5f6368;margin-top:4px;">Event runs ${esc(when)}</div>
+${e.location?`<div style="margin-top:8px;"><a href="${esc(maps(e.location))}" style="display:inline-block;background:#e8f0fe;color:#1a56c4;font-weight:700;font-size:13px;text-decoration:none;border-radius:8px;padding:7px 11px;">📍 ${esc(place)} · Directions</a></div>`:''}
+${notes?`<div style="font-size:13px;color:#3c4043;margin-top:8px;padding:8px 10px;background:#f6f7f9;border-radius:8px;white-space:pre-wrap;line-height:1.4;">${esc(notes)}</div>`:''}
+${note?`<div style="font-size:13px;color:#5b4a00;margin-top:8px;padding:8px 10px;background:#fff6d6;border-radius:8px;line-height:1.4;">📝 ${esc(note)}</div>`:''}
 </td></tr></table></td></tr>`;
-      text+=`- [${leg==='to'?'TO':'HOME'}] ${cxStrip(e.title)} (${kid}) — ${when}${legWhen?` — ${legWhen}`:''}${e.location?`\n    ${e.location}`:''}${notes?`\n    ${notes.replace(/\s*\n\s*/g,' ')}`:''}${note?`\n    Note: ${note}`:''}\n`;
+      text+=`- ${bigLbl} ${bigTime}: ${isTo?'drive':'bring'} ${kid} ${isTo?'there':'home'} — ${cxStrip(e.title)} (${when})${e.location?`\n    ${e.location}`:''}${notes?`\n    ${notes.replace(/\s*\n\s*/g,' ')}`:''}${note?`\n    Note: ${note}`:''}\n`;
     }
   }
-  html+=`<tr><td style="padding:18px 24px 22px;font-size:12px;color:#70757a;">Sent from the Hennessey Family Scheduler. Tom and Laura are cc'd. If something here is wrong, reply to this email and they'll fix it.</td></tr></table></div>`;
+  const others=(DRIVER_TO[who]||[]).filter(a=>a!==DRIVER_EMAIL[who]).length;
+  html+=`<tr><td style="padding:20px 24px 22px;font-size:12px;line-height:1.5;color:#70757a;border-top:1px solid #eef1f5;margin-top:10px;">Sent from the Hennessey Family Scheduler${others?', to both grandparents':''}. Tom and Laura are cc'd — if anything here is wrong, reply to this email and they'll fix it.</td></tr></table></div>`;
   text+=`\nSent from the Hennessey Family Scheduler — Tom and Laura are cc'd; reply if anything is wrong.\n`;
   const subject=`${who} — driving assignments${legs.length?` (${legs.length} leg${legs.length===1?'':'s'})`:''} · ${MONTHS_S[TODAY.getMonth()]} ${TODAY.getDate()}`;
   return {subject,html,text,n:legs.length};
 }
 function queueAssignEmail(who){
-  const to=DRIVER_EMAIL[who]; if(!to){ toast(`No email on file for ${who}`); return; }
+  const to=DRIVER_TO[who]||(DRIVER_EMAIL[who]?[DRIVER_EMAIL[who]]:null); if(!to){ toast(`No email on file for ${who}`); return; }
   const m=buildAssignEmail(who), now=Date.now();
   for(const v of Object.values(driveMail)) if(v&&v.who===who&&v.status==='pending'){ v.status='superseded'; v.ts=now; }
   const id='dm-'+who.replace(/\W+/g,'').toLowerCase()+'-'+now;
-  driveMail[id]={id, who, to:[to], cc:ASSIGN_CC, subject:m.subject, html:m.html, text:m.text, n:m.n, ts:now, status:'pending', by:'site'};
+  driveMail[id]={id, who, to, cc:ASSIGN_CC, subject:m.subject, html:m.html, text:m.text, n:m.n, ts:now, status:'pending', by:'site'};
   localStorage.setItem(DM_KEY,JSON.stringify(driveMail));
   pushSharedSoon(); renderAssignments();
-  const mailto=`mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(ASSIGN_CC.join(','))}&subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text.slice(0,1800))}`;
+  const mailto=`mailto:${encodeURIComponent(to.join(','))}?cc=${encodeURIComponent(ASSIGN_CC.join(','))}&subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text.slice(0,1800))}`;
   toast(`Email to ${who} queued — goes out from the scheduler within the hour (cc Tom & Laura)`,{label:'Open in Mail now',fn:()=>{ window.location.href=mailto; }});
 }
 let foreignKeys={};
