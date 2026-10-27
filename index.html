@@ -206,7 +206,7 @@ button{font-family:inherit; cursor:pointer;}
 .tr-flag{font-weight:700;color:#b06000;white-space:nowrap;}
 .tr-flag.bad{color:#c5221f;}
 .ride-box{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fafbfc;}
-/* v33 — Drive to / Drive home (Tom, 2026-10-27); v34 — both grandparents + restyled email */
+/* v33 — Drive to / Drive home (Tom, 2026-10-27); v34 — both grandparents + restyled email; v35 — Biscuit & jokes */
 .drive-box{margin-top:14px;border:1px solid #cfe3ff;border-radius:8px;padding:10px 12px;background:#f3f8ff;}
 .drive-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;}
 .drow{display:flex;align-items:flex-start;gap:8px;margin-top:6px;}
@@ -562,7 +562,9 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v34 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v35 (Google-Calendar-style)
+   v35 (10/27): Biscuit, the scheduler's own cartoon beagle (img/), signs off every assignment
+   email with a joke that changes each send; four poses rotate too.
    v34 (10/27): assignment emails go to BOTH grandparents (Mary's legs also to Tom Jr, Tom Jr's
    also to Mary), and the email is restyled: a summary line up top, big day headers, one card
    per leg with the time to be there in large type, a map button, notes set apart.
@@ -885,6 +887,36 @@ const DRIVERS=['Tom','Laura','Mary','Tom Jr','Nadine'];
 const DRIVER_EMAIL={'Mary':'marydhennessey@gmail.com','Tom Jr':'tomhjr@gmail.com'};
 const DRIVER_TO={'Mary':['marydhennessey@gmail.com','tomhjr@gmail.com'],'Tom Jr':['tomhjr@gmail.com','marydhennessey@gmail.com']};
 const ASSIGN_CC=['tvhennessey@gmail.com','lauraehennessey@gmail.com'];
+// v35 — Biscuit, the scheduler's own cartoon beagle (drawn in img/make_biscuit.py, served from
+// GitHub Pages so Gmail will show him), and the clean, grandparent-safe jokes he signs off with.
+const BISCUIT_IMG='https://tvhennessey88.github.io/sked/img/biscuit-';
+const BISCUIT_POSES=['wave','sit','car','cheer'];
+const BISCUIT_JOKES=[
+  {q:'Why did the soccer ball quit the team?',a:'It was tired of being kicked around.'},
+  {q:'What do you call a dog who directs traffic?',a:'A barking lot attendant.'},
+  {q:'Why do lacrosse players make great gardeners?',a:'They know how to handle a stick and a net.'},
+  {q:'What did the car say to the stop sign?',a:'"I\'d stay, but I\'m a little pressed for time."'},
+  {q:'Why was the goalie so calm?',a:'Nothing ever gets past him.'},
+  {q:'What is a dog\'s favorite kind of car?',a:'Anything with a window seat.'},
+  {q:'Why did the referee bring a ladder?',a:'To reach the high calls.'},
+  {q:'How do you know a beagle has been in the car?',a:'The window is all nose.'},
+  {q:'What do you call a sleepy soccer player?',a:'Off-sides.'},
+  {q:'Why did the orange stop halfway across the field?',a:'It ran out of juice.'},
+  {q:'Why do grandparents make the best drivers?',a:'They always know a shortcut, and they always bring snacks.'},
+  {q:'What did the coach say to the vending machine?',a:'"I want my quarter back."'},
+  {q:'Why did the bicycle fall over at practice?',a:'It was two tired.'},
+  {q:'Where do dogs park?',a:'In the barking garage.'},
+  {q:'What runs around a soccer field but never moves?',a:'The fence.'},
+  {q:'Why did the clock get benched?',a:'It kept running out.'},
+  {q:'What do you call a beagle magician?',a:'A labracadabrador.'},
+  {q:'Why is a pickup time like a good joke?',a:'It\'s all in the timing.'},
+  {q:'How does a lacrosse team stay cool?',a:'They stand near the fans.'},
+  {q:'What did the GPS say to the minivan?',a:'"Stick with me, I know the way to the field."'},
+  {q:'Why did the dog sit in the shade at the game?',a:'He didn\'t want to be a hot dog.'},
+  {q:'What did one shin guard say to the other?',a:'"Cover me, I\'m going in."'},
+  {q:'Why are soccer games so good for the lawn?',a:'They\'re always played on a pitch.'},
+  {q:'What do you call a dog that\'s always early for pickup?',a:'A good boy.'},
+];
 const ASSIGN_ALWAYS=['Mary','Tom Jr'];      // always have a section, even when empty
 const DRV_KEY='sked_drives_v1', DM_KEY='sked_drivemail_v1';
 let drives=JSON.parse(localStorage.getItem(DRV_KEY)||'{}');
@@ -1025,8 +1057,17 @@ ${note?`<div style="font-size:13px;color:#5b4a00;margin-top:8px;padding:8px 10px
     }
   }
   const others=(DRIVER_TO[who]||[]).filter(a=>a!==DRIVER_EMAIL[who]).length;
-  html+=`<tr><td style="padding:20px 24px 22px;font-size:12px;line-height:1.5;color:#70757a;border-top:1px solid #eef1f5;margin-top:10px;">Sent from the Hennessey Family Scheduler${others?', to both grandparents':''}. Tom and Laura are cc'd — if anything here is wrong, reply to this email and they'll fix it.</td></tr></table></div>`;
-  text+=`\nSent from the Hennessey Family Scheduler — Tom and Laura are cc'd; reply if anything is wrong.\n`;
+  // v35: Biscuit, the scheduler's beagle, signs off with a joke — a different one every email
+  const seed=Date.now(), joke=BISCUIT_JOKES[seed%BISCUIT_JOKES.length], pose=BISCUIT_POSES[Math.floor(seed/7)%BISCUIT_POSES.length];
+  html+=`<tr><td style="padding:14px 24px 6px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff8e6;border:1px solid #f3dfa6;border-radius:12px;"><tr>
+<td width="92" valign="middle" style="padding:10px 4px 10px 12px;"><img src="${BISCUIT_IMG}${pose}.png" width="80" height="80" alt="Biscuit the beagle" style="display:block;border:0;border-radius:16px;"></td>
+<td valign="middle" style="padding:10px 14px 10px 6px;">
+<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9a6b00;">Biscuit says</div>
+<div style="font-size:15px;line-height:1.45;color:#3c4043;margin-top:3px;">${esc(joke.q)}</div>
+<div style="font-size:15px;line-height:1.45;font-weight:700;color:#202124;margin-top:4px;">${esc(joke.a)}</div>
+</td></tr></table></td></tr>`;
+  html+=`<tr><td style="padding:14px 24px 22px;font-size:12px;line-height:1.5;color:#70757a;">Sent from the Hennessey Family Scheduler${others?', to both grandparents':''}. Tom and Laura are cc'd — if anything here is wrong, reply to this email and they'll fix it.</td></tr></table></div>`;
+  text+=`\nBiscuit says: ${joke.q} ${joke.a}\n\nSent from the Hennessey Family Scheduler — Tom and Laura are cc'd; reply if anything is wrong.\n`;
   const subject=`${who} — driving assignments${legs.length?` (${legs.length} leg${legs.length===1?'':'s'})`:''} · ${MONTHS_S[TODAY.getMonth()]} ${TODAY.getDate()}`;
   return {subject,html,text,n:legs.length};
 }
