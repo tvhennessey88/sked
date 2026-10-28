@@ -206,7 +206,7 @@ button{font-family:inherit; cursor:pointer;}
 .tr-flag{font-weight:700;color:#b06000;white-space:nowrap;}
 .tr-flag.bad{color:#c5221f;}
 .ride-box{margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fafbfc;}
-/* v33 — Drive to / Drive home (Tom, 2026-10-27); v34 — both grandparents + restyled email; v35 — Biscuit & jokes */
+/* v33 — Drive to / Drive home (Tom, 2026-10-27); v34 — both grandparents + restyled email; v35 — Biscuit & jokes; v36 — Share with Laura = private copy */
 .drive-box{margin-top:14px;border:1px solid #cfe3ff;border-radius:8px;padding:10px 12px;background:#f3f8ff;}
 .drive-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;}
 .drow{display:flex;align-items:flex-start;gap:8px;margin-top:6px;}
@@ -562,7 +562,9 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v35 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v36 (Google-Calendar-style)
+   v36 (10/28): Share with Laura makes a private COPY on her calendar instead of adding her
+   as a guest — Tom's other attendees never see her. The copy folds onto the work row.
    v35 (10/27): Biscuit, the scheduler's own cartoon beagle (img/), signs off every assignment
    email with a joke that changes each send; four poses rotate too.
    v34 (10/27): assignment emails go to BOTH grandparents (Mary's legs also to Tom Jr, Tom Jr's
@@ -773,28 +775,34 @@ function wbGid(row){ // the Google event id (and series root) a store row points
 }
 /* v27 — "Share with Laura" (Tom, 2026-10-14: "i want to be able to add her to an event,
    and have no one else see ... that way the out of normal hours events I can selectively
-   add to her").  One tap on a work event queues an attendee-add write-back; the hourly
-   Work Cal task adds her as a guest on the Google event.  Google then puts it on her own
-   calendar, the gcall- pull imports it, and v13 folds the two copies into one chip that is
-   visible with the Work Cal switch OFF — exactly how "MXO Spark Tank - Chicago" already
-   reaches the family.  Nothing else on the work calendar is exposed. */
+   add to her").
+   v36 (Tom, 2026-10-28): "when I click Share with Laura I want her to get a copy of the
+   event for her cal — BUT I DO NOT WANT her to show up as an invited guest on the Google
+   cal that the other guests can see."  So the button no longer adds her as an attendee.
+   It queues a COPY write-back: the hourly Work Cal task reads the work event and creates
+   a private duplicate on Laura's own calendar (same title, time, location, Meet link and
+   agenda; no attendees, nothing sent to anyone).  Tom's guests never see her.  The copy
+   carries "[sked-copy-of:<googleEventId>]" in its description, so when the gcall- pull
+   imports it gcal_sync.py ids it from the ORIGINAL event and marks it Tom's — v13 rule A
+   then folds it onto the work row, one chip, visible with the Work Cal switch OFF. */
 const LAURA_EMAIL='lauraehennessey@gmail.com';
 function queueShare(row,email){
   const id=String(row.id), cal=wbCal(id); if(!cal) return false;
   const {gid,rootGid,instDate}=wbGid(row); if(!gid&&!rootGid) return false;
   const prev=writeback[id]||{};
   const f={...(prev.status==='pending'?prev.f:{})};
-  f.addGuests=[...new Set([...(f.addGuests||[]),email])];
+  delete f.addGuests;                               // v36: never an attendee
+  f.copyTo=[...new Set([...(f.copyTo||[]),email])];
   writeback[id]={id, cal, gid, rootGid, origDate:instDate||row.start||'', origStart:row.timeStart||'', title:cxStrip(row.title||''), link:row.link||'',
     f, ts:Date.now(), status:'pending', by:'site'};
   localStorage.setItem(WB_KEY,JSON.stringify(writeback));
   return true;
 }
-function shareState(wk){ // 'on' = already a guest, 'queued' = write-back pending/done, '' = offer the button
+function shareState(wk,fam){ // 'on' = Laura's copy is on the calendar, 'queued' = write-back pending/done, '' = offer the button
   if(!wk) return '';
-  if((wk.guests||[]).some(g=>(g.e||'').toLowerCase()===LAURA_EMAIL)) return 'on';
+  if((fam||[]).some(m=>/^gcall-/.test(String(m.id)))) return 'on';          // v36: her private copy has arrived
   const w=writeback[String(wk.id)];
-  if(w&&w.f&&(w.f.addGuests||[]).includes(LAURA_EMAIL)&&w.status!=='failed') return 'queued';
+  if(w&&w.f&&((w.f.copyTo||[]).includes(LAURA_EMAIL)||(w.f.addGuests||[]).includes(LAURA_EMAIL))&&w.status!=='failed') return 'queued';
   return '';
 }
 function queueWriteback(before,after){
@@ -2752,10 +2760,10 @@ function showEvent(id){
   }
   if(wk&&wk.agenda) html+=`<div class="ev-detail"><span class="ic">📝</span><span style="white-space:pre-wrap;">${esc(wk.agenda)}</span></div>`;
   const wkRow=dupFamily(e).find(m=>WORK_SRC.test(m.source||''))||null;
-  const shSt=shareState(wkRow);
-  if(wkRow&&shSt==='on') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Laura is on this event — it shows on her calendar and here with the Work Cal off.</span></div>`;
-  else if(wkRow&&shSt==='queued') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Invite to Laura queued — on her Google calendar within the hour, on the family view at the next calendar pull.</span></div>`;
-  else if(wkRow) html+=`<div class="ev-detail"><span class="ic">👩</span><span><button class="btn" id="evShareLaura" style="padding:3px 10px;font-size:12px;">Share with Laura</button> <span style="color:var(--muted);font-size:12px;">adds her as a guest on the Google event; the rest of the work calendar stays hidden</span></span></div>`;
+  const shSt=shareState(wkRow,dupFamily(e));
+  if(wkRow&&shSt==='on') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Laura has her own copy of this event — it shows on her calendar and here with the Work Cal off. Tom&#39;s guests can&#39;t see her.</span></div>`;
+  else if(wkRow&&shSt==='queued') html+=`<div class="ev-detail"><span class="ic">👩</span><span style="color:var(--muted)">Copy for Laura queued — on her Google calendar within the hour, on the family view at the next calendar pull. She is not added as a guest.</span></div>`;
+  else if(wkRow) html+=`<div class="ev-detail"><span class="ic">👩</span><span><button class="btn" id="evShareLaura" style="padding:3px 10px;font-size:12px;">Share with Laura</button> <span style="color:var(--muted);font-size:12px;">puts a private copy on her calendar — she is not added as a guest, so the other attendees never see her</span></span></div>`;
   if(e.link) html+=`<div class="ev-detail"><span class="ic">🔗</span><a href="${esc(acctLink(e.link,e))}" target="_blank" rel="noopener">${/google\.com\/calendar/.test(e.link)?'Open in Google Calendar':esc(e.link.length>60?e.link.slice(0,57)+'…':e.link)}</a></div>`;
   if(e.recurRoot) html+=`<div class="ev-detail"><span class="ic">🔁</span><span style="color:var(--muted)">Repeats weekly. 🗑 removes just this day &nbsp;<button class="btn" id="evSeriesDel" style="padding:2px 9px;font-size:11px;">Remove the whole series</button></span></div>`;
   const fam=dupFamily(e);
@@ -2810,7 +2818,7 @@ function showEvent(id){
     localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedUser]));
     pushSharedSoon(); rebuild(); closeModals(); toast('Series removed for the whole family');
   };
-  const shb=$('evShareLaura'); if(shb) shb.onclick=()=>{ if(queueShare(wkRow,LAURA_EMAIL)){ pushSharedSoon(); toast('Laura will be added to this event within the hour'); showEvent(e.id); } else toast('Could not find the Google event for this row'); };
+  const shb=$('evShareLaura'); if(shb) shb.onclick=()=>{ if(queueShare(wkRow,LAURA_EMAIL)){ pushSharedSoon(); toast("A copy will land on Laura's calendar within the hour"); showEvent(e.id); } else toast('Could not find the Google event for this row'); };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=removeCurrent;
   $('evEdit').style.display = '';   // v22: every event is editable here
