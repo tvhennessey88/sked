@@ -562,7 +562,9 @@ body.sked-dragging .tg-scroll{overscroll-behavior:contain;}
 
 <script>
 /* ================================================================
-   HENNESSEY FAMILY SCHEDULER — v36 (Google-Calendar-style)
+   HENNESSEY FAMILY SCHEDULER — v37 (Google-Calendar-style)
+   v37 (10/30): the ARCHIVE — past events move to archive/YYYY-MM.json (archive.py, daily) and the
+   site loads them on demand, read-only. Nothing older than a week is lost any more (Tom, 2026-10-30).
    v36 (10/28): Share with Laura makes a private COPY on her calendar instead of adding her
    as a guest — Tom's other attendees never see her. The copy folds onto the work row.
    v35 (10/27): Biscuit, the scheduler's own cartoon beagle (img/), signs off every assignment
@@ -667,6 +669,43 @@ const SYNC_URL='https://textdb.dev/api/data/hsked-1578268b-3ae8-4007-b940-9b27e5
 const DELETED_KEY='sked_deleted_user_v1', TOMWORK_KEY='sked_tomwork_cache_v1', TOMWORK_TS_KEY='sked_tomwork_updated';
 let deletedUser=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let tomWork=JSON.parse(localStorage.getItem(TOMWORK_KEY)||'[]');
+/* ---------- v37 — the archive (Tom, 2026-10-30) ----------
+   "i think you are deleting events that are 7 days prior. that feels too short. Ideally
+   I'd like the record to be there."  Past events leave the live store (it has to stay
+   under ~700 KB and the work-cal feed only carries a week of history) and land in
+   archive/YYYY-MM.json in this repo, written daily by archive.py.  The site fetches the
+   months around whatever is on screen and draws them like any other event — full title,
+   times, location, link, notes, guests — read-only.  A live row always wins over its
+   archived copy, and an archived instance of a weekly series stays hidden while the
+   series root is still live, so nothing is ever drawn twice. */
+let archiveIndex=null, archiveRows=[];
+const archiveHave=new Set(), archivePending=new Set();
+function archiveMonthsWanted(){
+  const set=new Set(), add=d=>set.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+  if(searchQ) return null;                                   // search looks everywhere
+  if(view==='year'){ const y=cursor.getFullYear(); for(let m=0;m<12;m++) add(new Date(y,m,1)); return set; }
+  const c=new Date(cursor); add(addDays(c,-14)); add(c); add(addDays(c,14));
+  for(let m=-1;m<=1;m++) add(new Date(c.getFullYear(),c.getMonth()+m,1));
+  return set;
+}
+async function ensureArchive(){
+  try{
+    if(archiveIndex===null){
+      archiveIndex=false;
+      const r=await fetch('archive/index.json?v='+Date.now(),{cache:'no-store'}).catch(()=>null);
+      archiveIndex=(r&&r.ok)?await r.json():{months:[]};
+    }
+    if(!archiveIndex||!Array.isArray(archiveIndex.months)) return;
+    const want=archiveMonthsWanted();
+    const months=archiveIndex.months.filter(m=>(want===null||want.has(m))&&!archiveHave.has(m)&&!archivePending.has(m));
+    if(!months.length) return;
+    months.forEach(m=>archivePending.add(m));
+    const got=await Promise.all(months.map(m=>fetch(`archive/${m}.json?v=${encodeURIComponent(archiveIndex.updated||'')}`).then(r=>r.ok?r.json():null).catch(()=>null)));
+    let n=0;
+    got.forEach((j,i)=>{ archivePending.delete(months[i]); if(j&&Array.isArray(j.rows)){ archiveHave.add(months[i]); archiveRows=archiveRows.concat(j.rows); n+=j.rows.length; } });
+    if(n) rebuild();
+  }catch(e){ /* the archive is a convenience; the live calendar never depends on it */ }
+}
 // v23: the Forge calendar is a feed-owned key the page only READS — it is not in
 // MANAGED_KEYS, so every browser push carries it through untouched as a foreign key.
 const TOMFORGE_KEY='sked_tomforge_cache_v1';
@@ -1413,6 +1452,29 @@ function normAll(famCal,masselite,site){
         train:e.train||null, ride:e.ride||'', rideFor:e.rideFor||'', rideDate:e.rideDate||'', rideEnd:e.rideEnd||'', pickupId:e.pickupId||''});
     }
   }
+  // 5d) v37 — archived months (read-only history from archive/YYYY-MM.json)
+  if(archiveRows.length){
+    const liveIds=new Set([...userEvents,...tomWork,...tomForge].map(x=>String(x&&x.id)));
+    for(const a0 of archiveRows){
+      if(!a0||!a0.id||!a0.start) continue;
+      const id=String(a0.id), root=id.split('@')[0];
+      if(liveIds.has(id)||liveIds.has(root)||hiddenIds.has(id)||hiddenIds.has(root)) continue;
+      const w=withOverride(a0);
+      const work=a0._cal==='work'||/^tw-/.test(id), forge=a0._cal==='forge'||/^tf-/.test(id);
+      const allDay=(work||forge)?(w.allDay!==false&&!w.timeStart):w.allDay!==false;
+      let s,en;
+      if(allDay){ s=parseYMD(w.start); en=parseYMD(w.end||w.start); if(en<s) en=new Date(s); }
+      else{
+        s=parseYMD(w.start); const [h1,m1]=(w.timeStart||'09:00').split(':'); s.setHours(+h1,+m1);
+        en=parseYMD(w.end||w.start); const [h2,m2]=(w.timeEnd||w.timeStart||'10:00').split(':'); en.setHours(+h2,+m2);
+        if(en<=s) en=new Date(s.getTime()+1800000);
+      }
+      push({id, title:w.title||'(untitled)', person:w.person||((work||forge)?'D':'F'), type:w.type||'family', start:s, end:en, allDay,
+        location:w.location||'', link:w.link||'', notes:w.notes||'', status:w.status||'', edited:w._edited||a0._edited||0,
+        source:work?'tom-work':forge?'tom-forge':'archive', archived:true,
+        join:a0.join||'', joinKind:a0.joinKind||'', dial:a0.dial||'', codes:a0.codes||[], guests:a0.guests||[], organizer:a0.organizer||'', agenda:a0.agenda||''});
+    }
+  }
   // 5b) Tommy's ride home after EVERY RL practice or game (Tom, 2026-09-25).
   // Drawn from the rlsoc- rows at render time, so a practice the weekly RL sync adds
   // gets its ride home with nothing else having to run.  Until someone picks who is
@@ -1898,6 +1960,7 @@ function render(){
   document.body.className=document.body.className.replace(/\bv-\w+/g,'').trim()+' v-'+view;
   localStorage.setItem(VIEW_KEY,view);
   const tb=document.querySelector('.topbar'); if(tb) document.documentElement.style.setProperty('--tbh',tb.offsetHeight+'px');
+  ensureArchive();   // v37: pull in archived months around what is on screen (no-op once loaded)
   if(searchQ){renderAgenda();return;}
   if(view==='month') renderMonth();
   else if(view==='week') renderTimeGrid(weekSpan());
@@ -2408,7 +2471,7 @@ function renderDayCols(){
 // wins the merge), and one instance of a weekly `repeat` series is detached — the date goes into the
 // root's `except` list and a one-off copy is written at the new time. Feed-only rows (family_cal.json,
 // site_data statics, tracking chips, Tom's work cal) aren't draggable — colour/cursor says so.
-function canDrag(e){ return !!e && !e.allDay; }   // v22: every timed event, whatever feed it came from
+function canDrag(e){ return !!e && !e.allDay && !e.archived; }   // v22: every timed event, whatever feed it came from; v37: not the archive
 let keepScroll=null;
 function takeKeepScroll(dflt){ const v=keepScroll; keepScroll=null; return v==null?dflt:v; }
 /* Open the grid on the day's first event rather than a fixed 7am (or 2 hours
@@ -2792,9 +2855,10 @@ function showEvent(id){
     const mv=moveLog[String(e.id)];
     if(mv&&mv.orig&&mv.orig.start) html+=`<div class="ev-detail"><span class="ic">↩</span><span style="color:var(--muted)">Moved by drag — was ${esc(moveLabel(mv))}<button class="revert-btn" data-revert="${esc(String(e.id))}">↩ Revert to original time</button></span></div>`;
   }
+  if(e.archived) html+=`<div class="ev-detail"><span class="ic">📦</span><span style="color:var(--muted)">Archived record — this is how it stood on the calendar. Read-only; notes still work.</span></div>`;
   const isRide=/^ride-t-\d{4}-\d\d-\d\d$/.test(String(e.id));
-  if(isRide) html+=rideBoxHtml(e);
-  if(isKidEvent(e)&&!isRide) html+=driveBoxHtml(e);   // v33
+  if(isRide&&!e.archived) html+=rideBoxHtml(e);
+  if(isKidEvent(e)&&!isRide&&!e.archived) html+=driveBoxHtml(e);   // v33
   if(e.train) html+=`<div id="trainLiveBox"></div>`;
   const noteSet=new Set(); let allNotes='';
   for(const m of fam){ let n=(m.notes||'').trim(); if(m.join) n=n.replace(/\s*Join:\s*\S+/,'').trim(); if(n&&!noteSet.has(n)){ noteSet.add(n); allNotes+=(allNotes?'\n\n':'')+n; } }
@@ -2821,9 +2885,10 @@ function showEvent(id){
   const shb=$('evShareLaura'); if(shb) shb.onclick=()=>{ if(queueShare(wkRow,LAURA_EMAIL)){ pushSharedSoon(); toast("A copy will land on Laura's calendar within the hour"); showEvent(e.id); } else toast('Could not find the Google event for this row'); };
   const cb=$('evConfirm'); if(cb) cb.onclick=()=>confirmTracked(e.trackRoot||e.id);
   const sb=$('evSkip'); if(sb) sb.onclick=removeCurrent;
-  $('evEdit').style.display = '';   // v22: every event is editable here
-  if(isRide) wireRideBox(e);
-  if(isKidEvent(e)&&!isRide) wireDriveBox(e);   // v33
+  $('evEdit').style.display = e.archived?'none':'';   // v22: every event is editable here — v37: except the archive
+  $('evHide').style.display = e.archived?'none':'';
+  if(isRide&&!e.archived) wireRideBox(e);
+  if(isKidEvent(e)&&!isRide&&!e.archived) wireDriveBox(e);   // v33
   if(e.train) showTrainLive(e);
   openOverlay($('evModal'));
 }
